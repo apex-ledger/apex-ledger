@@ -1,0 +1,24 @@
+node_modules/
+.npm-cache/
+dist/
+dist-electron/
+release/
+*.log
+.DS_Store
+*.company
+.claude/
+
+# web version: built bundles and server data (organisations, seats, company files)
+dist-web/
+dist-server/
+web-data/
+.seed-result.json
+.seed-final-result.json
+*.company-wal
+*.company-shm
+demo-companies/Backups/
+# secrets and local settings
+.env
+.env.*
+license.json
+app-settings.json

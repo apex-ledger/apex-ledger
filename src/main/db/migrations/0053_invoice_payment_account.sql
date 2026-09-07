@@ -1,0 +1,17 @@
+-- Where an invoice payment actually landed.
+--
+-- IMPORTANT: raw SQL — the CamelCasePlugin does NOT translate identifiers here. snake_case only.
+--
+-- Sales receipts have always recorded their deposit target, which is how the "Make Deposit" screen
+-- knows which ones are still sitting in Undeposited Funds. Invoice payments never recorded theirs,
+-- so the screen assumed every paid invoice was undeposited.
+--
+-- That assumption is wrong for any payment posted straight to a bank account (Bank Import matching
+-- has always been able to do this, and the Receive Payment screen now can too). Such an invoice
+-- still appeared in the undeposited pool, and depositing it posted Debit Bank / Credit Undeposited
+-- Funds a SECOND time — overstating the bank and driving Undeposited Funds negative.
+--
+-- Left null on existing rows deliberately. Null means "not recorded", and the code treats that as
+-- Undeposited Funds — exactly how those rows already behave. Backfilling a guess would change what
+-- historical deposits mean.
+ALTER TABLE invoices ADD COLUMN payment_account_id INTEGER;

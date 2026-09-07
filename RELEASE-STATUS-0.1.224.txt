@@ -1,0 +1,19 @@
+North Ledger 0.1.224 development checkpoint
+
+Completed in source/config:
+- isolated TEST app id/product name
+- isolated TEST AppData path
+- isolated TEST company-file folder
+- production auto-updater disabled in TEST startup
+- manual updater IPC/check/install path also disabled in TEST build
+- npm dist -> Windows Electron Builder command
+- Windows build-and-test gate script
+
+Not yet executable-validated here:
+- npm dependency install (timed out in this environment)
+- native better-sqlite3 Electron rebuild
+- automated test suite
+- production build
+- Windows NSIS installer
+
+Do not call this the final release until those checks pass on Windows.

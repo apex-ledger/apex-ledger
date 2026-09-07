@@ -1,0 +1,127 @@
+/* Color scheme definitions for the whole app chrome (sidebar, header, buttons, accents).
+ * Every value is "R G B" (space-separated, no commas) so Tailwind's `rgb(var(--x) / <alpha-value>)`
+ * pattern in tailwind.config.js can still apply opacity modifiers. `forest` (the default) matches
+ * the app's original fixed brand/gold hex values exactly — switching to it changes nothing.
+ * Each other scheme reuses the same lightness/saturation ramp as forest, just at a different hue,
+ * so contrast and "feel" stay consistent across every scheme. */
+
+:root,
+:root[data-theme='forest'] {
+  --brand-50: 240 250 243;
+  --brand-100: 218 243 225;
+  --brand-200: 179 230 195;
+  --brand-300: 130 210 158;
+  --brand-400: 79 184 119;
+  --brand-500: 47 157 92;
+  --brand-600: 33 125 72;
+  --brand-700: 28 99 60;
+  --brand-800: 25 79 51;
+  --brand-900: 21 66 43;
+
+  --gold-50: 253 248 236;
+  --gold-100: 249 237 201;
+  --gold-200: 242 218 147;
+  --gold-300: 233 194 92;
+  --gold-400: 223 169 49;
+  --gold-500: 201 143 31;
+  --gold-600: 168 111 24;
+  --gold-700: 135 84 23;
+  --gold-800: 111 67 25;
+  --gold-900: 94 56 24;
+}
+
+:root[data-theme='ocean'] {
+  --brand-50: 240 244 250;
+  --brand-100: 218 229 243;
+  --brand-200: 179 202 230;
+  --brand-300: 130 166 210;
+  --brand-400: 79 126 184;
+  --brand-500: 47 96 157;
+  --brand-600: 33 74 125;
+  --brand-700: 28 60 99;
+  --brand-800: 25 49 79;
+  --brand-900: 21 41 66;
+
+  --gold-50: 253 244 236;
+  --gold-100: 249 223 201;
+  --gold-200: 242 190 147;
+  --gold-300: 233 155 92;
+  --gold-400: 223 127 49;
+  --gold-500: 201 108 31;
+  --gold-600: 168 89 24;
+  --gold-700: 135 73 23;
+  --gold-800: 111 64 25;
+  --gold-900: 94 56 24;
+}
+
+:root[data-theme='slate'] {
+  --brand-50: 242 244 248;
+  --brand-100: 224 228 237;
+  --brand-200: 190 200 219;
+  --brand-300: 148 163 192;
+  --brand-400: 103 123 160;
+  --brand-500: 72 93 132;
+  --brand-600: 54 71 104;
+  --brand-700: 44 58 83;
+  --brand-800: 37 48 67;
+  --brand-900: 31 40 56;
+
+  --gold-50: 237 252 250;
+  --gold-100: 205 245 241;
+  --gold-200: 154 235 227;
+  --gold-300: 103 222 210;
+  --gold-400: 62 210 195;
+  --gold-500: 44 188 174;
+  --gold-600: 35 157 145;
+  --gold-700: 31 127 117;
+  --gold-800: 31 105 97;
+  --gold-900: 29 89 83;
+}
+
+:root[data-theme='burgundy'] {
+  --brand-50: 250 240 242;
+  --brand-100: 243 218 224;
+  --brand-200: 230 179 191;
+  --brand-300: 210 130 149;
+  --brand-400: 184 79 103;
+  --brand-500: 157 47 73;
+  --brand-600: 125 33 54;
+  --brand-700: 99 28 45;
+  --brand-800: 79 25 38;
+  --brand-900: 66 21 31;
+
+  --gold-50: 253 248 236;
+  --gold-100: 249 235 201;
+  --gold-200: 242 213 147;
+  --gold-300: 233 191 92;
+  --gold-400: 223 171 49;
+  --gold-500: 201 150 31;
+  --gold-600: 168 125 24;
+  --gold-700: 135 101 23;
+  --gold-800: 111 85 25;
+  --gold-900: 94 73 24;
+}
+
+:root[data-theme='indigo'] {
+  --brand-50: 241 240 250;
+  --brand-100: 221 218 243;
+  --brand-200: 186 179 230;
+  --brand-300: 141 130 210;
+  --brand-400: 93 79 184;
+  --brand-500: 62 47 157;
+  --brand-600: 45 33 125;
+  --brand-700: 37 28 99;
+  --brand-800: 32 25 79;
+  --brand-900: 27 21 66;
+
+  --gold-50: 253 236 245;
+  --gold-100: 249 201 227;
+  --gold-200: 242 147 198;
+  --gold-300: 233 92 167;
+  --gold-400: 223 49 142;
+  --gold-500: 201 31 122;
+  --gold-600: 168 24 101;
+  --gold-700: 135 23 83;
+  --gold-800: 111 25 71;
+  --gold-900: 94 24 61;
+}

@@ -1,0 +1,11 @@
+North Ledger 0.1.222 package-script audit
+
+rebuild: electron-rebuild -f -w better-sqlite3
+test: vitest run
+build: tsc -p tsconfig.json --noEmit && vite build
+dist: MISSING
+package: MISSING
+dev: vite
+
+Release blocker note:
+Core rebuild/test/build scripts are present. Installer script still must be verified on Windows.

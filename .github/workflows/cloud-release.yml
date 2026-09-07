@@ -1,0 +1,110 @@
+# Apex Ledger cloud — verify on every change, deploy only on an approved release.
+#
+# Three stages, each gated on the one before:
+#   verify   — the same local release gate a developer runs (node cloud/verify-cloud.mjs), plus
+#              Bicep compilation and a placeholder scan. Runs on every push and pull request.
+#   image    — builds the API image inside Azure Container Registry and records its immutable
+#              digest. Only on a version tag (v0.1.331 …), never on a branch.
+#   deploy   — the two-stage Bicep deployment, against a GitHub Environment that requires a
+#              reviewer's approval. Secrets come from the environment, never from the workflow.
+#
+# Authentication is OIDC federated credentials (azure/login with no client secret). Configure the
+# app registration's federated credential for this repository and the `production` environment.
+name: cloud-release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['cloud/**', '.github/workflows/cloud-release.yml']
+  pull_request:
+    paths: ['cloud/**']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Local release gate (API, web, migrations, versions)
+        run: node cloud/verify-cloud.mjs
+      - name: Bicep compiles
+        run: az bicep build --file cloud/infra/main.bicep --stdout > /dev/null
+      - name: Image builds
+        run: docker build --tag apex-ledger-api:ci cloud/api
+
+  image:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - id: build
+        name: Build the API image in the registry and record its digest
+        run: |
+          az acr build --registry "${{ vars.ACR_NAME }}" --image "apex-ledger-api:${{ steps.version.outputs.version }}" --file cloud/api/Dockerfile cloud/api
+          digest=$(az acr repository show --name "${{ vars.ACR_NAME }}" --image "apex-ledger-api:${{ steps.version.outputs.version }}" --query digest --output tsv)
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "Built apex-ledger-api:${{ steps.version.outputs.version }} @ $digest" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Write the real parameters from environment secrets
+        # The example file is the template; the real one never touches the repository.
+        run: |
+          cat > cloud/infra/main.bicepparam <<EOF
+          using './main.bicep'
+          param prefix = '${{ vars.PREFIX }}'
+          param environmentName = 'production'
+          param apiImageTag = '${{ needs.image.outputs.version }}'
+          param allowedWebOrigin = '${{ vars.WEB_ORIGIN }}'
+          param authIssuer = '${{ vars.AUTH_ISSUER }}'
+          param authAudience = '${{ vars.AUTH_AUDIENCE }}'
+          param authJwksUri = '${{ vars.AUTH_JWKS_URI }}'
+          param invitationBaseUrl = '${{ vars.WEB_ORIGIN }}/accept-invitation'
+          param emailDeliveryUrl = '${{ vars.EMAIL_DELIVERY_URL }}'
+          param emailFromAddress = '${{ vars.EMAIL_FROM_ADDRESS }}'
+          param postgresAdministratorPassword = '${{ secrets.POSTGRES_ADMIN_PASSWORD }}'
+          param databaseAppConnectionString = '${{ secrets.DATABASE_APP_CONNECTION_STRING }}'
+          param contactSearchHmacSecret = '${{ secrets.CONTACT_SEARCH_HMAC_SECRET }}'
+          param mfaHmacSecret = '${{ secrets.MFA_HMAC_SECRET }}'
+          param emailDeliveryBearerToken = '${{ secrets.EMAIL_DELIVERY_BEARER_TOKEN }}'
+          EOF
+      - name: What-if, then deploy the application stage
+        run: |
+          az deployment group what-if --resource-group "${{ vars.RESOURCE_GROUP }}" --template-file cloud/infra/main.bicep --parameters cloud/infra/main.bicepparam deployApi=true
+          az deployment group create --name "apex-ledger-${{ needs.image.outputs.version }}" --resource-group "${{ vars.RESOURCE_GROUP }}" --template-file cloud/infra/main.bicep --parameters cloud/infra/main.bicepparam deployApi=true --only-show-errors
+      - name: Publish the web front end
+        run: |
+          cd cloud/web
+          npm ci --no-audit --no-fund
+          VITE_API_URL='${{ vars.API_URL }}' VITE_ENTRA_CLIENT_ID='${{ vars.SPA_CLIENT_ID }}' VITE_ENTRA_AUTHORITY='${{ vars.ENTRA_AUTHORITY }}' VITE_ENTRA_KNOWN_AUTHORITY='${{ vars.ENTRA_KNOWN_AUTHORITY }}' VITE_API_SCOPE='${{ vars.API_SCOPE }}' npm run build
+          npx --yes @azure/static-web-apps-cli deploy ./dist --deployment-token '${{ secrets.STATIC_WEB_APP_TOKEN }}' --env production
+      - name: Readiness probe
+        run: curl --fail --silent --show-error "${{ vars.API_URL }}/ready"

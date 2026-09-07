@@ -1,0 +1,10 @@
+North Ledger 0.1.226 release hardening
+
+Concrete fixes in this checkpoint:
+- package version and Electron Builder output folder now agree at 0.1.226;
+- pre-build TEST isolation verifier checks appId, product name, output folder, artifact name, updater guard, userData isolation and company-file isolation;
+- Windows build gate now runs the isolation verifier before installing/building;
+- artifact collection only accepts the exact expected North Ledger TEST installer instead of recursively copying arbitrary EXE files;
+- build manifest is generated beside the final test artifacts.
+
+This checkpoint still does not claim that the Windows installer has executed successfully in this environment.

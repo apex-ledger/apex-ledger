@@ -1,0 +1,20 @@
+NORTH LEDGER ULTIMATE — 0.1.220 DEVELOPMENT RELEASE NOTES
+
+ACCOUNTING FOUNDATION
+- Company-isolated databases and account selectors.
+- Company-address tax defaults with Company Tax / No Tax / Manual Tax workflow.
+- Partial customer receipts and vendor payments with remaining-balance aging design.
+- Inventory/COGS atomic-posting controls and negative-stock safeguards.
+- Purchase order tax/product retention and PO -> goods receipt -> GRNI -> supplier invoice matching design.
+- HST filing separated from CRA cash settlement.
+- Fiscal-period GIFI logic and CRA total validation requirements.
+- Reversal, period-lock and reconciliation release gates.
+
+ULTIMATE SUITE
+- Canonical navigation and accountant workflow map.
+- COA presentation requirements including GIFI and tax defaults.
+- Core financial/accounting report consistency requirements.
+- Retained DEMO / TEST company plan and review walkthrough.
+
+FINAL RELEASE STATUS
+Not yet a final executable release. Windows dependency/build/test execution remains mandatory before installer delivery.

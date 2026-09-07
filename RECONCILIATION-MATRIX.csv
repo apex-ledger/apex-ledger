@@ -1,0 +1,7 @@
+area,control_gl,subledger_source,expected_difference
+Accounts Receivable,AR control,Open customer balances,0
+Accounts Payable,AP control,Open vendor balances,0
+Inventory,Inventory Asset,Inventory valuation,0
+GST/HST Recoverable,Tax recoverable GL,Unfiled ITC detail,0
+GST/HST Payable,Tax payable GL,Unfiled collected tax detail,0
+Undeposited Funds,Undeposited Funds,Undeposited customer receipts,0

@@ -1,0 +1,14 @@
+North Ledger 0.1.225
+
+This checkpoint strengthens the real Windows execution path.
+It does NOT claim the EXE was built in this Linux/container environment.
+
+Ready for Windows execution:
+- clean dependency install with one fallback attempt
+- native better-sqlite3 rebuild
+- automated tests
+- production build
+- explicit npm run dist installer step
+- final artifact collection folder
+
+Final sign-off still requires the Windows gate to pass.

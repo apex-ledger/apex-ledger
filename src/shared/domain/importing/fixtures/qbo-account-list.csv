@@ -1,0 +1,17 @@
+﻿Northwind Bookkeeping Test Co.,,,,
+Account List,,,,
+,,,,
+Account,Type,Detail type,Description,Balance
+Chequing Account,Bank,Chequing,Main operating account,6017.0
+Accounts Receivable (A/R),Accounts receivable (A/R),Accounts Receivable (A/R),,0
+Office Equipment,Fixed Assets,Machinery & Equipment,,0
+Accounts Payable (A/P),Accounts payable (A/P),Accounts Payable (A/P),,0
+Visa,Credit Card,Credit Card,,0
+GST/HST Payable,Other Current Liabilities,Sales Tax Payable,,-117.0
+Shareholder Loan,Long Term Liabilities,Shareholder Notes Payable,,0
+Owner's Equity,Equity,Owner's Equity,,0
+Sales Revenue,Income,Service/Fee Income,,-1000.0
+Interest Earned,Other Income,Interest Earned,,0
+Cost of Goods Sold,Cost of Goods Sold,Supplies & Materials - COGS,,0
+Telephone,Expenses,Utilities,,100.0
+Penalties,Other Expense,Penalties & Settlements,,0

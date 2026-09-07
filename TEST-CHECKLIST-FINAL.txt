@@ -1,0 +1,26 @@
+NORTH LEDGER ULTIMATE — FINAL USER TEST
+
+[ ] Open DEMO — Ontario Retail & Inventory
+[ ] Follow vendor PO -> receipt -> bill -> payment
+[ ] Follow customer invoice -> COGS -> receipt -> deposit
+[ ] Confirm HST Centre net position
+[ ] Confirm Inventory/GL reconciliation = 0
+[ ] Confirm AR/AP reconciliation = 0
+[ ] Confirm Trial Balance balances
+[ ] Confirm Balance Sheet balances
+[ ] Confirm P&L gross profit matches demo expectation
+[ ] Open DEMO — CRA/GIFI Validation and review GIFI
+[ ] Switch among demo companies and confirm no data mixing
+[ ] Create a fresh test company and verify province tax default
+
+RAIL / NAVIGATION BEFORE ACCOUNTING TESTS
+[ ] Open company name visible at top of left rail
+[ ] DEMO / TEST badge visible for demo companies
+[ ] Canonical 14-item rail appears in correct order
+[ ] No duplicate Bookkeeping or Accounting groups
+[ ] Active destination is visually clear
+[ ] Inventory/Payroll feature gating still works
+[ ] Switching companies refreshes rail/company context
+[ ] Accounting opens Accountant Centre
+[ ] Tax & GIFI opens GIFI area
+[ ] Settings opens Company Settings

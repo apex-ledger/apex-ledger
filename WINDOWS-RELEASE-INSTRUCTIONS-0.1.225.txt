@@ -1,0 +1,21 @@
+NORTH LEDGER ULTIMATE TEST — WINDOWS RELEASE INSTRUCTIONS
+
+1. Extract this source to:
+   D:\NorthLedger-Test\Final-Test\NorthLedger-Ultimate-Test
+
+2. Open that folder.
+
+3. Double-click:
+   WINDOWS-BUILD-AND-TEST.cmd
+
+4. The script stops if dependency install, native SQLite rebuild,
+   automated tests, production build, or installer creation fails.
+
+5. If all stages pass, inspect:
+   FINAL-TEST-ARTIFACTS
+
+IMPORTANT:
+- Use DEMO / TEST companies first.
+- Do not copy real client data into the test build until the demo
+  accounting/reconciliation checks pass.
+- This test build is intended to use a separate app identity/data path.

@@ -1,0 +1,9 @@
+document,party,flow,base_amount,tax_choice,tax_amount,total
+PO-1001,Vendor A,Inventory purchase order,1000.00,Company Tax - HST 13%,130.00,1130.00
+GR-1001,Vendor A,Receive inventory / accrue GRNI,1000.00,No tax posted at receipt,0.00,1000.00
+BILL-1001,Vendor A,Supplier invoice match / clear GRNI + ITC,1000.00,HST 13%,130.00,1130.00
+VPAY-1001,Vendor A,Partial vendor payment,500.00,N/A,0.00,500.00
+INV-1001,Customer A,Inventory sale,2000.00,HST 13%,260.00,2260.00
+COGS-1001,Customer A,COGS / inventory relief,1000.00,N/A,0.00,1000.00
+RCPT-1001,Customer A,Partial customer receipt,1000.00,N/A,0.00,1000.00
+RCPT-1002,Customer A,Final customer receipt,1260.00,N/A,0.00,1260.00

@@ -1,0 +1,27 @@
+{
+  "name": "apexledger-cloud-api",
+  "private": true,
+  "version": "0.1.330",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsx watch src/server.ts",
+    "test": "node --require ./test-bootstrap.cjs --import tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "fastify": "5.12.1",
+    "jose": "6.1.0",
+    "pg": "8.16.3",
+    "zod": "4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.0",
+    "@types/pg": "8.15.5",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2"
+  }
+}

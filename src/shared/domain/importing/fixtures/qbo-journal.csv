@@ -1,0 +1,16 @@
+﻿Northwind Bookkeeping Test Co.,,,,,,,
+Journal,,,,,,,
+"October - December, 2025",,,,,,,
+,,,,,,,
+Date,Transaction Type,Num,Name,Memo/Description,Account,Debit,Credit
+2025-10-03,Expense,,Bell Canada,Phone,Telephone,100.0,
+,,,,Phone,GST/HST Payable,13.0,
+,,,,Phone,Chequing Account,,113.0
+,,,,,,$113.00,$113.00
+,,,,,,,
+2025-10-15,Deposit,1042,Maple Consulting Group,October retainer,Chequing Account,1130.0,
+,,,,October retainer,Sales Revenue,,1000.0
+,,,,October retainer,GST/HST Payable,,130.0
+,,,,,,"$1,130.00","$1,130.00"
+,,,,,,,
+TOTAL,,,,,,"$1,243.00","$1,243.00"

@@ -1,0 +1,1 @@
+ALTER TABLE accounts ADD COLUMN is_transfer_eligible INTEGER NOT NULL DEFAULT 0;

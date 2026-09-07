@@ -1,0 +1,22 @@
+North Ledger Ultimate TEST 0.1.232
+
+This package was rebuilt from the latest 0.1.231 rail-fixed source lineage.
+
+Verified canonical rail:
+Dashboard
+Sales
+Purchases
+Banking
+Expenses
+Inventory
+HST Centre
+Payroll
+Accounting
+Reports
+Tax & GIFI
+Customers
+Vendors
+Settings
+
+Do not build from any older D:\NorthLedger-0.1.223-dev folder.
+Extract this ZIP to a NEW folder such as D:\NorthLedger-Latest-0.1.232.

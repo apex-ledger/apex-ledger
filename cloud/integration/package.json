@@ -1,0 +1,12 @@
+{
+  "name": "apexledger-cloud-integration",
+  "private": true,
+  "version": "0.1.330",
+  "type": "module",
+  "scripts": {
+    "test": "node --test migration.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8"
+  }
+}

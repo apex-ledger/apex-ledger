@@ -1,0 +1,4 @@
+-- Intentionally empty. The first cut of this migration dropped and re-added preferred_vendor_id to
+-- fix its foreign key, but the runner re-applies every migration on every open, so the drop ran
+-- each launch and cleared the value. 0082 now names the right table (vendors) directly. Rule for
+-- this codebase: migrations must be safe to re-run — never DROP COLUMN, and guard every UPDATE.

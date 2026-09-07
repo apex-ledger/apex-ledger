@@ -1,0 +1,120 @@
+{
+  "name": "professional-accounting-software",
+  "private": true,
+  "version": "0.1.330-alpha.17",
+  "description": "Desktop double-entry accounting software with GIFI code support for Canadian corporate filing.",
+  "main": "dist-electron/main/index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "node scripts/clean-dist.mjs && tsc -p tsconfig.json --noEmit && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "dist:win": "npm run verify:test-build && npm run build && electron-builder --win --x64",
+    "release:win": "npm run build && electron-builder --win --x64 --publish always",
+    "dist": "npm run dist:win",
+    "verify:test-build": "node scripts/verify-test-build.mjs && node scripts/verify-sidebar.mjs && node scripts/verify-comprehensive-demo.mjs && node scripts/verify-recovery-safety.mjs && node scripts/verify-recurring-schedule.mjs && node scripts/verify-pre-migration-safety.mjs && node scripts/verify-atomic-correction.mjs && node scripts/verify-special-tax-correction.mjs && node scripts/verify-multi-currency.mjs && node scripts/verify-company-switch-safety.mjs && node scripts/verify-atomic-create-and-post.mjs && node scripts/verify-import-retry-safety.mjs && node scripts/verify-vendor-invoice-number.mjs && node scripts/verify-atomic-document-reversal.mjs && node scripts/verify-document-drillback.mjs && node scripts/verify-payment-reversal.mjs && node scripts/verify-payment-history.mjs && node scripts/verify-hst-filing-lock.mjs && node scripts/verify-credit-settlement-undo.mjs && node scripts/verify-linked-journal-protection.mjs && node scripts/verify-payroll-reversal.mjs && node scripts/verify-mileage-reversal.mjs && node scripts/verify-po-receipt-reversal.mjs && node scripts/verify-inventory-movement-reversal.mjs && node scripts/verify-receipt-journal-protection.mjs && node scripts/verify-receipt-file-safety.mjs && node scripts/verify-session-lock.mjs && node scripts/verify-receipt-history.mjs && node scripts/verify-receipt-reprocess.mjs && node scripts/verify-scanner-integration.mjs && node scripts/verify-reconciliation-reopen.mjs && node scripts/verify-reconciliation-abandon.mjs && node scripts/verify-reconciliation-sequence.mjs && node scripts/verify-commitment-conversion-safety.mjs && node scripts/verify-commitment-conversion-retry.mjs && node scripts/verify-po-supplier-unmatch.mjs && node scripts/verify-po-supplier-invoice-number.mjs && node scripts/verify-po-conversion-invoice-number.mjs && node scripts/verify-delete-confirmations.mjs && node scripts/verify-sales-receipt-hst.mjs && node scripts/verify-paystub-employer-details-hidden.mjs && node scripts/verify-pd7a-employer-details-hidden.mjs && node scripts/verify-invoice-product-entry.mjs && node scripts/verify-sales-tax-category-breakdown.mjs && node scripts/verify-account-codes-hidden.mjs && node scripts/verify-crm-search.mjs && node scripts/verify-compliance-reports.mjs && node scripts/verify-entry-actions-and-report-trace.mjs && node scripts/verify-company-user-access.mjs && node scripts/verify-item-catalogue.mjs",
+    "verify:packaged-test": "node scripts/verify-packaged-test.mjs && node scripts/verify-packaged-smoke.mjs",
+    "seed:test-company": "npm run build && node scripts/create-fictitious-company.mjs",
+    "check:flow": "npm run build && node scripts/check-data-flow.mjs",
+    "api:map": "node scripts/gen-api-map.mjs",
+    "build:web": "node scripts/gen-api-map.mjs && vite build --config vite.web.config.ts && node scripts/build-server.mjs",
+    "start:web": "node dist-server/index.js"
+  },
+  "build": {
+    "npmRebuild": false,
+    "appId": "ca.pjinsuretax.northledger.ultimate.test",
+    "productName": "Apex Ledger Ultimate - TEST",
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**"
+    ],
+    "extraResources": [
+      {
+        "from": "demo-companies",
+        "to": "demo-companies",
+        "filter": [
+          "**/*.company"
+        ]
+      },
+      {
+        "from": "resources/scripts",
+        "to": "scripts",
+        "filter": [
+          "**/*.js"
+        ]
+      }
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "win": {
+      "icon": "build/north-ledger-icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "include": "build/installer.nsh",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "artifactName": "ApexLedger-Ultimate-TEST-Setup-${version}.${ext}"
+    },
+    "directories": {
+      "output": "release/ApexLedger-${version}-test"
+    },
+    "artifactName": "ApexLedger-Ultimate-TEST-${version}-portable.${ext}"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@types/express": "^4.17.25",
+    "better-sqlite3": "^11.3.0",
+    "electron-updater": "^6.8.9",
+    "express": "^4.22.2",
+    "fflate": "0.8.2",
+    "jimp": "^1.6.1",
+    "kysely": "^0.27.4",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.2.108",
+    "pngjs": "^7.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^3.10.1",
+    "tesseract.js": "^7.0.0",
+    "zod": "^3.23.8",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.6.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.5",
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "electron": "^32.1.2",
+    "electron-builder": "^25.0.5",
+    "jsdom": "^30.0.1",
+    "postcss": "^8.4.45",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.4",
+    "vite-plugin-electron": "^0.28.8",
+    "vite-plugin-electron-renderer": "^0.14.6",
+    "vitest": "^2.0.5"
+  }
+}

@@ -1,0 +1,14 @@
+NORTH LEDGER DEMO REVIEW
+
+1. Open a company whose name begins DEMO.
+2. Confirm DEMO / TEST appears in the application shell.
+3. For retail accounting, open DEMO — Ontario Retail & Inventory.
+4. Start in Purchases and follow PO -> Receive Goods -> Supplier Invoice Match -> Bill -> Payment.
+5. Open Inventory and inspect quantity, valuation and Inventory/GL reconciliation.
+6. Open Sales and follow Invoice -> Customer Receipt -> Deposit.
+7. Open Accounting -> General Ledger / Trial Balance.
+8. Open Reports -> P&L and Balance Sheet.
+9. Open HST Centre and verify collected tax, ITCs and net position.
+10. Open Tax & GIFI and compare mapped totals to the financial statements.
+
+All records are fictional test data.

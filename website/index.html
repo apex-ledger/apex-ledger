@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Apex Ledger — Canadian accounting software for bookkeepers</title>
+  <meta name="description" content="Double-entry accounting, GST/HST, payroll for every province, GIFI and T2 schedules, and an audit-ready year end. Built in Canada, your data stays in Canada." />
+  <link rel="canonical" href="https://apexledger.ca/" />
+  <style>
+    :root { --green: #14532d; --green-2: #166534; --green-3: #dcfce7; --gold: #d4a017; --ink: #111827; --muted: #4b5563; --line: #e5e7eb; --bg: #ffffff; --soft: #f7faf7; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.55; }
+    a { color: var(--green-2); }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+    header { position: sticky; top: 0; background: rgba(255,255,255,.95); border-bottom: 1px solid var(--line); backdrop-filter: blur(6px); z-index: 10; }
+    header .wrap { display: flex; align-items: center; gap: 18px; height: 60px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--green); text-decoration: none; font-size: 18px; }
+    .brand .mark { width: 30px; height: 30px; border-radius: 8px; background: var(--green); display: grid; place-items: center; color: var(--gold); font-size: 18px; }
+    nav { margin-left: auto; display: flex; gap: 18px; font-size: 14px; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a.cta { color: #fff; background: var(--green); padding: 8px 14px; border-radius: 999px; }
+    .hero { background: linear-gradient(180deg, #0f3d22 0%, #14532d 100%); color: #fff; padding: 72px 0 64px; }
+    .hero h1 { font-size: 40px; line-height: 1.15; margin: 0 0 14px; max-width: 720px; }
+    .hero p { font-size: 18px; max-width: 640px; color: #d1fae5; margin: 0 0 26px; }
+    .btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 12px 20px; border-radius: 999px; font-weight: 600; text-decoration: none; font-size: 15px; }
+    .btn.gold { background: var(--gold); color: #1f1300; }
+    .btn.ghost { border: 1px solid rgba(255,255,255,.5); color: #fff; }
+    .hero .note { margin-top: 18px; font-size: 13px; color: #a7f3d0; }
+    section { padding: 56px 0; }
+    section.soft { background: var(--soft); }
+    h2 { font-size: 28px; margin: 0 0 8px; color: var(--green); }
+    .lede { color: var(--muted); margin: 0 0 28px; max-width: 700px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+    .card { border: 1px solid var(--line); border-radius: 12px; padding: 18px; background: #fff; }
+    .card h3 { margin: 0 0 6px; font-size: 16px; color: var(--ink); }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .card.tint { background: var(--green-3); border-color: #bbf7d0; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+    .price { font-size: 30px; font-weight: 700; color: var(--green); }
+    .price small { font-size: 13px; color: var(--muted); font-weight: 400; }
+    .pill { display: inline-block; background: var(--green-3); color: var(--green); border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 600; }
+    footer { border-top: 1px solid var(--line); padding: 28px 0; font-size: 13px; color: var(--muted); }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: center; }
+    @media (max-width: 640px) { .hero h1 { font-size: 30px; } nav a:not(.cta) { display: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/"><span class="mark">✦</span> Apex Ledger</a>
+      <nav>
+        <a href="#features">Features</a>
+        <a href="#payroll">Payroll</a>
+        <a href="#security">Data in Canada</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#contact">Contact</a>
+        <a class="cta" href="https://app.apexledger.ca">Sign in</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <h1>Canadian accounting software built for bookkeepers and the businesses they keep books for.</h1>
+      <p>Double-entry ledger, GST/HST returns, payroll for every province, GIFI and T2 schedules, and a year-end sign-off that tells you when the books are ready. On your desktop, or in the browser from anywhere. Your data stays in Canada.</p>
+      <div class="btns">
+        <a class="btn gold" href="#contact">Book a walkthrough</a>
+        <a class="btn ghost" href="#download">Download for Windows</a>
+      </div>
+      <div class="note">Made in Ontario. Hosted in Canada Central with backups in Canada East.</div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>Everything a client file needs</h2>
+      <p class="lede">The whole cycle, the way a bookkeeper works it: enter, reconcile, file, report, sign off.</p>
+      <div class="grid">
+        <div class="card"><h3>Sales and receivables</h3><p>Invoices, estimates, sales orders, sales receipts, credit notes, statements, late interest, and Receive Payment to Make Deposit the way the bank sees it.</p></div>
+        <div class="card"><h3>Purchases and payables</h3><p>Vendor bills, approvals, part payments, vendor credits, purchase orders with receiving and supplier-invoice matching, recurring bills, mileage claims.</p></div>
+        <div class="card"><h3>Banking</h3><p>Import OFX, QFX, QBO and CSV downloads, categorise by rules, match payments, reconcile every bank and card to the cent, with the report your accountant wants.</p></div>
+        <div class="card"><h3>GST/HST and provincial tax</h3><p>HST, GST-only, exempt and meals codes on every line; the return built from them; filed periods locked; PST, RST and QST by province; quick method.</p></div>
+        <div class="card"><h3>Inventory and jobs</h3><p>Stock at moving-average cost, reorder points, services with prices, projects, tags by department or location, budgets against actuals.</p></div>
+        <div class="card"><h3>Quick Entry</h3><p>Receipts and card charges in five fields. Or type the sentence: "expense 85.50 fuel on Visa with HST" comes back as a card to confirm.</p></div>
+        <div class="card"><h3>Reports that drill down</h3><p>Trial balance, P&amp;L on accrual or cash basis, balance sheet, cash flow, ageing, sales by customer, expenses by vendor. Every name on every report opens the record.</p></div>
+        <div class="card"><h3>Year end and audit</h3><p>Audit Exceptions, Activity Log, Reclassify, workpapers, CPA review package, continuity schedules, GIFI export and T2 reconciliation, and a Year-End Sign-off with a light on every check.</p></div>
+        <div class="card"><h3>Help &amp; Tutor</h3><p>Ask how to do anything and get the steps with a button to the screen. Forty-five lessons walk through each screen on the real page, field by field.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="payroll" class="soft">
+    <div class="wrap">
+      <h2>Payroll for every province</h2>
+      <p class="lede">CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT. Weekly, biweekly, semi-monthly and monthly. Pay stubs, PD7A, ROE, T4, T4A, T5018, T5, direct deposit files.</p>
+      <div class="grid">
+        <div class="card tint"><h3>Hourly and salaried</h3><p>Overtime, bonuses, taxable benefits, union dues, RRSP match, health benefits, reimbursements, vacation paid or accrued.</p></div>
+        <div class="card tint"><h3>Remittances</h3><p>PD7A by month for regular, quarterly and accelerated remitters, with the Action Centre warning before the due date.</p></div>
+        <div class="card tint"><h3>Year end</h3><p>Slips and summaries straight from the posted runs, with a checklist of every deadline.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="security">
+    <div class="wrap">
+      <h2>Your data stays in Canada</h2>
+      <p class="lede">A bookkeeping firm holds other people's books. That is a responsibility we designed around.</p>
+      <div class="grid">
+        <div class="card"><h3>Canadian regions only</h3><p>The web service runs in Microsoft Azure Canada Central, with backups in Canada East. No data leaves the country.</p></div>
+        <div class="card"><h3>One file per company</h3><p>Each client's books are a separate encrypted file in your organisation's own folder. Another organisation can never open it.</p></div>
+        <div class="card"><h3>Seats and sign-ins</h3><p>Each person signs in with their own email and password; every entry and change is stamped with their name in the Activity Log.</p></div>
+        <div class="card"><h3>Desktop, if you prefer</h3><p>The Windows app keeps everything on your own computer with daily backups and a second backup folder of your choosing.</p></div>
+        <div class="card"><h3>No AI in your books unless you ask</h3><p>The optional AI assistant and the optional voice recognition are off by default. Voice recognition, when on, runs on your own computer.</p></div>
+        <div class="card"><h3>Built to be audited</h3><p>Posted entries are voided, never deleted. Filed returns lock their period. Every report traces to the entry behind it.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pricing" class="soft">
+    <div class="wrap">
+      <h2>Pricing</h2>
+      <p class="lede">Per seat, per month, in Canadian dollars. A seat is one person; an organisation holds as many company files as it needs.</p>
+      <div class="grid">
+        <div class="card"><span class="pill">Desktop</span><div class="price">$39<small> / seat / month</small></div><p>Windows app, all features, updates included. Your data on your computer.</p></div>
+        <div class="card tint"><span class="pill">Web</span><div class="price">$59<small> / seat / month</small></div><p>Everything in the browser, hosted in Canada, backed up nightly. Two seats to start; add seats any time.</p></div>
+        <div class="card"><span class="pill">Firm</span><div class="price">Ask<small> · 5+ seats</small></div><p>For a bookkeeping practice keeping books for many clients: client management, deadlines, reminders and engagement letters included.</p></div>
+      </div>
+      <p style="margin-top:14px;font-size:13px;color:var(--muted)">Prices are placeholders until launch and exclude HST.</p>
+    </div>
+  </section>
+
+  <section id="download">
+    <div class="wrap">
+      <h2>Download for Windows</h2>
+      <p class="lede">The desktop app installs in a minute and opens a demo company so you can try every screen before entering your own books.</p>
+      <a class="btn gold" href="/downloads/ApexLedger-Setup.exe">Download the installer</a>
+      <p style="margin-top:12px;font-size:13px;color:var(--muted)">Windows 10 or 11, 64-bit. The installer is signed. Version 0.1.330.</p>
+    </div>
+  </section>
+
+  <section id="contact" class="soft">
+    <div class="wrap">
+      <h2>Talk to us</h2>
+      <p class="lede">Book a walkthrough, ask about moving from QuickBooks or Sage, or set up seats for your firm.</p>
+      <div class="grid">
+        <div class="card"><h3>Email</h3><p><a href="mailto:hello@apexledger.ca">hello@apexledger.ca</a></p></div>
+        <div class="card"><h3>Sign in</h3><p><a href="https://app.apexledger.ca">app.apexledger.ca</a></p></div>
+        <div class="card"><h3>Where</h3><p>Ontario, Canada</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <span>© <span id="y"></span> Apex Ledger. Canadian accounting software.</span>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
+      <span>Data hosted in Canada Central and Canada East.</span>
+    </div>
+  </footer>
+  <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+North Ledger 0.1.231
+
+Rail implementation from 0.1.230 is now incorporated into the final pre-test checklist.
+The Windows test gate should be run from this rail-fixed source lineage, not an older checkpoint.
+
+Next decisive action: execute WINDOWS-BUILD-AND-TEST.cmd on Windows and fix any test/build failures before user accounting testing.

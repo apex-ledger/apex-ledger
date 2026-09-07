@@ -1,0 +1,6 @@
+North Ledger 0.1.229 rail implementation audit
+
+Candidate: src/renderer/App.tsx (score 6)
+Candidate: src/renderer/layout/Sidebar.tsx (score 5)
+Candidate: src/renderer/layout/SidebarGating.test.tsx (score 3)
+Candidate: src/renderer/layout/Sidebar.test.tsx (score 2)

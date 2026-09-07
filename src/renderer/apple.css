@@ -1,0 +1,211 @@
+/*
+ * Apple-style surface layer.
+ *
+ * The app's markup is Tailwind utilities written inline across ~90 components, so restyling it
+ * component-by-component would mean editing every one. This file instead redefines what those
+ * utilities render as — the same technique index.css already uses for the gray text scale and
+ * table headers. `body`-prefixed selectors (two selectors) outrank Tailwind's single-class
+ * utilities regardless of compiled order, so no !important is needed.
+ *
+ * What it changes, in order of how visible it is:
+ *   1. Form controls  — filled, borderless, 10px radius (macOS/iOS fields)
+ *   2. Corners        — every radius steps up; nothing is square
+ *   3. Borders        — hairlines at 8% black instead of solid grays
+ *   4. Depth          — layered low-opacity shadows instead of hard edges
+ *   5. Sidebar        — frosted translucency, pill-shaped selection
+ *   6. Tables         — airier rows, quiet headers, no grid lines
+ *   7. Type           — larger, tighter page titles
+ */
+
+/* ---- 1. Form controls -------------------------------------------------- */
+/* The single biggest visible change: every input, select and textarea in the app becomes a filled
+   field rather than a boxed one. Apple's fields read as a recessed surface, not an outline. */
+body input:not([type='checkbox']):not([type='radio']):not([type='range']),
+body select,
+body textarea {
+  background-color: rgb(118 118 128 / 0.08);
+  border-color: transparent;
+  border-radius: 10px;
+  box-shadow: none;
+  /* Deliberately NO padding override. Adding vertical padding here grew every field in the app by
+     a few pixels, which across a 12-field form was enough to push a modal taller than a short
+     window. The look comes from the fill and the radius, not from extra height. */
+}
+
+body input:not([type='checkbox']):not([type='radio']):not([type='range']):hover,
+body select:hover,
+body textarea:hover {
+  background-color: rgb(118 118 128 / 0.12);
+}
+
+/* Focused fields lift to white with a brand ring — the field "comes forward" rather than just
+   changing its border colour. */
+body input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+body select:focus,
+body textarea:focus {
+  background-color: #fff;
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgb(var(--brand-500) / 0.18),
+    0 1px 2px rgb(15 23 42 / 0.06);
+}
+
+/* Radios keep the accent colour and a little more presence than the 13px default. */
+body input[type='radio'] {
+  accent-color: rgb(var(--brand-600));
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Settings toggles become macOS switches.
+ *
+ * Apple's own convention is the split this follows: a SWITCH for a setting that takes effect
+ * immediately ("accrue vacation pay", "show inactive"), a CHECKBOX for selecting rows in a list.
+ * So checkboxes inside a table cell are left as checkboxes — turning a multi-select column into a
+ * row of switches would misread as twenty independent settings. */
+body input[type='checkbox']:not(td input):not(th input) {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 2.05rem;
+  height: 1.2rem;
+  border-radius: 9999px;
+  background-color: rgb(120 120 128 / 0.22);
+  cursor: pointer;
+  transition: background-color 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  vertical-align: middle;
+}
+
+/* The knob. Translating it (rather than repositioning) keeps the movement on the compositor. */
+body input[type='checkbox']:not(td input):not(th input)::after {
+  content: '';
+  position: absolute;
+  top: 0.1rem;
+  left: 0.1rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.18), 0 2px 6px rgb(0 0 0 / 0.12);
+  transition: transform 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+body input[type='checkbox']:not(td input):not(th input):checked {
+  background-color: rgb(var(--brand-600));
+}
+
+body input[type='checkbox']:not(td input):not(th input):checked::after {
+  transform: translateX(0.85rem);
+}
+
+body input[type='checkbox']:not(td input):not(th input):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- 2. Corners -------------------------------------------------------- */
+/* Apple's hierarchy of radii: controls ~10, cards ~14, sheets ~18. Nothing stays at 4px. */
+body .rounded { border-radius: 10px; }
+body .rounded-md { border-radius: 10px; }
+body .rounded-lg { border-radius: 14px; }
+body .rounded-xl { border-radius: 16px; }
+
+/* ---- 3. Borders -------------------------------------------------------- */
+/* Solid mid-grays read as drawn boxes. Hairlines at low opacity separate without framing. */
+body .border-gray-100 { border-color: rgb(0 0 0 / 0.05); }
+body .border-gray-200 { border-color: rgb(0 0 0 / 0.08); }
+body .border-gray-300 { border-color: rgb(0 0 0 / 0.10); }
+body .divide-gray-100 > * + * { border-color: rgb(0 0 0 / 0.05); }
+body .divide-gray-200 > * + * { border-color: rgb(0 0 0 / 0.07); }
+
+/* ---- 4. Depth ---------------------------------------------------------- */
+/* Two-layer shadows: a tight contact shadow plus a wide soft one. A single dark shadow looks
+   drawn on; two layers read as an object sitting above the page. */
+body .shadow-sm {
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.04),
+    0 2px 8px rgb(15 23 42 / 0.04);
+}
+body .shadow-md,
+body .shadow-lg {
+  box-shadow:
+    0 2px 4px rgb(15 23 42 / 0.05),
+    0 8px 24px rgb(15 23 42 / 0.08);
+}
+body .shadow-xl {
+  box-shadow:
+    0 8px 16px rgb(15 23 42 / 0.08),
+    0 24px 56px rgb(15 23 42 / 0.16);
+}
+
+/* Any white card on the gray page gets a whisper of a shadow so it reads as a raised surface even
+   where the markup didn't ask for one. Excluded when the element already carries a shadow utility:
+   this selector is more specific, so without the guard it would flatten the layered shadows above
+   back down to a single hairline. */
+body .bg-white.border:not([class*='shadow']) {
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.03);
+}
+
+/* ---- 5. Sidebar -------------------------------------------------------- */
+/* Frosted, like a macOS source list, with the content behind faintly showing through. */
+body aside {
+  background-color: rgb(var(--brand-50) / 0.72);
+  backdrop-filter: saturate(180%) blur(24px);
+  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  border-right-color: rgb(0 0 0 / 0.06);
+}
+
+/* NOTE: no hover/background rule for sidebar rows here, deliberately.
+ *
+ * `body aside nav button:hover` has higher specificity than the single utility class the active row
+ * carries (`bg-brand-800`), so it repainted the SELECTED row pale on hover while its text stayed
+ * white — white-on-near-white, unreadable. The nav rows already style their own hover and active
+ * states in Sidebar.tsx; this file has no business overriding them. The frosted panel above is the
+ * only thing the sidebar needs from this layer. */
+
+/* ---- 6. Tables --------------------------------------------------------- */
+/* Grid lines removed, rows given room to breathe, headers demoted to quiet labels. Figures stay
+   tabular (see index.css) so columns align on the decimal. */
+body table th {
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgb(60 60 67 / 0.6);
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgb(0 0 0 / 0.06);
+}
+body table td {
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+body table tbody tr {
+  transition: background-color 140ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Excluded when the row already carries a background of its own (a selected row, a status stripe).
+ * This selector outranks a single `bg-*` utility, so without the guard it would repaint a selected
+ * row pale on hover while its white text stayed white — the same failure the sidebar hit. */
+body table tbody tr:not([class*='bg-']):hover {
+  background-color: rgb(var(--brand-500) / 0.05);
+}
+
+/* ---- 7. Type ----------------------------------------------------------- */
+/* macOS "large title" proportions: bigger, heavier, tighter. */
+body h1 {
+  font-size: 1.6rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+body h2 { letter-spacing: -0.018em; }
+
+/* Pill buttons get real presence rather than reading as text links. */
+body .rounded-full {
+  border-radius: 9999px;
+}
+body button.rounded-full {
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
+  font-weight: 500;
+}

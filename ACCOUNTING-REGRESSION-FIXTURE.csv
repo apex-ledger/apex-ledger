@@ -1,0 +1,9 @@
+step,transaction,debit_account,debit,credit_account,credit,tax_effect
+1,Opening bank funding,Bank,10000.00,Shareholder/Equity,10000.00,0.00
+2,Receive inventory before invoice,Inventory Asset,1000.00,GRNI,1000.00,0.00
+3,Supplier invoice match,GRNI,1000.00,Accounts Payable,1130.00,130.00 ITC debit
+4,Partial vendor payment,Accounts Payable,565.00,Bank,565.00,0.00
+5,Credit inventory sale,Accounts Receivable,2260.00,Sales + HST Payable,2260.00,260.00 collected
+6,COGS on sale,COGS,1000.00,Inventory Asset,1000.00,0.00
+7,Partial customer receipt,Bank/Undeposited Funds,1130.00,Accounts Receivable,1130.00,0.00
+8,Remaining customer receipt,Bank/Undeposited Funds,1130.00,Accounts Receivable,1130.00,0.00

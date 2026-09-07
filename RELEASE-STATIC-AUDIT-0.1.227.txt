@@ -1,0 +1,13 @@
+North Ledger 0.1.227 static release audit
+
+Migration files found: 60
+WINDOWS-BUILD-AND-TEST.cmd: OK
+TEST-CHECKLIST-FINAL.txt: OK
+FINAL-RELEASE-MANIFEST.txt: OK
+demo-data/README.md: OK
+demo-data/HOW-TO-REVIEW-DEMO.txt: OK
+
+Static verifier added: VERIFY-FINAL-RELEASE.js
+Windows gate now runs the verifier before dependency installation.
+
+Executable Windows validation is still required before final EXE sign-off.

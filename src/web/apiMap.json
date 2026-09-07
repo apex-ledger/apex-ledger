@@ -1,0 +1,572 @@
+{
+  "groups": {
+    "rows": {},
+    "access": {
+      "getIdentity": "access:getIdentity",
+      "setIdentity": "access:setIdentity",
+      "getRole": "access:getRole",
+      "setRole": "access:setRole",
+      "usersList": "access:usersList",
+      "usersInvite": "access:usersInvite",
+      "usersUpdateRole": "access:usersUpdateRole",
+      "usersSetStatus": "access:usersSetStatus",
+      "usersResendInvite": "access:usersResendInvite",
+      "usersCancelInvite": "access:usersCancelInvite",
+      "sessionUsersList": "access:sessionUsersList",
+      "switchUser": "access:switchUser",
+      "setupThreeUserDemo": "access:setupThreeUserDemo",
+      "signInHistory": "access:signInHistory",
+      "recordLock": "access:recordLock",
+      "recordUnlock": "access:recordUnlock"
+    },
+    "app": {
+      "getVersion": "app:getVersion",
+      "quit": "app:quit",
+      "savePdf": "app:savePdf",
+      "saveExcelFile": "app:saveExcelFile"
+    },
+    "aiAssistant": {
+      "keysStatus": "aiAssistant:keysStatus",
+      "keysSave": "aiAssistant:keysSave",
+      "chatSend": "aiAssistant:chatSend"
+    },
+    "license": {
+      "status": "license:status",
+      "activate": "license:activate",
+      "getMachineId": "license:getMachineId"
+    },
+    "company": {
+      "get": "company:get",
+      "update": "company:update",
+      "pickLogo": "company:pickLogo",
+      "create": "company:create",
+      "open": "company:open",
+      "installDemo": "company:installDemo",
+      "installTestCompany": "company:installTestCompany",
+      "listRecent": "company:listRecent",
+      "saveAs": "company:saveAs",
+      "backup": "company:backup",
+      "listRecoveryPoints": "company:listRecoveryPoints",
+      "restoreRecoveryPoint": "company:restoreRecoveryPoint",
+      "close": "company:close",
+      "deleteCurrent": "company:deleteCurrent"
+    },
+    "fiscalPeriods": {
+      "list": "fiscalPeriods:list",
+      "create": "fiscalPeriods:create",
+      "lock": "fiscalPeriods:lock",
+      "unlock": "fiscalPeriods:unlock"
+    },
+    "accounts": {
+      "list": "accounts:list",
+      "get": "accounts:get",
+      "create": "accounts:create",
+      "update": "accounts:update",
+      "deactivate": "accounts:deactivate",
+      "ensureGstHstAccount": "accounts:ensureGstHstAccount",
+      "seedFromTemplate": "accounts:seedFromTemplate",
+      "listTemplates": "accounts:listTemplates",
+      "saveAsTemplate": "accounts:saveAsTemplate",
+      "deleteTemplate": "accounts:deleteTemplate",
+      "reclassifyPreview": "accounts:reclassifyPreview",
+      "reclassify": "accounts:reclassify"
+    },
+    "gifi": {
+      "list": "gifi:list",
+      "get": "gifi:get",
+      "createCustom": "gifi:createCustom",
+      "update": "gifi:update"
+    },
+    "journal": {
+      "list": "journal:list",
+      "get": "journal:get",
+      "create": "journal:create",
+      "createAndPost": "journal:createAndPost",
+      "post": "journal:post",
+      "update": "journal:update",
+      "reclassifyCandidates": "journal:reclassifyCandidates",
+      "reclassify": "journal:reclassify",
+      "revisions": "journal:revisions",
+      "suggestContraAccount": "journal:suggestContraAccount",
+      "updateDate": "journal:updateDate",
+      "void": "journal:void",
+      "delete": "journal:delete",
+      "setManualHst": "journal:setManualHst",
+      "setLineTaxCode": "journal:setLineTaxCode",
+      "findPossibleDuplicates": "journal:findPossibleDuplicates",
+      "findByReference": "journal:findByReference",
+      "findRecentByMemo": "journal:findRecentByMemo",
+      "suggestTaxCodeForAccount": "journal:suggestTaxCodeForAccount"
+    },
+    "quickEntry": {
+      "create": "quickEntry:create",
+      "correct": "quickEntry:correct"
+    },
+    "reports": {
+      "trialBalance": "reports:trialBalance",
+      "generalLedger": "reports:generalLedger",
+      "incomeStatement": "reports:incomeStatement",
+      "balanceSheet": "reports:balanceSheet",
+      "cashFlow": "reports:cashFlow",
+      "journal": "reports:journal",
+      "workingTrialBalance": "reports:workingTrialBalance",
+      "expensesByVendor": "reports:expensesByVendor",
+      "customerStatement": "reports:customerStatement",
+      "chequeRegister": "reports:chequeRegister",
+      "activityLog": "reports:activityLog",
+      "employeeEarnings": "reports:employeeEarnings",
+      "auditExceptions": "reports:auditExceptions",
+      "yearEndSignoff": "reports:yearEndSignoff",
+      "yearEndSignoffHistory": "reports:yearEndSignoffHistory",
+      "yearEndSignoffSign": "reports:yearEndSignoffSign",
+      "salesTaxDetail": "reports:salesTaxDetail",
+      "reconciliation": "reports:reconciliation",
+      "reconciliationList": "reports:reconciliationList",
+      "t2125": "reports:t2125",
+      "invalidTransactions": "reports:invalidTransactions",
+      "profitAndLossDetail": "reports:profitAndLossDetail",
+      "profitAndLossByCustomer": "reports:profitAndLossByCustomer",
+      "changesInEquity": "reports:changesInEquity",
+      "gifiExport": "reports:gifiExport",
+      "gifiExportExcel": "reports:gifiExportExcel",
+      "projections": "reports:projections",
+      "hstSummary": "reports:hstSummary",
+      "salesTaxByProvince": "reports:salesTaxByProvince",
+      "provincialSalesTax": "reports:provincialSalesTax",
+      "profitAndLossByTag": "reports:profitAndLossByTag",
+      "compliancePackage": "reports:compliancePackage",
+      "comprehensiveCompany": "reports:comprehensiveCompany"
+    },
+    "categoryRules": {
+      "list": "categoryRules:list",
+      "create": "categoryRules:create",
+      "update": "categoryRules:update",
+      "delete": "categoryRules:delete"
+    },
+    "bankImport": {
+      "readCsvFile": "bankImport:readCsvFile",
+      "readPdfFile": "bankImport:readPdfFile",
+      "exclusionsList": "bankImport:exclusionsList",
+      "exclusionsAdd": "bankImport:exclusionsAdd",
+      "exclusionsRemove": "bankImport:exclusionsRemove",
+      "rowProgressList": "bankImport:rowProgressList",
+      "rowProgressSave": "bankImport:rowProgressSave",
+      "rowProgressClear": "bankImport:rowProgressClear"
+    },
+    "clientOverview": {
+      "get": "clientOverview:get"
+    },
+    "qbImport": {
+      "readIifFile": "qbImport:readIifFile",
+      "readCsvFile": "qbImport:readCsvFile"
+    },
+    "qbExport": {
+      "toIif": "qbExport:toIif"
+    },
+    "clients": {
+      "list": "clients:list",
+      "save": "clients:save",
+      "delete": "clients:delete",
+      "exportSheet": "clients:exportSheet",
+      "exportPdf": "clients:exportPdf",
+      "importCsv": "clients:importCsv"
+    },
+    "reminders": {
+      "list": "reminders:list",
+      "save": "reminders:save",
+      "delete": "reminders:delete"
+    },
+    "deadlineAcks": {
+      "list": "deadlineAcks:list",
+      "setInformed": "deadlineAcks:setInformed"
+    },
+    "appointments": {
+      "list": "appointments:list",
+      "save": "appointments:save",
+      "delete": "appointments:delete",
+      "snooze": "appointments:snooze"
+    },
+    "employees": {
+      "list": "employees:list",
+      "get": "employees:get",
+      "create": "employees:create",
+      "update": "employees:update",
+      "deactivate": "employees:deactivate"
+    },
+    "payrollRuns": {
+      "list": "payrollRuns:list",
+      "get": "payrollRuns:get",
+      "calculate": "payrollRuns:calculate",
+      "create": "payrollRuns:create",
+      "post": "payrollRuns:post",
+      "reverse": "payrollRuns:reverse",
+      "delete": "payrollRuns:delete",
+      "getPaystub": "payrollRuns:getPaystub",
+      "savePaystubPdf": "payrollRuns:savePaystubPdf"
+    },
+    "payroll": {
+      "generatePd7aPdf": "payroll:generatePd7aPdf",
+      "ehtAccrued": "payroll:ehtAccrued",
+      "ehtAccrue": "payroll:ehtAccrue",
+      "generateT4Slips": "payroll:generateT4Slips",
+      "generateT4ASlips": "payroll:generateT4ASlips",
+      "getT4Preview": "payroll:getT4Preview",
+      "getT4APreview": "payroll:getT4APreview",
+      "generateT5018Slips": "payroll:generateT5018Slips",
+      "getT5018Preview": "payroll:getT5018Preview"
+    },
+    "shareholders": {
+      "list": "shareholders:list",
+      "save": "shareholders:save",
+      "deactivate": "shareholders:deactivate",
+      "generateT5Slips": "shareholders:generateT5Slips",
+      "getT5Preview": "shareholders:getT5Preview"
+    },
+    "t5Payments": {
+      "list": "t5Payments:list",
+      "record": "t5Payments:record",
+      "delete": "t5Payments:delete"
+    },
+    "customers": {
+      "list": "customers:list",
+      "save": "customers:save",
+      "deactivate": "customers:deactivate",
+      "merge": "customers:merge"
+    },
+    "vendors": {
+      "list": "vendors:list",
+      "save": "vendors:save",
+      "deactivate": "vendors:deactivate",
+      "merge": "vendors:merge"
+    },
+    "bills": {
+      "list": "bills:list",
+      "get": "bills:get",
+      "payments": "bills:payments",
+      "create": "bills:create",
+      "pay": "bills:pay",
+      "reverseLastPayment": "bills:reverseLastPayment",
+      "delete": "bills:delete",
+      "setApproval": "bills:setApproval",
+      "approvalReport": "bills:approvalReport"
+    },
+    "estimates": {
+      "list": "estimates:list",
+      "get": "estimates:get",
+      "nextNumber": "estimates:nextNumber",
+      "create": "estimates:create",
+      "update": "estimates:update",
+      "setStatus": "estimates:setStatus",
+      "delete": "estimates:delete",
+      "convertToInvoice": "estimates:convertToInvoice",
+      "convertToPurchaseOrder": "estimates:convertToPurchaseOrder",
+      "setFulfillment": "estimates:setFulfillment",
+      "setRequiredBy": "estimates:setRequiredBy"
+    },
+    "purchaseOrders": {
+      "list": "purchaseOrders:list",
+      "get": "purchaseOrders:get",
+      "nextNumber": "purchaseOrders:nextNumber",
+      "create": "purchaseOrders:create",
+      "update": "purchaseOrders:update",
+      "setStatus": "purchaseOrders:setStatus",
+      "receive": "purchaseOrders:receive",
+      "reverseLatestReceipt": "purchaseOrders:reverseLatestReceipt",
+      "matchSupplierBill": "purchaseOrders:matchSupplierBill",
+      "unmatchSupplierBill": "purchaseOrders:unmatchSupplierBill",
+      "delete": "purchaseOrders:delete"
+    },
+    "mileage": {
+      "list": "mileage:list",
+      "claim": "mileage:claim",
+      "create": "mileage:create",
+      "update": "mileage:update",
+      "delete": "mileage:delete",
+      "reverseLatestClaim": "mileage:reverseLatestClaim"
+    },
+    "tags": {
+      "groups": "tags:groups",
+      "createGroup": "tags:createGroup",
+      "updateGroup": "tags:updateGroup",
+      "deleteGroup": "tags:deleteGroup",
+      "create": "tags:create",
+      "update": "tags:update",
+      "delete": "tags:delete",
+      "forEntry": "tags:forEntry",
+      "setForLine": "tags:setForLine",
+      "allAssignments": "tags:allAssignments"
+    },
+    "invoices": {
+      "list": "invoices:list",
+      "get": "invoices:get",
+      "payments": "invoices:payments",
+      "lateInterestPreview": "invoices:lateInterestPreview",
+      "chargeLateInterest": "invoices:chargeLateInterest",
+      "nextNumber": "invoices:nextNumber",
+      "create": "invoices:create",
+      "recordStock": "invoices:recordStock",
+      "receivePayment": "invoices:receivePayment",
+      "reverseLastPayment": "invoices:reverseLastPayment",
+      "delete": "invoices:delete"
+    },
+    "deposits": {
+      "list": "deposits:list",
+      "listDetailed": "deposits:listDetailed",
+      "getUndeposited": "deposits:getUndeposited",
+      "create": "deposits:create",
+      "delete": "deposits:delete"
+    },
+    "salesReceipts": {
+      "list": "salesReceipts:list",
+      "get": "salesReceipts:get",
+      "nextNumber": "salesReceipts:nextNumber",
+      "undepositedFundsAccountId": "salesReceipts:undepositedFundsAccountId",
+      "create": "salesReceipts:create",
+      "delete": "salesReceipts:delete"
+    },
+    "letters": {
+      "list": "letters:list",
+      "generate": "letters:generate"
+    },
+    "workpapers": {
+      "sheet": "workpapers:sheet",
+      "setStatus": "workpapers:setStatus",
+      "setNote": "workpapers:setNote",
+      "addAttachment": "workpapers:addAttachment",
+      "removeAttachment": "workpapers:removeAttachment",
+      "openAttachment": "workpapers:openAttachment"
+    },
+    "auditEngagement": {
+      "get": "auditEngagement:get",
+      "saveMateriality": "auditEngagement:saveMateriality",
+      "saveDocument": "auditEngagement:saveDocument",
+      "signDocument": "auditEngagement:signDocument",
+      "addReviewNote": "auditEngagement:addReviewNote",
+      "resolveReviewNote": "auditEngagement:resolveReviewNote",
+      "setStatus": "auditEngagement:setStatus",
+      "lock": "auditEngagement:lock"
+    },
+    "cpaNotes": {
+      "list": "cpaNotes:list",
+      "save": "cpaNotes:save",
+      "setStatus": "cpaNotes:setStatus",
+      "delete": "cpaNotes:delete",
+      "generateReviewPackage": "cpaNotes:generateReviewPackage"
+    },
+    "creditNotes": {
+      "list": "creditNotes:list",
+      "get": "creditNotes:get",
+      "nextNumber": "creditNotes:nextNumber",
+      "create": "creditNotes:create",
+      "apply": "creditNotes:apply",
+      "refund": "creditNotes:refund",
+      "undoSettlement": "creditNotes:undoSettlement",
+      "delete": "creditNotes:delete"
+    },
+    "hstFilings": {
+      "list": "hstFilings:list",
+      "preview": "hstFilings:preview",
+      "create": "hstFilings:create",
+      "void": "hstFilings:void"
+    },
+    "salesReceiptPdf": {
+      "generate": "salesReceiptPdf:generate",
+      "emailViaOutlook": "salesReceiptPdf:emailViaOutlook",
+      "saveToDownloads": "salesReceiptPdf:saveToDownloads"
+    },
+    "invoicePdf": {
+      "generate": "invoicePdf:generate",
+      "emailViaOutlook": "invoicePdf:emailViaOutlook",
+      "saveToDownloads": "invoicePdf:saveToDownloads"
+    },
+    "bankReconciliation": {
+      "list": "bankReconciliation:list",
+      "get": "bankReconciliation:get",
+      "start": "bankReconciliation:start",
+      "toggleLine": "bankReconciliation:toggleLine",
+      "complete": "bankReconciliation:complete",
+      "reopen": "bankReconciliation:reopen",
+      "abandon": "bankReconciliation:abandon"
+    },
+    "fixedAssets": {
+      "list": "fixedAssets:list",
+      "save": "fixedAssets:save",
+      "delete": "fixedAssets:delete",
+      "schedule": "fixedAssets:schedule",
+      "runDepreciation": "fixedAssets:runDepreciation",
+      "dispose": "fixedAssets:dispose"
+    },
+    "approvals": {
+      "pending": "approvals:pending",
+      "setJournal": "journal:setApproval",
+      "setPurchaseOrder": "purchaseOrders:setApproval"
+    },
+    "actionCentre": {
+      "items": "actionCentre:items"
+    },
+    "roe": {
+      "preview": "roe:preview",
+      "savePdf": "roe:savePdf",
+      "saveXml": "roe:saveXml"
+    },
+    "payrollItems": {
+      "list": "payrollItems:list",
+      "save": "payrollItems:save"
+    },
+    "directDeposit": {
+      "payDates": "directDeposit:payDates",
+      "preview": "directDeposit:preview",
+      "saveFile": "directDeposit:saveFile"
+    },
+    "timeEntries": {
+      "list": "timeEntries:list",
+      "unbilled": "timeEntries:unbilled",
+      "create": "timeEntries:create",
+      "update": "timeEntries:update",
+      "delete": "timeEntries:delete",
+      "invoice": "timeEntries:invoice"
+    },
+    "recurringInvoices": {
+      "list": "recurringInvoices:list",
+      "due": "recurringInvoices:due",
+      "create": "recurringInvoices:create",
+      "update": "recurringInvoices:update",
+      "delete": "recurringInvoices:delete",
+      "generateDue": "recurringInvoices:generateDue"
+    },
+    "documentHistory": {
+      "get": "documentHistory:get"
+    },
+    "paymentReminders": {
+      "preview": "paymentReminders:preview",
+      "emailViaOutlook": "paymentReminders:emailViaOutlook",
+      "overdueCustomers": "paymentReminders:overdueCustomers"
+    },
+    "appSettings": {
+      "get": "appSettings:get",
+      "save": "appSettings:save",
+      "pickBackupFolder": "appSettings:pickBackupFolder",
+      "sendTestEmail": "appSettings:sendTestEmail"
+    },
+    "customerStatements": {
+      "list": "customerStatements:list",
+      "saveAll": "customerStatements:saveAll",
+      "email": "customerStatements:email"
+    },
+    "attachments": {
+      "list": "attachments:list",
+      "add": "attachments:add",
+      "open": "attachments:open",
+      "remove": "attachments:remove",
+      "counts": "attachments:counts"
+    },
+    "fx": {
+      "foreignBalances": "fx:foreignBalances",
+      "revaluationPreview": "fx:revaluationPreview",
+      "revaluationPost": "fx:revaluationPost"
+    },
+    "fxRates": {
+      "getLatest": "fxRates:getLatest",
+      "getOnDate": "fxRates:getOnDate"
+    },
+    "market": {
+      "quotes": "market:quotes",
+      "news": "market:news"
+    },
+    "receiptInbox": {
+      "list": "receiptInbox:list",
+      "history": "receiptInbox:history",
+      "reprocess": "receiptInbox:reprocess",
+      "importFiles": "receiptInbox:importFiles",
+      "scannerStatus": "receiptInbox:scannerStatus",
+      "scan": "receiptInbox:scan",
+      "getPreview": "receiptInbox:getPreview",
+      "extractFields": "receiptInbox:extractFields",
+      "pickAndExtract": "receiptInbox:pickAndExtract",
+      "importAsBill": "receiptInbox:importAsBill",
+      "importAsQuickEntry": "receiptInbox:importAsQuickEntry",
+      "dismiss": "receiptInbox:dismiss",
+      "openFile": "receiptInbox:openFile",
+      "showFolder": "receiptInbox:showFolder",
+      "getForJournalEntry": "receiptInbox:getForJournalEntry"
+    },
+    "clipboard": {
+      "readText": "clipboard:readText"
+    },
+    "cca": {
+      "pools": "cca:pools",
+      "save": "cca:save",
+      "delete": "cca:delete",
+      "schedule": "cca:schedule",
+      "rollForward": "cca:rollForward"
+    },
+    "budgets": {
+      "list": "budgets:list",
+      "create": "budgets:create",
+      "delete": "budgets:delete",
+      "lines": "budgets:lines",
+      "setLine": "budgets:setLine",
+      "spreadEvenly": "budgets:spreadEvenly",
+      "vsActual": "budgets:vsActual"
+    },
+    "loans": {
+      "list": "loans:list",
+      "save": "loans:save",
+      "delete": "loans:delete",
+      "schedule": "loans:schedule"
+    },
+    "products": {
+      "list": "products:list",
+      "create": "products:create",
+      "update": "products:update",
+      "delete": "products:delete"
+    },
+    "inventory": {
+      "movements": "inventory:movements",
+      "addMovement": "inventory:addMovement",
+      "deleteMovement": "inventory:deleteMovement",
+      "reverseMovement": "inventory:reverseMovement",
+      "status": "inventory:status",
+      "productValuation": "inventory:productValuation"
+    },
+    "recurringTemplates": {
+      "list": "recurringTemplates:list",
+      "create": "recurringTemplates:create",
+      "update": "recurringTemplates:update",
+      "delete": "recurringTemplates:delete",
+      "postBill": "recurringTemplates:postBill"
+    },
+    "forms": {
+      "generatePdf": "forms:generatePdf",
+      "emailViaOutlook": "forms:emailViaOutlook",
+      "saveToDownloads": "forms:saveToDownloads"
+    },
+    "voice": {
+      "status": "voice:status",
+      "prepare": "voice:prepare",
+      "transcribe": "voice:transcribe"
+    },
+    "events": {},
+    "updater": {
+      "checkForUpdates": "updater:checkForUpdates",
+      "quitAndInstall": "updater:quitAndInstall"
+    },
+    "window": {
+      "openMirror": "window:openMirror"
+    },
+    "zoom": {}
+  },
+  "events": {
+    "events": {
+      "onVoiceProgress": "voice:progress",
+      "onCompanyChanged": "company:changed",
+      "onTriggerNewCompany": "menu:triggerNewCompany",
+      "onNavigateToClientHub": "menu:navigateToClientHub",
+      "onDataChanged": "data:changed",
+      "onRequestClose": "app:requestClose"
+    },
+    "updater": {
+      "onStatus": "updater:status"
+    }
+  }
+}

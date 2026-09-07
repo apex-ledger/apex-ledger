@@ -1,0 +1,11 @@
+North Ledger Ultimate Suite — Final Test Release
+
+Expected artifacts when release gate passes:
+1. NorthLedger-Ultimate-Test-Setup.exe
+2. NorthLedger-Ultimate-Test-source.zip
+3. RELEASE-NOTES.txt
+4. TEST-CHECKLIST.txt
+5. ACCOUNTING-VALIDATION-SUMMARY.txt
+
+Intended user folder:
+D:\NorthLedger-Test\Final-Test\

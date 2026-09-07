@@ -1,0 +1,20 @@
+NORTH LEDGER ACCOUNTING VALIDATION — DRAFT
+
+Validated/design-reviewed areas:
+- double-entry flow architecture
+- AR/AP partial settlement model
+- inventory/COGS integrity controls
+- GRNI purchase flow
+- GST/HST control-account mapping and filing/settlement separation
+- GIFI fiscal-period vs as-of-date distinction
+- company isolation requirements
+
+Still requiring executable Windows validation before final sign-off:
+- complete reversal service execution
+- reconciliation engine execution
+- full automated regression suite
+- production renderer/main build
+- native SQLite/Electron build
+- installer clean-install/migration/relaunch test
+
+No final sign-off should be inferred until these items pass.

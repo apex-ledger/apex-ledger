@@ -1,0 +1,183 @@
+@import './themes.css';
+/* Apple-style surface layer — see apple.css. Imported here (before the Tailwind layers, as
+   postcss-import requires) but every rule is body-prefixed, so it still outranks the utilities
+   by specificity rather than by order. */
+@import './apple.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable Text', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* Slightly tightened tracking is what makes a UI read as composed rather than default — at body
+     size the effect is subliminal, but it is the difference between "a form" and "a product". */
+  letter-spacing: -0.01em;
+  /* Stops a mid-drag selection from highlighting labels/chrome the way a web page would. Inputs,
+     textareas, and table cells opt back in below, so nothing that holds real data becomes
+     uncopyable. */
+  user-select: none;
+}
+
+input,
+textarea,
+td,
+th,
+[contenteditable='true'] {
+  user-select: text;
+}
+
+/* Headings carry the tightening further — the larger the type, the more visible loose tracking is. */
+h1, h2, h3 {
+  letter-spacing: -0.02em;
+}
+
+/* THE most valuable typographic detail in an accounting app: fixed-width digits, so every column
+   of figures lines up on the decimal down the whole page. Proportional digits make a trial balance
+   look subtly ragged no matter how carefully it's aligned. */
+table,
+input[type='number'],
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* Everything interactive eases rather than jumps. Scoped to the properties that actually change on
+   hover/focus/press so it never animates layout (which would feel sluggish, not smooth). */
+button,
+a,
+select,
+input,
+textarea,
+[role='button'] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* A press should register physically. Kept very small — a big squash reads as a toy. */
+button:not(:disabled):active,
+[role='button']:not([aria-disabled='true']):active {
+  transform: scale(0.98);
+}
+
+/* One consistent, deliberate focus ring, and only for keyboard users — the default per-element
+   browser outlines are what make an app look unfinished when tabbed through. */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand-500) / 0.55);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Thin, unobtrusive scrollbars that fade into the surface instead of framing every pane. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.5) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.4);
+  border-radius: 9999px;
+  /* Inset via a transparent border so the thumb reads as floating in the gutter. */
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(100 116 139 / 0.6);
+}
+
+/* Respects the OS "reduce motion" setting — the accessibility counterpart to all of the above.
+   Transitions collapse to near-zero rather than being removed, so state changes still land. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/* Darkens body/label/muted TEXT app-wide, everywhere text-gray-400/500/600/700 is used — every
+   page uses this same shared scale for secondary text, so this is the one place to darken it
+   everywhere instead of editing hundreds of individual className strings. Deliberately only
+   overrides `.text-gray-*` (the color property) — `.bg-gray-*` and `.border-gray-*` share the same
+   shade numbers but are separate generated classes, so backgrounds and borders are untouched.
+   `body .text-gray-*` (two selectors) has higher specificity than Tailwind's own single-class
+   `.text-gray-*` utility, so this wins regardless of where it lands in the compiled CSS — no
+   !important needed. Each shade is shifted two steps darker on Tailwind's own default gray scale
+   (400->600, 500->700, 600->800, 700->900); 800/900 are already near-black, so left alone. */
+body .text-gray-400 { color: #4b5563; }
+body .text-gray-500 { color: #374151; }
+body .text-gray-600 { color: #1f2937; }
+body .text-gray-700 { color: #111827; }
+
+/* Bolds every table column header ("sheet" header) app-wide — most already use font-medium, this
+   makes them genuinely bold everywhere instead of editing every table's own header row. Matches
+   the sidebar's own section-heading weight (Tailwind's font-bold, 700) per explicit request to
+   make table headers look "like in sidebar". */
+th {
+  font-weight: 700;
+}
+
+/* Cheque printing is deliberately isolated from the app chrome. The scan is only printed when the
+   reviewer explicitly enables it; normally these positioned fields land on pre-printed stock. */
+.cheque-print-sheet {
+  display: none;
+}
+@media print {
+  body.cheque-printing * {
+    visibility: hidden !important;
+  }
+  body.cheque-printing .cheque-print-sheet,
+  body.cheque-printing .cheque-print-sheet * {
+    visibility: visible !important;
+  }
+  body.cheque-printing .cheque-print-sheet {
+    display: block;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow: hidden;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  @page {
+    margin: 0;
+  }
+}
+
+/* Wide sheets scroll sideways instead of squeezing their columns. Every table in the content pane
+   keeps its natural width (it still stretches to fill when it fits), and the pane itself gains a
+   horizontal scrollbar when a table is wider than the window. Applies to entry screens and
+   reports alike, so a 20-column register never collapses into unreadable slivers. */
+main table {
+  min-width: max-content;
+}
+main {
+  overflow-x: auto;
+}
+
+/* The pane, not each table wrapper, scrolls sideways. A wrapper's own scrollbar sits under the
+   table, below the fold on any long sheet, so nobody finds it. Letting wide content overflow the
+   wrapper puts one horizontal scrollbar at the bottom edge of the window, always in view. */
+main .overflow-x-auto,
+main .overflow-auto {
+  overflow-x: visible !important;
+}

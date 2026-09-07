@@ -1,0 +1,24 @@
+NORTH LEDGER ULTIMATE TEST — FINAL FOLDER LAYOUT
+
+Recommended:
+D:\NorthLedger-Test\Final-Test\
+
+Inside:
+D:\NorthLedger-Test\Final-Test\NorthLedger-Ultimate-Test\
+    package.json
+    WINDOWS-BUILD-AND-TEST.cmd
+    VERIFY-FINAL-RELEASE.js
+    TEST-CHECKLIST-FINAL.txt
+    FINAL-RELEASE-MANIFEST.txt
+    demo-data\
+    src\
+    ...
+
+After a successful build:
+D:\NorthLedger-Test\Final-Test\NorthLedger-Ultimate-Test\FINAL-TEST-ARTIFACTS\
+    North Ledger Ultimate TEST Setup <version>.exe
+    TEST-CHECKLIST-FINAL.txt
+    RELEASE-NOTES...
+    ACCOUNTING-VALIDATION-SUMMARY...
+
+Do not place live client databases into the TEST application until the DEMO / TEST companies pass your checks.

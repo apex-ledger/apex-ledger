@@ -1,0 +1,5 @@
+0.1.221 adds a Windows build-gate script so the remaining release blockers can be executed rather than described.
+
+On the compatible Windows build machine, WINDOWS-FINAL-GATE.cmd will stop immediately on dependency, native rebuild, test, production build, or installer failure.
+
+The final release is still withheld until this gate passes and the accounting smoke-test checklist is completed.
