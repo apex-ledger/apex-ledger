@@ -12,7 +12,19 @@ async function call<T>(channel: string, args: unknown[]): Promise<Result<T>> {
       window.dispatchEvent(new Event('apex:signed-out'));
       return { ok: false, error: 'Please sign in.' };
     }
-    return (await res.json()) as Result<T>;
+    const body = (await res.json()) as Result<T>;
+    // A "saved" file on the server is handed to the browser as a download, so Save as PDF and
+    // Export Excel behave like the desktop's save dialog.
+    const data = body.ok ? (body.data as { download?: boolean; filePath?: string } | null) : null;
+    if (data && data.download && typeof data.filePath === 'string') {
+      const a = document.createElement('a');
+      a.href = data.filePath;
+      a.download = '';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    return body;
   } catch (error) {
     return { ok: false, error: error instanceof Error ? `The server could not be reached: ${error.message}` : String(error) };
   }

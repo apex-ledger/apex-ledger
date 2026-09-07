@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
-import { handlerRegistry, BrowserWindow } from './electronStub';
+import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR } from './electronStub';
 import { authenticate, bootstrap, companiesDirFor, createOrg, createUser, getOrg, listOrgs, listUsers, openAdminStore, recentFailures, setUserActive, setUserPassword, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
@@ -214,6 +214,27 @@ app.post('/api/admin/users/:id/active', (req, res) => { const s = requirePlatfor
 app.post('/api/admin/users/:id/password', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); setUserPassword(u.id, String((req.body ?? {}).password ?? '')); return true; })); });
 app.post('/api/me/password', (req, res) => { const s = sessionOf(req); if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; } res.json(wrap(() => { setUserPassword(s.user.id, String((req.body ?? {}).password ?? '')); return true; })); });
 
+// ---- downloads: a file a handler "saved" through the stub dialog, streamed once to the browser ----
+app.get('/api/download/:file', (req, res) => {
+  const s = sessionOf(req);
+  if (!s) { res.status(401).end(); return; }
+  const file = path.basename(req.params.file);
+  const full = path.join(DOWNLOAD_DIR, file);
+  if (!full.startsWith(DOWNLOAD_DIR) || !fs.existsSync(full)) { res.status(404).end(); return; }
+  const shown = file.includes('__') ? file.slice(file.indexOf('__') + 2) : file;
+  res.setHeader('Content-Disposition', `attachment; filename="${shown.replace(/"/g, '')}"`);
+  res.sendFile(full, (err) => { if (!err) fs.rm(full, { force: true }, () => undefined); });
+});
+
+/** A handler result that names a file under the downloads folder becomes a download link. */
+function asDownload(result: unknown): unknown {
+  const r = result as { ok?: boolean; data?: { filePath?: unknown } } | null;
+  const fp = r && r.ok && r.data && typeof r.data === 'object' ? r.data.filePath : undefined;
+  if (typeof fp !== 'string' || !path.resolve(fp).startsWith(DOWNLOAD_DIR)) return result;
+  const file = path.basename(fp);
+  return { ...r, data: { ...(r!.data as object), filePath: `/api/download/${encodeURIComponent(file)}`, download: true, fileName: file.includes('__') ? file.slice(file.indexOf('__') + 2) : file } };
+}
+
 // ---- the application itself ----
 app.post('/api/:channel', async (req, res) => {
   const s = sessionOf(req);
@@ -228,7 +249,7 @@ app.post('/api/:channel', async (req, res) => {
       if (!handler) return { ok: false, error: `Unknown request: ${channel}` };
       return handler({ sender: { id: s.id } }, ...args);
     })));
-    res.json(result ?? { ok: true, data: null });
+    res.json(asDownload(result) ?? { ok: true, data: null });
   } catch (error) {
     res.json({ ok: false, error: error instanceof Error ? error.message : String(error) });
   }

@@ -44,9 +44,20 @@ export const ipcMain = {
 
 const notOnWeb = (what: string) => { throw new Error(`${what} needs the desktop app. On the web, use the download or upload button for this instead.`); };
 
+/** Where "Save as…" lands on the web: a handler writes the file here, and the HTTP layer turns
+ * the returned path into a download for the browser, then deletes the file. */
+export const DOWNLOAD_DIR = path.join(dataDir, 'downloads');
+fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
+
 export const dialog = {
   showOpenDialog: async () => ({ canceled: true, filePaths: [] as string[] }),
-  showSaveDialog: async () => ({ canceled: true, filePath: undefined as string | undefined }),
+  showSaveDialog: async (_window?: unknown, options?: { defaultPath?: string; filters?: Array<{ extensions?: string[] }> }) => {
+    const suggested = path.basename(options?.defaultPath ?? 'download');
+    const ext = path.extname(suggested) || (options?.filters?.[0]?.extensions?.[0] ? `.${options.filters[0].extensions[0]}` : '');
+    const base = suggested.endsWith(ext) ? suggested : `${suggested}${ext}`;
+    const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    return { canceled: false, filePath: path.join(DOWNLOAD_DIR, `${token}__${base.replace(/[<>:"/\\|?*]+/g, '_')}`) };
+  },
   showMessageBox: async () => ({ response: 0, checkboxChecked: false }),
   showErrorBox: (title: string, content: string) => { console.error('[dialog]', title, content); },
 };
