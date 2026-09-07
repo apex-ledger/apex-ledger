@@ -66,6 +66,8 @@ On a server there is only Node, so a plain `npm ci` is right.
 
 ## Azure, Canada Central
 
+Live since 2026-09-07: resource group `apexledger-prod-cac`, VM `apexledger-app` (Standard_B2ps_v2, ARM64 Ubuntu 22.04, 2 vCPU, 8 GB, 64 GB Premium SSD data disk at /srv/apex), public name `apexledger-app.canadacentral.cloudapp.azure.com`, nightly backup to `apexledger-vault` (geo-redundant, copy in Canada East). Deploy with `deploy/setup-vm.sh` after uploading the release tarball. A new subscription only offers ARM sizes in Canada Central; x64 sizes need a quota request, which is not necessary.
+
 SQLite company files want a real disk, not a network share, so the right host is a small Linux
 virtual machine with a managed disk, not App Service's shared storage:
 
