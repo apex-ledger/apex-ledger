@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
-import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext } from './electronStub';
+import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
 import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
@@ -208,6 +208,12 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 app.use(express.json({ limit: '50mb' }));
+// A body that is not JSON (or too large) gets a JSON answer, not Express's HTML stack trace.
+app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (!err) { next(); return; }
+  const e = err as { type?: string; status?: number; message?: string };
+  res.status(e.status && e.status >= 400 && e.status < 600 ? e.status : 400).json({ ok: false, error: e.type === 'entity.too.large' ? 'That request is too large.' : 'The request body could not be read.' });
+});
 
 // ---- trial requests from the public website ----
 // The marketing site lives on another host, so this one route answers cross-origin for it.
@@ -471,14 +477,18 @@ app.post('/api/:channel', async (req, res) => {
   const files = uploadedFiles(s, (req.body ?? {}).uploads);
   res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });
   if (s.pendingCompany) await reopenPendingCompany(s);
+  const opened: { filePath?: string } = {};
   try {
-    const result = await uploadContext.run(files, () => sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {
+    let result = await downloadContext.run(opened, () => uploadContext.run(files, () => sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {
       const override = overrides[channel];
       if (override) { try { return { ok: true, data: await override(s, args) }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } }
       const handler = handlerRegistry.get(channel);
       if (!handler) return { ok: false, error: `Unknown request: ${channel}` };
       return handler({ sender: { id: s.id } }, ...args);
-    }))));
+    })))));
+    // A handler that "opened" a file on the web has copied it for download: hand the link back.
+    const r = result as { ok?: boolean; data?: unknown } | null;
+    if (opened.filePath && r && r.ok) result = { ...r, data: { ...(r.data && typeof r.data === 'object' ? (r.data as object) : {}), filePath: opened.filePath } };
     res.json(asDownload(result) ?? { ok: true, data: null });
     if (channel.startsWith('company:')) persistSession(s);
   } catch (error) {

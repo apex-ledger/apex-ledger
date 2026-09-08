@@ -12,15 +12,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   // upper-right corner drives this element, so it works the same on every screen.
   const mainRef = useRef<HTMLElement>(null);
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50">
+    <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50" data-shell="root">
       <TickerStrip />
-      <div className="flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1" data-shell="body">
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col" data-shell="column">
           <Header />
           <TopBar />
           <UpdateBanner />
-          <div className="relative flex min-h-0 flex-1">
+          <div className="relative flex min-h-0 flex-1" data-shell="content">
             {/* Right padding leaves a lane for the quick scroller so it never sits on a figure. */}
             <main ref={mainRef} className="w-full flex-1 overflow-y-auto overflow-x-auto p-2 pr-11">{children}</main>
             <QuickScroll targetRef={mainRef} />

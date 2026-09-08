@@ -52,6 +52,12 @@ async function uploadFiles(files: File[]): Promise<string[]> {
 }
 
 async function call<T>(channel: string, args: unknown[]): Promise<Result<T>> {
+  // The server has no page to print. The browser's own print dialog offers "Save as PDF", with
+  // the same print stylesheet File > Print uses, so that is what Save as PDF means on the web.
+  if (channel === 'app:savePdf') {
+    window.print();
+    return { ok: true, data: { saved: false } as unknown as T };
+  }
   try {
     let uploads: string[] = [];
     const picker = PICKERS[channel];

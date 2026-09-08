@@ -139,6 +139,36 @@ th {
   display: none;
 }
 @media print {
+  /* Printing a screen (File > Print, Save as PDF in the browser): only the content pane prints,
+     flowing over as many pages as it needs, without the ticker, sidebar, toolbars or status bar.
+     The shell wrappers are sized to the window on screen, so they must become plain blocks here
+     or the print would stop at one page. Cheque printing below keeps its own exact layout. */
+  body:not(.cheque-printing) [data-shell] {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    width: auto !important;
+    overflow: visible !important;
+  }
+  body:not(.cheque-printing) [data-shell='root'] > *:not([data-shell='body']),
+  body:not(.cheque-printing) [data-shell='body'] > aside,
+  body:not(.cheque-printing) [data-shell='column'] > *:not([data-shell='content']),
+  body:not(.cheque-printing) [data-shell='content'] > *:not(main) {
+    display: none !important;
+  }
+  body:not(.cheque-printing) main {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 12mm !important;
+  }
+  body:not(.cheque-printing) main table {
+    min-width: 0;
+  }
+  body:not(.cheque-printing) html,
+  body:not(.cheque-printing) #root {
+    height: auto !important;
+    overflow: visible !important;
+  }
   body.cheque-printing * {
     visibility: hidden !important;
   }

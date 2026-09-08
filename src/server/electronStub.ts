@@ -103,10 +103,23 @@ export const safeStorage = {
   decryptString: (b: Buffer) => b.toString('utf8'),
 };
 
+/** "Open this file" on the web means "download it": openPath copies the file into the downloads
+ * folder and notes it for the current request, and the HTTP layer turns the handler's answer into
+ * a download link. Showing a folder has no browser equivalent and quietly does nothing. */
+export const downloadContext = new AsyncLocalStorage<{ filePath?: string }>();
 export const shell = {
   openExternal: async () => notOnWeb('Opening a link'),
-  openPath: async () => 'Opening a file needs the desktop app.',
-  showItemInFolder: () => notOnWeb('Showing a file in its folder'),
+  openPath: async (filePath: string): Promise<string> => {
+    const store = downloadContext.getStore();
+    if (!store) return 'Opening a file needs the desktop app.';
+    if (!fs.existsSync(filePath)) return 'The file is no longer on disk.';
+    const token = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    const target = path.join(DOWNLOAD_DIR, `${token}__${path.basename(filePath).replace(/[<>:"/\\|?*]+/g, '_')}`);
+    fs.copyFileSync(filePath, target);
+    store.filePath = target;
+    return '';
+  },
+  showItemInFolder: () => undefined,
 };
 
 export const clipboard = {

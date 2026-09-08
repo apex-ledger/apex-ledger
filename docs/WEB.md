@@ -84,6 +84,11 @@ On a server there is only Node, so a plain `npm ci` is right.
   `PUT /api/upload`, then sends the request with the upload tokens, and the stub's
   `dialog.showOpenDialog` returns those files to the handler. Uploads live only for that request.
   Folder pickers (second backup folder, save-all statements) stay cancelled on the web.
+- Opening a file (attachments, workpaper attachments, receipts) means downloading it: the stub's
+  `shell.openPath` copies the file into the downloads folder and the HTTP layer returns the link.
+  Save as PDF on the web opens the browser's print dialog (its Save as PDF), and the print
+  stylesheet prints only the content pane, over as many pages as needed. Cheque printing is
+  unchanged. Bad or oversized request bodies get a JSON error, never an HTML stack trace.
 - Backups: the server's disk is backed up as a whole; the in-app second backup folder is not used.
 - Voice: off by default and best left off on a server; typing does everything.
 - The demo and test companies are desktop features. Settings, Organisation & seats, Company
