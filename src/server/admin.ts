@@ -15,9 +15,10 @@ import path from 'node:path';
 export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null }
 /** The founding-firms offer: half price for six months, for the first firms that sign up. */
 export const FOUNDING = { pct: 50, months: 6, maxFirms: 20, signUpBy: '2026-12-31' };
-export type SeatType = 'full' | 'bookkeeper' | 'business';
-export const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
-export const SEAT_TYPE_LABELS: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
+export type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
+/** Lowest to highest price. */
+export const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
+export const SEAT_TYPE_LABELS: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
 export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; createdAt: string; lastSignIn: string | null }
 
 let db: Database.Database | null = null;
@@ -53,7 +54,7 @@ export function openAdminStore(dir: string): void {
       seat_type TEXT PRIMARY KEY,
       cents INTEGER NOT NULL
     );
-    INSERT OR IGNORE INTO seat_rates (seat_type, cents) VALUES ('full', 7900), ('bookkeeper', 5900), ('business', 3900);
+    INSERT OR IGNORE INTO seat_rates (seat_type, cents) VALUES ('business', 3900), ('payroll', 4500), ('bookkeeper', 5900), ('full', 7900);
     CREATE TABLE IF NOT EXISTS sign_in_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
@@ -162,7 +163,7 @@ export function setFeedbackStatus(id: number, status: 'new' | 'done'): FeedbackN
 /** A trial request from the public website: who they are, which edition, how many seats. The
  * platform administrator reads these in Settings and creates the organisation from them. */
 export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
-const TRIAL_EDITIONS = ['Full accountant', 'Bookkeeper', 'Business', 'Accounting Essential', 'Ultimate Suite', 'Payroll'];
+const TRIAL_EDITIONS = ['Business', 'Payroll Unlimited', 'Payroll only', 'Bookkeeper', 'Full accountant', 'Accounting Essential', 'Ultimate Suite', 'Payroll'];
 
 export function createTrialRequest(input: Record<string, unknown>, ip: string | null): TrialRequest {
   const text = (k: string, max: number, required = false) => {
@@ -292,10 +293,10 @@ export function listUsers(orgId?: number): WebUser[] {
 }
 
 /** Adds a person to an organisation, refusing when every seat is taken. */
-/** A seat's type sets what the person is billed at: Full accountant, Bookkeeper or Business. The role inside
+/** A seat's type sets what the person is billed at: Business, Payroll Unlimited, Bookkeeper or Full accountant. The role inside
  * each company file is still set there; the type is the commercial label and the rate. */
 export function seatRates(): Record<SeatType, number> {
-  const out = { full: 7900, bookkeeper: 5900, business: 3900 } as Record<SeatType, number>;
+  const out = { business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900 } as Record<SeatType, number>;
   for (const r of store().prepare('SELECT seat_type, cents FROM seat_rates').all() as { seat_type: string; cents: number }[]) if (SEAT_TYPES.includes(r.seat_type as SeatType)) out[r.seat_type as SeatType] = Number(r.cents);
   return out;
 }

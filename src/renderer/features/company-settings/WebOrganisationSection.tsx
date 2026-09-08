@@ -8,10 +8,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * organisations, so this section does not appear there. */
 interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null }
 interface Founding { pct: number; months: number; maxFirms: number; signUpBy: string; used: number }
-type SeatType = 'full' | 'bookkeeper' | 'business';
-const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
-const SEAT_LABEL: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
-const SEAT_HINT: Record<SeatType, string> = { full: 'An accountant: everything, including year end, GIFI, T2 working papers, CRM and payroll', bookkeeper: 'A bookkeeper: daily books, bank import, invoices, bills, HST and payroll; no accountant tools', business: 'A business keeping its own books: invoices, bills, bank import, HST and reports' };
+type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
+const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
+const SEAT_LABEL: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
+const SEAT_HINT: Record<SeatType, string> = { business: 'A business keeping its own books: invoices, bills, bank import, HST and reports', payroll: 'Payroll Unlimited: payroll only, no limit on employees: pay runs, stubs, PD7A, ROE, T4s', bookkeeper: 'A bookkeeper: daily books, bank import, invoices, bills, HST and payroll; no accountant tools', full: 'An accountant: everything, including year end, GIFI, T2 working papers, CRM and payroll' };
 interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
@@ -37,8 +37,8 @@ export function WebOrganisationSection() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner', seatType: 'full' as SeatType });
-  const [rates, setRates] = useState<Record<SeatType, number>>({ full: 7900, bookkeeper: 5900, business: 3900 });
-  const [rateDraft, setRateDraft] = useState<Record<SeatType, string>>({ full: '', bookkeeper: '', business: '' });
+  const [rates, setRates] = useState<Record<SeatType, number>>({ business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900 });
+  const [rateDraft, setRateDraft] = useState<Record<SeatType, string>>({ business: '', payroll: '', bookkeeper: '', full: '' });
   const money = (cents: number) => `$${(cents / 100).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (rates[p.seatType] ?? 0), 0);
   const today = new Date().toISOString().slice(0, 10);
@@ -240,7 +240,7 @@ export function WebOrganisationSection() {
               </select>
               <button type="button" onClick={() => void addPerson()} disabled={!newPerson.email || newPerson.password.length < 8} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Add {orgName(newPerson.orgId) ? `to ${orgName(newPerson.orgId)}` : ''}</button>
             </div>
-            <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats. The seat type sets the monthly rate: Full accountant has everything, Bookkeeper has the daily books and payroll, Business is for a company keeping its own books. The exact screens each person may use are set inside each company under Access &amp; Permissions.</p>
+            <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats. The seat type sets the monthly rate, lowest to highest: Business for a company keeping its own books, Payroll Unlimited for payroll alone with no limit on employees, Bookkeeper for the daily books and payroll, Full accountant for everything. The exact screens each person may use are set inside each company under Access &amp; Permissions.</p>
           </div>
 
           {ctx.org.isPlatform && (
