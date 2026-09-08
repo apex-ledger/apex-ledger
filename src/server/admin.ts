@@ -50,6 +50,10 @@ export function openAdminStore(dir: string): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
       last_sign_in TEXT
     );
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS seat_rates (
       seat_type TEXT PRIMARY KEY,
       cents INTEGER NOT NULL
@@ -96,6 +100,19 @@ export function openAdminStore(dir: string): void {
     );
   `);
   ensureColumns();
+}
+
+/** Platform-wide switches, e.g. sign-in paused for every firm while something is checked. */
+export function getSetting(key: string): string | null {
+  const r = store().prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined;
+  return r ? r.value : null;
+}
+export function setSetting(key: string, value: string): void {
+  store().prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
+}
+export function signInPaused(): boolean { return getSetting('signin_paused') === '1'; }
+export function deleteSessionsOfNonPlatformUsers(): number {
+  return Number(store().prepare('DELETE FROM sessions WHERE user_id IN (SELECT u.id FROM users u JOIN orgs o ON o.id = u.org_id WHERE o.is_platform = 0)').run().changes);
 }
 
 /** Sign-ins outlive the process: a session row holds the hash of the cookie token, the person,

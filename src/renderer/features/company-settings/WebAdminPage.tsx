@@ -12,10 +12,17 @@ export function WebAdminPage() {
   const ctx = webContext();
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [newTrials, setNewTrials] = useState<number | null>(null);
+  const [paused, setPaused] = useState<boolean | null>(null);
+  async function setPause(next: boolean) {
+    if (next && !window.confirm('Pause sign-in for every firm? Their people are signed out now and cannot sign in until you resume. You stay signed in.')) return;
+    const r = (await (await fetch('/api/admin/signin-pause', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paused: next }) })).json()) as { ok: boolean; data?: { paused: boolean } };
+    if (r.ok && r.data) setPaused(r.data.paused);
+  }
 
   useEffect(() => {
     if (!ctx) return;
     void fetch('/api/admin/orgs', { credentials: 'same-origin' }).then((r) => r.json()).then((b: { ok: boolean; data?: Org[] }) => { if (b.ok && b.data) setOrgs(b.data); }).catch(() => undefined);
+    if (ctx.org.isPlatform) void fetch('/api/admin/signin-pause', { credentials: 'same-origin' }).then((r) => r.json()).then((b: { ok: boolean; data?: { paused: boolean } }) => { if (b.ok && b.data) setPaused(b.data.paused); }).catch(() => undefined);
     if (ctx.org.isPlatform) void fetch('/api/admin/trial-requests', { credentials: 'same-origin' }).then((r) => r.json()).then((b: { ok: boolean; data?: Trial[] }) => { if (b.ok && b.data) setNewTrials(b.data.filter((t) => t.status === 'new').length); }).catch(() => undefined);
   }, [ctx]);
 
@@ -35,6 +42,13 @@ export function WebAdminPage() {
         </div>
         <div className="text-xs text-gray-500">Signed in as {ctx.user.name} · {ctx.user.email}</div>
       </div>
+      {ctx.org.isPlatform && paused !== null && (
+        <div className={`mb-4 flex flex-wrap items-center gap-3 rounded-lg border px-4 py-3 text-sm ${paused ? 'border-rose-300 bg-rose-50 text-rose-900' : 'border-gray-200 bg-white text-gray-700'}`} data-testid="signin-pause">
+          <span className="font-semibold">{paused ? 'Sign-in is paused for every firm.' : 'Sign-in is open for every firm.'}</span>
+          <span className="text-xs">{paused ? 'Their people see "Sign-in is paused for a short time" and cannot get in. You can.' : 'Pause it if you need to stop everyone while something is checked.'}</span>
+          <button type="button" onClick={() => void setPause(!paused)} className={`ml-auto rounded-full px-3 py-1 text-xs font-medium text-white ${paused ? 'bg-emerald-700 hover:bg-emerald-800' : 'bg-rose-700 hover:bg-rose-800'}`}>{paused ? 'Resume sign-in' : 'Pause sign-in for firms'}</button>
+        </div>
+      )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <div className="rounded-lg bg-brand-50 p-4"><div className="text-xs font-semibold uppercase tracking-wide text-brand-700">{ctx.org.isPlatform ? 'Firms' : 'Organisation'}</div><div className="mt-1 text-2xl font-semibold text-brand-900">{ctx.org.isPlatform ? firms.length : ctx.org.name}</div></div>

@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, signInPaused, setSetting, deleteSessionsOfNonPlatformUsers, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity, applySeatAccess, getAccessRole, SEAT_ACCESS } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -120,10 +120,12 @@ function readCookie(req: express.Request, name: string): string | null {
   return null;
 }
 
+const PAUSED_MESSAGE = 'Sign-in is paused for a short time while we complete a check. Please try again later.';
 function sessionOf(req: express.Request): Session | null {
   const token = readCookie(req, 'apex_session');
   if (!token || !/^[A-Za-z0-9_-]{20,}$/.test(token)) return null;
   const s = sessions.get(token) ?? restoreSession(token);
+  if (s && !s.org.isPlatform && signInPaused()) { endSession(s, true); return null; }
   if (s) { s.lastSeen = Date.now(); persistSession(s); }
   return s;
 }
@@ -278,6 +280,7 @@ app.post('/api/login', (req, res) => {
   const user = email && password ? authenticate(email, password, ip) : null;
   if (!user) { res.status(401).json({ ok: false, error: 'Wrong email or password.' }); return; }
   const org = getOrg(user.orgId)!;
+  if (!org.isPlatform && signInPaused()) { res.status(403).json({ ok: false, error: PAUSED_MESSAGE }); return; }
   const s = newSession(user, org);
   res.setHeader('Set-Cookie', sessionCookie(req, s));
   res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role, seatType: user.seatType, accessRole: SEAT_ACCESS[user.seatType].role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
@@ -322,6 +325,7 @@ app.get('/api/auth/:provider/callback', async (req, res) => {
     const user = signInByVerifiedEmail(claims.email, p.id, ip);
     if (!user) throw new Error(`${claims.email} has no seat here yet. Ask your organisation's owner to add you with this email, then sign in with ${p.label} again.`);
     const org = getOrg(user.orgId)!;
+    if (!org.isPlatform && signInPaused()) throw new Error(PAUSED_MESSAGE);
     const s = newSession(user, org);
     res.setHeader('Set-Cookie', [clear, sessionCookie(req, s)]);
     res.redirect('/');
@@ -363,6 +367,16 @@ function requirePlatform(req: express.Request, res: express.Response): Session |
 const wrap = (fn: () => unknown) => { try { return { ok: true, data: fn() }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } };
 app.get('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => (s.org.isPlatform ? listOrgs() : [s.org]).map((o) => ({ ...o, activeSeats: listUsers(o.id).filter((u) => u.isActive).length })))); });
 app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); })); });
+app.get('/api/admin/signin-pause', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { paused: signInPaused() } }); });
+app.post('/api/admin/signin-pause', (req, res) => {
+  const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  const paused = Boolean((req.body ?? {}).paused);
+  setSetting('signin_paused', paused ? '1' : '0');
+  let ended = 0;
+  if (paused) { for (const x of [...sessions.values()]) if (!x.org.isPlatform) { endSession(x, true); ended++; } ended += deleteSessionsOfNonPlatformUsers(); }
+  console.log(`[web] sign-in ${paused ? 'PAUSED' : 'resumed'} by ${s.user.email}${paused ? `, ${ended} firm sessions ended` : ''}`);
+  res.json({ ok: true, data: { paused, ended } });
+});
 app.get('/api/admin/founding', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { ...FOUNDING, used: foundingFirmsCount() } }); });
 app.post('/api/admin/orgs/:id/founding', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const on = Boolean((req.body ?? {}).on); if (on && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return setOrgFounding(Number(req.params.id), on); })); });
 app.post('/api/admin/orgs/:id/seats', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => updateOrgSeats(Number(req.params.id), Number((req.body ?? {}).seats)))); });
