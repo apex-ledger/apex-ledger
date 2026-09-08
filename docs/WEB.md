@@ -18,6 +18,11 @@ Every request runs inside the caller's session on async-local storage: the sessi
 connection (`runWithCompanyContext`) and access identity (`runWithAccessSession`). Handlers call
 `getCurrentDb()` exactly as on the desktop and get that session's connection.
 
+Several people in one organisation can work in the same company file at once: each session has
+its own SQLite connection in WAL mode. Verified 2026-09-08 with two sessions posting 16 quick
+entries simultaneously while one read the trial balance eight times: no locked-database errors,
+and the other session received data:changed over server-sent events.
+
 ## Build and run
 
 ```bash
