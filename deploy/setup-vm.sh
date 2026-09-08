@@ -97,7 +97,15 @@ mkdir -p /var/www/apexledger
 if [ -d /home/apex/website ]; then rm -rf /var/www/apexledger/* && cp -r /home/apex/website/. /var/www/apexledger/ && chown -R www-data:www-data /var/www/apexledger; fi
 APP_HOSTS="${HOST}"
 [ -n "${APP_DOMAIN:-}" ] && APP_HOSTS="${APP_HOSTS}, app.${APP_DOMAIN}"
+# HTTP/3 stays off: the network security group allows TCP 443 only, and a browser that switches
+# to HTTP/3 (UDP) would see large downloads fail silently ("Network blackhole detected").
 cat > /etc/caddy/Caddyfile <<EOF
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
 ${APP_HOSTS} {
 	encode gzip
 	reverse_proxy localhost:8787

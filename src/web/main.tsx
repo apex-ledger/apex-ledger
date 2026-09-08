@@ -21,6 +21,8 @@ function Gate() {
   const [error, setError] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [App, setApp] = useState<React.ComponentType | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [slow, setSlow] = useState(false);
 
   useEffect(() => {
     // A failed provider sign-in comes back as ?signin=<reason>; show it and clean the address.
@@ -35,7 +37,14 @@ function Gate() {
   }, []);
   useEffect(() => {
     if (state !== 'signedIn' || App) return;
-    void import('../renderer/App').then((m) => setApp(() => m.default));
+    // The application is one download of about 600 KB. Say so if it is slow, and say what went
+    // wrong if it fails, rather than showing "Loading…" for ever.
+    const slowTimer = window.setTimeout(() => setSlow(true), 8000);
+    import('../renderer/App')
+      .then((m) => setApp(() => m.default))
+      .catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)))
+      .finally(() => window.clearTimeout(slowTimer));
+    return () => window.clearTimeout(slowTimer);
   }, [state, App]);
 
   async function submit(e: React.FormEvent) {
@@ -80,7 +89,27 @@ function Gate() {
       </div>
     );
   }
-  if (!App) return <div className="flex h-screen items-center justify-center text-sm text-gray-500">Loading…</div>;
+  if (!App) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-3 bg-brand-900 text-sm text-white">
+        {loadError ? (
+          <>
+            <div className="max-w-md rounded-lg bg-white p-5 text-gray-800 shadow-xl">
+              <div className="font-semibold text-brand-900">The application did not load</div>
+              <p className="mt-1 text-xs text-gray-600">{loadError}</p>
+              <p className="mt-2 text-xs text-gray-600">This is usually a dropped download. Reloading fixes it; if it keeps happening, try another browser and tell us.</p>
+              <button type="button" onClick={() => window.location.reload()} className="mt-3 rounded-full bg-brand-700 px-4 py-1.5 text-xs font-medium text-white hover:bg-brand-800">Reload</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>Loading Apex Ledger…</div>
+            {slow && <div className="text-xs text-brand-100">Still downloading the application (about 600 KB). If this takes more than a minute, press Ctrl+F5 to reload.</div>}
+          </>
+        )}
+      </div>
+    );
+  }
   return <App />;
 }
 
