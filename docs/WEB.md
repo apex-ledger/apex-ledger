@@ -121,8 +121,10 @@ virtual machine with a managed disk, not App Service's shared storage:
    restart on failure.
 3. **HTTPS** Caddy in front (`app.apexledger.ca` → `localhost:8787`); it fetches and renews the
    certificate itself.
-4. **Network** an NSG allowing 443 from the internet and 22 only from the office address; nothing
-   else inbound. The app port is not exposed.
+4. **Network** NSG `apexledger-appNSG`: TCP 80/443 from the internet, TCP 22 only from the
+   owner's address (set 2026-09-08; if that address changes, change the rule with
+   `az network nsg rule update ... --source-address-prefixes <new ip>/32`, which needs no SSH).
+   Nothing else inbound; the app port is not exposed; HTTP/3 (UDP) is off on Caddy.
 5. **Backups** Azure Backup nightly snapshots of the data disk, retained 30 days, with the vault's
    secondary copy in Canada East.
 6. **Sign-in** Entra ID (Microsoft) single sign-on is the next step; today it is email and
