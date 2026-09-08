@@ -4,6 +4,7 @@ import { useIpcQuery } from '../../hooks/useIpcQuery';
 import { FiscalPeriodsPanel } from './FiscalPeriodsPanel';
 import { InstallationSettingsSection } from './InstallationSettingsSection';
 import { SelfTutorialSection } from './SelfTutorialSection';
+import { WebOrganisationSection } from './WebOrganisationSection';
 import { ALL_SUGGESTED_CATEGORIES, BUSINESS_TYPES, suggestedCategoriesForBusinessType, type SuggestedCategory } from '@shared/domain/businessTypes';
 import { currentFiscalYearDates, fiscalYearEndFromStart, fiscalYearEndParts } from '@shared/domain/company/fiscalYearDates';
 import { WSIB_RATE_CLASSES_2026, wsibRateForClass } from '@shared/domain/payroll/wsibRates2026';
@@ -694,6 +695,7 @@ export function CompanySettingsPage() {
               <p className="mt-1 text-[11px] text-gray-500">Above the threshold a journal cannot post and a purchase order cannot be sent until an administrator or accountant approves it in Approvals. Bills already have their own approval on the Purchases page.</p>
             </div>
             <InstallationSettingsSection logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
+            <WebOrganisationSection />
             <SelfTutorialSection />
             <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3">
               <div className="text-sm font-semibold text-gray-800">Direct deposit (EFT) — from your bank’s EFT agreement</div>
