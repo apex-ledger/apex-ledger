@@ -12,6 +12,9 @@
 <meta property="og:url" content="https://apexledger.ca/">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#081613">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ApexLedger","applicationCategory":"BusinessApplication","operatingSystem":"Web browser","url":"https://apexledger.ca/","description":"Canadian web accounting for accountants and bookkeepers: client books, bank reconciliation, GST/HST, payroll for every province, GIFI and T2 working papers, client CRM and a year-end sign-off. Hosted in Canada.","offers":[{"@type":"Offer","name":"Accounting Essential","price":"39","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Payroll","price":"49","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Ultimate Suite","price":"79","priceCurrency":"CAD","description":"Per seat per month after a free month"}],"provider":{"@type":"Organization","name":"ApexLedger","url":"https://apexledger.ca/","email":"admin@apexledger.ca","address":{"@type":"PostalAddress","addressLocality":"Mississauga","addressRegion":"ON","addressCountry":"CA"}}}
+</script>
 <style>
 :root{--bg:#081613;--fg:#f9f6ec;--gold:#f2ca72;--card:#102a22;--border:#355244;--muted:#a4b6b4}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:100px}html,body{overflow-x:hidden}
@@ -74,7 +77,7 @@ h2{font-size:clamp(36px,3.5vw,50px);line-height:1.13;letter-spacing:-2px;margin-
 .plan{padding:32px;background:linear-gradient(155deg,#16392c,#0d251d);color:#fff7e1;border:1px solid #466148;border-radius:12px;position:relative;box-shadow:0 15px 35px #0003;transition:transform .25s,box-shadow .25s,border-color .25s}.plan.featured{background:linear-gradient(145deg,#234e35,#102f23);border-color:#e2b65c;box-shadow:0 0 32px #e6ba4d22}
 .ribbon{position:absolute;top:-27px;left:-1px;right:-1px;height:36px;border-radius:10px 10px 0 0;background:linear-gradient(100deg,#d3a244,#ffe8ae,#dfb655);color:#24301d;text-align:center;padding:6px;font-size:10px;letter-spacing:1.2px;font-weight:700}
 .plan>svg{color:#efc96e;width:28px;height:28px}.plan .number{color:#d9bd80;font-size:9px}.plan h3{font-size:27px;letter-spacing:-1px}.plan>p{font-size:15px;line-height:1.65;color:#b8cbbd;min-height:52px;margin-top:10px}
-.price{font-size:21px;font-weight:600;margin:25px 0 20px}.price small{display:block;font-size:12px;color:#b6c6b8;font-weight:400;margin-top:5px}.plan .button{width:100%;justify-content:space-between}
+.price{font-size:34px;font-weight:700;letter-spacing:-1px;margin:25px 0 20px;line-height:1.1}.price .per{display:inline;font-size:14px;font-weight:500;letter-spacing:0;color:#d9bd80;margin-left:4px}.price small{display:block;font-size:12px;color:#b6c6b8;font-weight:400;margin-top:5px}.plan .button{width:100%;justify-content:space-between}
 .plan ul{border-top:1px solid #496147;margin:26px 0 0;padding:24px 0 0;list-style:none}.plan li{display:flex;align-items:center;gap:10px;margin:13px 0;font-size:13px}.plan li svg{color:#efc96e;width:16px;height:16px}.plan li.hi{color:var(--gold);font-weight:600}
 .plans .plan-note{font-size:12px;margin-top:28px}
 .closing{text-align:center;padding-top:100px;padding-bottom:100px}.closing .eyebrow{justify-content:center}
@@ -164,25 +167,25 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:32px 5%
   <div class="plan-grid">
     <article class="plan">
       <svg class="ic"><use href="#i-layers"/></svg><div class="number">BOOKS &amp; INVENTORY · NO LIMIT ON COMPANY FILES</div><h3>Accounting Essential</h3><p>Core accounting, invoicing, banking and inventory for your client books.</p>
-      <div class="price">One-month free trial<small>Per seat, per month in Canadian dollars after the trial. Ask for pricing.</small></div>
+      <div class="price">$39 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Two months free when paid yearly.</small></div>
       <a class="button outline" href="#contact">Start with Essential <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Double-entry bookkeeping &amp; journals</li><li><svg class="ic"><use href="#i-check"/></svg>Sales invoices, bills &amp; payments</li><li><svg class="ic"><use href="#i-check"/></svg>Inventory &amp; purchase orders</li><li><svg class="ic"><use href="#i-check"/></svg>Bank import, categorisation &amp; reconciliation</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST, GIFI &amp; accountant tools</li><li><svg class="ic"><use href="#i-check"/></svg>Reports with drill-down, Excel &amp; PDF</li><li><svg class="ic"><use href="#i-check"/></svg>Help &amp; Tutor with 45 lessons</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
     </article>
     <article class="plan featured">
       <div class="ribbon">THE CONNECTED PRACTICE SUITE ↗</div>
       <svg class="ic"><use href="#i-layers"/></svg><div class="number">FULL SUITE · NO LIMIT ON COMPANY FILES</div><h3>Ultimate Suite</h3><p>Accounting, payroll, inventory and client management in one edition.</p>
-      <div class="price">One-month free trial<small>Per seat, per month in Canadian dollars after the trial. Ask for pricing.</small></div>
+      <div class="price">$79 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Two months free when paid yearly.</small></div>
       <a class="button" href="#contact">Start with Ultimate <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Accounting Essential</li><li><svg class="ic"><use href="#i-check"/></svg>Client CRM, deadlines &amp; reminders</li><li><svg class="ic"><use href="#i-check"/></svg>Document checklists &amp; return status</li><li><svg class="ic"><use href="#i-check"/></svg>Appointments, engagement letters &amp; client communication</li><li><svg class="ic"><use href="#i-check"/></svg>Canadian payroll for every province</li><li><svg class="ic"><use href="#i-check"/></svg>Custom reports &amp; budgeting</li><li><svg class="ic"><use href="#i-check"/></svg>Projects &amp; fixed assets</li><li><svg class="ic"><use href="#i-check"/></svg>User permissions &amp; approvals</li><li><svg class="ic"><use href="#i-check"/></svg>Month-end close, audit tools &amp; Year-End Sign-off</li><li><svg class="ic"><use href="#i-check"/></svg>GIFI mapping &amp; T2 working papers</li></ul>
     </article>
     <article class="plan">
       <svg class="ic"><use href="#i-layers"/></svg><div class="number">BOOKS &amp; PAYROLL · NO LIMIT ON COMPANY FILES</div><h3>Payroll</h3><p>Bookkeeping and Canadian payroll for your client companies.</p>
-      <div class="price">One-month free trial<small>Per seat, per month in Canadian dollars after the trial. Ask for pricing.</small></div>
+      <div class="price">$49 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Two months free when paid yearly.</small></div>
       <a class="button outline" href="#contact">Start with Payroll <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Bookkeeping &amp; invoicing included</li><li><svg class="ic"><use href="#i-check"/></svg>Employee records &amp; pay runs</li><li><svg class="ic"><use href="#i-check"/></svg>Pay stubs, ROE &amp; payroll journals</li><li><svg class="ic"><use href="#i-check"/></svg>Source deductions &amp; PD7A reports</li><li><svg class="ic"><use href="#i-check"/></svg>T4, T4A, T5018 &amp; T5 year-end slips</li><li><svg class="ic"><use href="#i-check"/></svg>WSIB and Ontario EHT</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST &amp; accountant tools</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
     </article>
   </div>
-  <p class="plan-note">Accounting Essential includes books and inventory. Payroll includes books and payroll. Ultimate Suite includes both, plus client CRM. A seat is one person with their own sign-in; company files are never counted. Prices exclude HST.</p>
+  <p class="plan-note">Accounting Essential includes books and inventory. Payroll includes books and payroll. Ultimate Suite includes both, plus client CRM. A seat is one person with their own sign-in; company files are never counted. Prices are in Canadian dollars per seat per month, exclude HST, and can be cancelled at the end of any month. Yearly billing gives two months free.</p>
 </section>
 
 <section class="highlights" id="highlights">
