@@ -5,9 +5,58 @@ import apiMap from './apiMap.json';
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
+/** Requests that open a file picker on the desktop. In the browser the picker is an <input type=file>
+ * opened here, in the same click, and the chosen files are uploaded before the request is sent;
+ * the server hands them to the handler as if a dialog had returned them. Cancelling sends the
+ * request with no files, so the handler answers exactly as it does for a cancelled dialog. */
+const PICKERS: Record<string, { accept: string; multiple: boolean }> = {
+  'bankImport:readCsvFile': { accept: '.csv,.txt,.ofx,.qfx,.qbo', multiple: false },
+  'bankImport:readPdfFile': { accept: '.pdf', multiple: true },
+  'qbImport:readIifFile': { accept: '.iif,.txt', multiple: false },
+  'qbImport:readCsvFile': { accept: '.xlsx,.xls,.csv,.txt', multiple: false },
+  'clients:importCsv': { accept: '.csv', multiple: false },
+  'company:pickLogo': { accept: '.png,.jpg,.jpeg', multiple: false },
+  'receiptInbox:importFiles': { accept: '.pdf,.png,.jpg,.jpeg', multiple: true },
+  'receiptInbox:pickAndExtract': { accept: '.pdf,.png,.jpg,.jpeg', multiple: false },
+  'workpapers:addAttachment': { accept: '.pdf,.png,.jpg,.jpeg,.csv,.xlsx,.docx,.txt', multiple: true },
+  'attachments:add': { accept: '*/*', multiple: true },
+};
+
+function pickFiles(spec: { accept: string; multiple: boolean }): Promise<File[]> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = spec.accept;
+    input.multiple = spec.multiple;
+    input.style.display = 'none';
+    let done = false;
+    const finish = (files: File[]) => { if (done) return; done = true; input.remove(); resolve(files); };
+    input.addEventListener('change', () => finish(Array.from(input.files ?? [])));
+    input.addEventListener('cancel', () => finish([]));
+    // Older browsers fire no cancel event: when the window regains focus and nothing was chosen, give up.
+    window.addEventListener('focus', () => { setTimeout(() => { if (!done) finish(Array.from(input.files ?? [])); }, 1500); }, { once: true });
+    document.body.appendChild(input);
+    input.click();
+  });
+}
+
+async function uploadFiles(files: File[]): Promise<string[]> {
+  const tokens: string[] = [];
+  for (const file of files) {
+    const res = await fetch('/api/upload', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+    const body = (await res.json()) as Result<{ token: string }>;
+    if (!body.ok) throw new Error(body.error);
+    tokens.push(body.data.token);
+  }
+  return tokens;
+}
+
 async function call<T>(channel: string, args: unknown[]): Promise<Result<T>> {
   try {
-    const res = await fetch(`/api/${encodeURIComponent(channel)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ args }) });
+    let uploads: string[] = [];
+    const picker = PICKERS[channel];
+    if (picker) uploads = await uploadFiles(await pickFiles(picker));
+    const res = await fetch(`/api/${encodeURIComponent(channel)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ args, uploads }) });
     if (res.status === 401) {
       window.dispatchEvent(new Event('apex:signed-out'));
       return { ok: false, error: 'Please sign in.' };

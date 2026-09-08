@@ -22,7 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
-import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR } from './electronStub';
+import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext } from './electronStub';
 import { authenticate, bootstrap, companiesDirFor, createOrg, createUser, getOrg, listOrgs, listUsers, openAdminStore, recentFailures, setUserActive, setUserPassword, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
@@ -235,20 +235,49 @@ function asDownload(result: unknown): unknown {
   return { ...r, data: { ...(r!.data as object), filePath: `/api/download/${encodeURIComponent(file)}`, download: true, fileName: file.includes('__') ? file.slice(file.indexOf('__') + 2) : file } };
 }
 
+// ---- uploads: the browser's side of a file picker ----
+// The screen sends each chosen file here first (raw body, name in a header) and gets a token; the
+// request that follows names the tokens, and the stub's file picker hands the handler those files.
+// Files live only for that one request, in a folder per session, and are removed afterwards.
+const uploadDirFor = (s: Session) => path.join(UPLOAD_DIR, `s${s.id}`);
+app.put('/api/upload', express.raw({ type: () => true, limit: '200mb' }), (req, res) => {
+  const s = sessionOf(req);
+  if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
+  const name = decodeURIComponent(String(req.headers['x-file-name'] ?? 'upload')).replace(/[<>:"/\\|?*\x00-\x1f]+/g, '_').slice(-180) || 'upload';
+  const token = `${Date.now().toString(36)}-${crypto.randomBytes(6).toString('hex')}`;
+  // One folder per file so the handler sees the file under its own name, as a dialog would give it.
+  const dir = path.join(uploadDirFor(s), token);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name), Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0));
+  res.json({ ok: true, data: { token } });
+});
+function uploadedFiles(s: Session, tokens: unknown): string[] {
+  if (!Array.isArray(tokens) || tokens.length === 0) return [];
+  const base = uploadDirFor(s);
+  return tokens.flatMap((t) => {
+    const dir = path.join(base, String(t).replace(/[^a-z0-9-]/gi, ''));
+    if (!dir.startsWith(base) || !fs.existsSync(dir)) return [];
+    const n = fs.readdirSync(dir)[0];
+    return n ? [path.join(dir, n)] : [];
+  });
+}
+
 // ---- the application itself ----
 app.post('/api/:channel', async (req, res) => {
   const s = sessionOf(req);
   if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
   const channel = req.params.channel;
   const args = Array.isArray((req.body ?? {}).args) ? (req.body.args as unknown[]) : [];
+  const files = uploadedFiles(s, (req.body ?? {}).uploads);
+  res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });
   try {
-    const result = await sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {
+    const result = await uploadContext.run(files, () => sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {
       const override = overrides[channel];
       if (override) { try { return { ok: true, data: await override(s, args) }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } }
       const handler = handlerRegistry.get(channel);
       if (!handler) return { ok: false, error: `Unknown request: ${channel}` };
       return handler({ sender: { id: s.id } }, ...args);
-    })));
+    }))));
     res.json(asDownload(result) ?? { ok: true, data: null });
   } catch (error) {
     res.json({ ok: false, error: error instanceof Error ? error.message : String(error) });

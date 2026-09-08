@@ -56,9 +56,14 @@ On a server there is only Node, so a plain `npm ci` is right.
 
 ## What differs from the desktop
 
-- File dialogs do not exist. Create Company writes into the organisation's folder; Open Company
-  offers that folder's files; Save-as-PDF and Export Excel buttons that rely on a save dialog do
-  nothing on the web yet (next step: stream the file as a download).
+- File dialogs are replaced, not missing. Create Company writes into the organisation's folder and
+  Open Company offers that folder's files. Save-as-PDF and Export Excel hand the file to the
+  browser as a download. Every screen that opens a file picker on the desktop (bank CSV/OFX, bank
+  statement PDF, QuickBooks/Xero Excel, IIF, client CSV, receipts, attachments, workpapers, logo)
+  opens the browser's file chooser instead: `src/web/api.ts` uploads the chosen files to
+  `PUT /api/upload`, then sends the request with the upload tokens, and the stub's
+  `dialog.showOpenDialog` returns those files to the handler. Uploads live only for that request.
+  Folder pickers (second backup folder, save-all statements) stay cancelled on the web.
 - Backups: the server's disk is backed up as a whole; the in-app second backup folder is not used.
 - Voice: off by default and best left off on a server; typing does everything.
 - The demo and test companies are desktop features; upload a `.company` file into the

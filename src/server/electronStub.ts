@@ -7,6 +7,7 @@
  * instead of hanging. The server bundle aliases `electron` to this file. */
 import fs from 'node:fs';
 import path from 'node:path';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 export type IpcHandler = (event: unknown, ...args: unknown[]) => unknown;
 
@@ -49,8 +50,20 @@ const notOnWeb = (what: string) => { throw new Error(`${what} needs the desktop 
 export const DOWNLOAD_DIR = path.join(dataDir, 'downloads');
 fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
 
+/** Files the browser uploaded for the current request. The HTTP layer runs each request inside
+ * this store; a handler that opens a file picker gets those files instead of a dialog, so bank
+ * statements, Excel exports, receipts and attachments arrive from the browser the same way they
+ * arrive from a desktop dialog. Folder pickers have no browser equivalent and stay cancelled. */
+export const uploadContext = new AsyncLocalStorage<string[]>();
+export const UPLOAD_DIR = path.join(dataDir, 'uploads');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+
 export const dialog = {
-  showOpenDialog: async () => ({ canceled: true, filePaths: [] as string[] }),
+  showOpenDialog: async (_window?: unknown, options?: { properties?: string[] }) => {
+    const files = uploadContext.getStore() ?? [];
+    if (options?.properties?.includes('openDirectory') || files.length === 0) return { canceled: true, filePaths: [] as string[] };
+    return { canceled: false, filePaths: options?.properties?.includes('multiSelections') ? files : files.slice(0, 1) };
+  },
   showSaveDialog: async (_window?: unknown, options?: { defaultPath?: string; filters?: Array<{ extensions?: string[] }> }) => {
     const suggested = path.basename(options?.defaultPath ?? 'download');
     const ext = path.extname(suggested) || (options?.filters?.[0]?.extensions?.[0] ? `.${options.filters[0].extensions[0]}` : '');
