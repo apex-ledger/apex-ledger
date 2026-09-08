@@ -179,6 +179,8 @@ export type View =
   | { kind: 'about' }
   | { kind: 'whatsNew' }
   | { kind: 'accessPermissions' }
+  /** Web only: firms, seats, company files and trial requests, for the platform administrator or a firm's owner. */
+  | { kind: 'webAdmin' }
   /** Not a page: choosing it opens the Help & Tutor panel over whatever is showing. */
   | { kind: 'helpTutor' };
 

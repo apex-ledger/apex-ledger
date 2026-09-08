@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createFeedback, createOrg, createTrialRequest, createUser, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -250,6 +250,16 @@ app.post('/api/trial-request', (req, res) => {
 });
 app.get('/api/admin/trial-requests', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => listTrialRequests())); });
 app.post('/api/admin/trial-requests/:id/status', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setTrialRequestStatus(Number(req.params.id), (req.body ?? {}).status === 'done' ? 'done' : 'new'))); });
+
+// ---- feedback from the Feedback button ----
+app.post('/api/feedback', (req, res) => {
+  const s = sessionOf(req);
+  if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
+  const r = wrap(() => { const n = createFeedback(s.user, s.org, (req.body ?? {}) as { message?: unknown; page?: unknown }); console.log(`[feedback] ${n.orgName} / ${n.userName} on ${n.page}: ${n.message.slice(0, 120)}`); return { received: true }; });
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.get('/api/admin/feedback', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => listFeedback(s.org.isPlatform ? undefined : s.org.id))); });
+app.post('/api/admin/feedback/:id/status', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setFeedbackStatus(Number(req.params.id), (req.body ?? {}).status === 'done' ? 'done' : 'new'))); });
 
 app.post('/api/login', (req, res) => {
   const { email, password } = (req.body ?? {}) as { email?: string; password?: string };

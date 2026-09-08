@@ -17,6 +17,14 @@ import { QuickSearchPalette } from './QuickSearchPalette';
 import { useIpcQuery } from '../hooks/useIpcQuery';
 import { storeAccessRole } from '../utils/accessRole';
 import { isWeb } from '../utils/platform';
+import { FeedbackDialog } from './FeedbackDialog';
+
+/** Feedback: on the web a dialog that posts to the server (the Header listens for this event);
+ * on the desktop the mail client, as before. Shared by the header button and both menus. */
+function sendFeedback(): void {
+  if (isWeb()) window.dispatchEvent(new Event('apex:feedback'));
+  else window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Feedback');
+}
 import {
   IconBank,
   IconBillPlus,
@@ -420,7 +428,7 @@ function SettingsMenu() {
       heading: 'Company',
       links: [
         { label: 'User Guide', onClick: () => go({ kind: 'userGuide' }) },
-        { label: 'Send Feedback', onClick: () => window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Feedback') },
+        { label: 'Send Feedback', onClick: sendFeedback },
       ],
     },
   ];
@@ -588,7 +596,7 @@ function AppMenuBar({
     { label: 'About & License', onClick: () => setView({ kind: 'about' }) },
     { separator: true },
     { label: 'Contact Support', onClick: () => window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Support') },
-    { label: 'Send Feedback', onClick: () => window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Feedback') },
+    { label: 'Send Feedback', onClick: sendFeedback },
   ];
 
   return (
@@ -835,6 +843,8 @@ export function Header() {
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showAiChat, setShowAiChat] = useState(false);
   const showVoice = useUiStore((s) => s.helpTutorOpen);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  useEffect(() => { const open = () => setFeedbackOpen(true); window.addEventListener('apex:feedback', open); return () => window.removeEventListener('apex:feedback', open); }, []);
   const setShowVoice = useUiStore((s) => s.setHelpTutorOpen);
   const pendingLessonId = useUiStore((s) => s.pendingLessonId);
   useEffect(() => { if (pendingLessonId) setShowVoice(true); }, [pendingLessonId, setShowVoice]);
@@ -991,9 +1001,10 @@ export function Header() {
           </button>
           <button
             type="button"
-            onClick={() => window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Feedback')}
-            title="Send feedback to info@pjinsuretax.ca"
+            onClick={sendFeedback}
+            title={isWeb() ? 'Tell Apex Ledger what is wrong, confusing or missing on this screen' : 'Send feedback to info@pjinsuretax.ca'}
             className="rounded-full px-1.5 py-1 text-xs font-semibold hover:bg-brand-100 hover:text-brand-700"
+            data-testid="feedback-button"
           >
             Feedback
           </button>
@@ -1088,6 +1099,7 @@ export function Header() {
       <KeyboardShortcutsModal open={showKeyboardShortcuts} onClose={() => setShowKeyboardShortcuts(false)} />
       <AiChatPanel open={showAiChat} onClose={() => setShowAiChat(false)} />
       <VoiceAgentPanel open={showVoice} onClose={() => setShowVoice(false)} />
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </div>
   );
 }

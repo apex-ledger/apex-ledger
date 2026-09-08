@@ -5,7 +5,8 @@ import { useEdition } from '../hooks/useEdition';
 import type { Feature } from '@shared/domain/licensing/editions';
 import { confirmDialog } from '../app/store/confirmStore';
 import { Logo } from '../components/Logo';
-import { IconBell, IconPencil } from '../components/icons';
+import { IconBell, IconPencil, IconUserGroup } from '../components/icons';
+import { webContext } from '../features/company-settings/WebOrganisationSection';
 import {
   applyStoredOrder,
   loadColorOverrides,
@@ -68,6 +69,15 @@ export const QUICK_ENTRY_NAV_ITEM: NavItem = {
   view: { kind: 'quickEntry', type: 'expense' },
   color: 'orange',
   icon: <IconPencil />,
+};
+
+/** Web only, for the platform administrator and firm owners: one clean page for firms, seats,
+ * company files and trial requests. Sits under Quick Entry, outside the reorderable list. */
+export const ADMIN_NAV_ITEM: NavItem = {
+  label: 'Administration',
+  view: { kind: 'webAdmin' },
+  color: 'purple',
+  icon: <IconUserGroup />,
 };
 
 export const MAIN_NAV: NavItem[] = [
@@ -773,6 +783,11 @@ export function Sidebar() {
           emphasized
         />
       </div>
+      {(() => { const w = webContext(); return w && (w.org.isPlatform || w.user.role === 'owner'); })() && (
+        <div className="px-2 pt-1">
+          <NavButton item={ADMIN_NAV_ITEM} forceActive={currentView.kind === 'webAdmin'} emphasized />
+        </div>
+      )}
 
       {editMode && (
         <div className="border-b border-brand-200 bg-brand-100 px-3 py-2 text-[11px] text-brand-700">

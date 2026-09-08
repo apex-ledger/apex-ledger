@@ -58,6 +58,18 @@ export function openAdminStore(dir: string): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now')),
       last_seen TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      org_id INTEGER NOT NULL,
+      org_name TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      user_name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      page TEXT NOT NULL DEFAULT '',
+      message TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+    );
     CREATE TABLE IF NOT EXISTS trial_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       firm TEXT NOT NULL,
@@ -98,6 +110,29 @@ export function purgeSessions(): number {
 export function getUser(id: number): WebUser | null {
   const r = store().prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown> | undefined;
   return r ? mapUser(r) : null;
+}
+
+/** A note from the Feedback button: who, from which firm, on which screen, and what they said. */
+export interface FeedbackNote { id: number; orgId: number; orgName: string; userId: number; userName: string; email: string; page: string; message: string; status: 'new' | 'done'; createdAt: string }
+const rowToNote = (r: Record<string, unknown>): FeedbackNote => ({ id: Number(r.id), orgId: Number(r.org_id), orgName: String(r.org_name), userId: Number(r.user_id), userName: String(r.user_name), email: String(r.email), page: String(r.page), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at) });
+export function createFeedback(user: WebUser, org: Org, input: { message?: unknown; page?: unknown }): FeedbackNote {
+  const message = String(input.message ?? '').trim().slice(0, 4000);
+  if (message.length < 5) throw new Error('Say a little more so we can act on it.');
+  const page = String(input.page ?? '').trim().slice(0, 120);
+  const r = store().prepare('INSERT INTO feedback (org_id, org_name, user_id, user_name, email, page, message) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, org.name, user.id, user.name, user.email, page, message) as Record<string, unknown>;
+  return rowToNote(r);
+}
+export function listFeedback(orgId?: number): FeedbackNote[] {
+  const rows = orgId === undefined
+    ? store().prepare('SELECT * FROM feedback ORDER BY id DESC LIMIT 300').all()
+    : store().prepare('SELECT * FROM feedback WHERE org_id = ? ORDER BY id DESC LIMIT 300').all(orgId);
+  return (rows as Record<string, unknown>[]).map(rowToNote);
+}
+export function setFeedbackStatus(id: number, status: 'new' | 'done'): FeedbackNote {
+  store().prepare('UPDATE feedback SET status = ? WHERE id = ?').run(status, id);
+  const r = store().prepare('SELECT * FROM feedback WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!r) throw new Error('Note not found.');
+  return rowToNote(r);
 }
 
 /** A trial request from the public website: who they are, which edition, how many seats. The

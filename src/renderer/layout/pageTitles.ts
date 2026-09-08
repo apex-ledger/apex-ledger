@@ -19,6 +19,7 @@ export const TITLES: Record<string, string> = {
   bulkExpenseImport: 'Bulk Expense Import',
   bankImport: 'Banking',
   companySettings: 'Settings',
+  webAdmin: 'Administration',
   hstCentre: 'GST/HST Centre',
   reportsHub: 'Reports',
   clientHub: 'Client Management (CRM)',
@@ -119,7 +120,7 @@ const SECTIONS: Record<string, string> = {
   purchases: 'Expenses', vendors: 'Expenses', purchaseOrders: 'Expenses', purchaseOrderEditor: 'Expenses', expenses: 'Expenses', mileage: 'Expenses', receiptInbox: 'Banking',
   banking: 'Banking', bankImport: 'Banking', bankReconciliation: 'Banking', transactions: 'Banking',
   chartOfAccounts: 'Accounting', journalList: 'Accounting', journalForm: 'Accounting', fixedAssets: 'Accounting', monthEndClose: 'Accounting', taxGifi: 'Accounting',
-  products: 'Inventory', projects: 'Projects', tags: 'Settings', companySettings: 'Settings', accessPermissions: 'Settings',
+  products: 'Inventory', projects: 'Projects', tags: 'Settings', companySettings: 'Settings', accessPermissions: 'Settings', webAdmin: 'Administration',
   payroll: 'Payroll', paystub: 'Payroll', hstCentre: 'Sales Tax (GST/HST)',
   approvals: 'Accounting', reclassify: 'Accountant', reportsHub: 'Reports', report: 'Reports', audit: 'Auditor', accountantCentre: 'Accountant', workpapers: 'Accountant', cpaReview: 'Accountant', clientHub: 'CRM',
 };
