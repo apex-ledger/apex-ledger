@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { isWeb } from '../../utils/platform';
 import type { AppSettingsView } from '../../../preload/index';
 
 /**
@@ -92,6 +93,8 @@ export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { lo
 
       <VoiceModelCard />
 
+      {/* On the web the server's disk is backed up nightly as a whole; there is no second folder to pick. */}
+      {!isWeb() && (
       <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="backup-settings">
         <div className="text-sm font-semibold text-gray-800">Backups — second copy</div>
         <p className="mt-1 text-xs text-gray-600">Automatic backups already go to the Backups folder beside each company file. Pick a second place — a OneDrive or Google Drive folder, a network share, an external drive — and every backup is copied there too, so a lost disk does not mean lost books.</p>
@@ -101,6 +104,7 @@ export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { lo
           {settings?.secondaryBackupFolder && <button type="button" onClick={() => void clearBackupFolder()} className="text-xs text-gray-500 hover:underline">Stop copying</button>}
         </div>
       </div>
+      )}
 
       <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="email-settings">
         <div className="text-sm font-semibold text-gray-800">Email — statements, reminders, invoices and forms</div>

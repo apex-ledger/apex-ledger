@@ -84,6 +84,11 @@ On a server there is only Node, so a plain `npm ci` is right.
   `PUT /api/upload`, then sends the request with the upload tokens, and the stub's
   `dialog.showOpenDialog` returns those files to the handler. Uploads live only for that request.
   Folder pickers (second backup folder, save-all statements) stay cancelled on the web.
+- Every answer carries a strict Content-Security-Policy (scripts and connections only from this
+  origin, no framing), nosniff, a referrer policy and a permissions policy. `GET /api/health`
+  needs no sign-in and reports only status and version, for a monitor. The web build has no
+  inline scripts, so the policy needs no exceptions; the settings screen hides the desktop-only
+  "second backup folder" picker on the web.
 - Opening a file (attachments, workpaper attachments, receipts) means downloading it: the stub's
   `shell.openPath` copies the file into the downloads folder and the HTTP layer returns the link.
   Save as PDF on the web opens the browser's print dialog (its Save as PDF), and the print

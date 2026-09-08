@@ -207,6 +207,19 @@ const overrides: Record<string, (s: Session, args: unknown[]) => Promise<unknown
 const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
+// Browser-side guard rails on every answer: scripts only from this origin, no framing by other
+// sites, no content sniffing. The web bundle has no inline scripts, so the policy is strict.
+const CSP = ["default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data: blob:", "font-src 'self' data:", "connect-src 'self'", "media-src 'self' blob:", "worker-src 'self' blob:", "frame-ancestors 'none'", "base-uri 'self'", "form-action 'self'", "object-src 'none'"].join('; ');
+app.use((_req, res, next) => {
+  res.setHeader('Content-Security-Policy', CSP);
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), geolocation=(), payment=(), usb=(), microphone=(self)');
+  next();
+});
+// For a monitor or load balancer: no sign-in, no details beyond "up" and the version.
+app.get('/api/health', (_req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ ok: true, data: { status: 'ok', version: process.env.APEX_VERSION ?? null, uptimeSeconds: Math.round(process.uptime()) } }); });
 app.use(express.json({ limit: '50mb' }));
 // A body that is not JSON (or too large) gets a JSON answer, not Express's HTML stack trace.
 app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
