@@ -250,6 +250,17 @@ export function authenticate(email: string, password: string, ip: string | null)
   return mapUser(r);
 }
 
+/** Sign-in through Microsoft or Google: the provider has verified the email, so the only question
+ * is whether an active person with that email exists. No seat is ever created this way. */
+export function signInByVerifiedEmail(email: string, provider: string, ip: string | null): WebUser | null {
+  const norm = email.trim().toLowerCase();
+  const r = store().prepare('SELECT * FROM users WHERE email = ? AND is_active = 1').get(norm) as Record<string, unknown> | undefined;
+  store().prepare('INSERT INTO sign_in_log (email, ok, ip) VALUES (?, ?, ?)').run(`${norm} via ${provider}`, r ? 1 : 0, ip);
+  if (!r) return null;
+  store().prepare("UPDATE users SET last_sign_in = strftime('%Y-%m-%d %H:%M:%f', 'now') WHERE id = ?").run(r.id);
+  return mapUser(r);
+}
+
 /** Failed sign-ins from one address in the last 15 minutes; the server refuses above a limit. */
 export function recentFailures(ip: string | null): number {
   if (!ip) return 0;

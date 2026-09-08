@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -33,6 +33,7 @@ import { seedFirmServices } from '../main/db/seeds/firmServices.seed';
 import { getCurrentDb } from '../main/companyFile';
 import { companyCreateSchema } from '@shared/validation/schemas';
 import { WEB_LICENSE } from '../main/licensing/license';
+import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 8787);
@@ -239,8 +240,56 @@ app.post('/api/login', (req, res) => {
   if (!user) { res.status(401).json({ ok: false, error: 'Wrong email or password.' }); return; }
   const org = getOrg(user.orgId)!;
   const s = newSession(user, org);
-  res.setHeader('Set-Cookie', `apex_session=${s.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_DAYS * 86400}${req.secure ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', sessionCookie(req, s));
   res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
+});
+
+// ---- sign in with Microsoft or Google ----
+// The browser is sent to the provider with a random state and nonce kept in a short-lived cookie;
+// the provider sends it back with a code; the code becomes an ID token, checked in oidc.ts; the
+// email in it must belong to an active person here. Errors go back to the sign-in page as text.
+const providers = providersFromEnv(process.env);
+if (providers.length) console.log('[web] sign in with:', providers.map((p) => p.label).join(', '));
+const sessionCookie = (req: express.Request, s: Session) => `apex_session=${s.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_DAYS * 86400}${req.secure ? '; Secure' : ''}`;
+function publicOrigin(req: express.Request): string {
+  const configured = (process.env.APEX_PUBLIC_URL ?? '').trim().replace(/\/+$/, '');
+  if (configured) return configured;
+  return `${req.secure ? 'https' : 'http'}://${req.headers.host ?? 'localhost'}`;
+}
+const toSignIn = (res: express.Response, error: string) => res.redirect(`/?signin=${encodeURIComponent(error)}`);
+app.get('/api/auth/options', (_req, res) => { res.json({ ok: true, data: { providers: providers.map((p) => ({ id: p.id, label: p.label })) } }); });
+app.get('/api/auth/:provider', (req, res) => {
+  const p = providers.find((x) => x.id === req.params.provider);
+  if (!p) { res.status(404).json({ ok: false, error: 'That sign-in method is not set up on this server.' }); return; }
+  const state = crypto.randomBytes(16).toString('base64url');
+  const nonce = crypto.randomBytes(16).toString('base64url');
+  res.setHeader('Set-Cookie', `apex_oauth=${p.id}.${state}.${nonce}; HttpOnly; SameSite=Lax; Path=/api/auth; Max-Age=600${req.secure ? '; Secure' : ''}`);
+  res.redirect(authorizeUrl(p, `${publicOrigin(req)}/api/auth/${p.id}/callback`, state, nonce));
+});
+app.get('/api/auth/:provider/callback', async (req, res) => {
+  const p = providers.find((x) => x.id === req.params.provider);
+  if (!p) { toSignIn(res, 'That sign-in method is not set up on this server.'); return; }
+  const clear = `apex_oauth=; Max-Age=0; Path=/api/auth`;
+  try {
+    const [cookieProvider, state, nonce] = (readCookie(req, 'apex_oauth') ?? '').split('.');
+    if (cookieProvider !== p.id || !state || !nonce || String(req.query.state ?? '') !== state) throw new Error('The sign-in did not start from this browser. Please try again.');
+    if (req.query.error) throw new Error(String(req.query.error_description ?? req.query.error));
+    const code = String(req.query.code ?? '');
+    if (!code) throw new Error(`${p.label} did not return a sign-in code.`);
+    const idToken = await exchangeCode(p, code, `${publicOrigin(req)}/api/auth/${p.id}/callback`);
+    const claims = verifyIdToken(idToken, await signingKeys(p), { clientId: p.clientId, nonce, issuerOk: p.issuerOk });
+    const ip = req.ip ?? null;
+    if (recentFailures(ip) >= 8) throw new Error('Too many failed sign-ins. Try again in 15 minutes.');
+    const user = signInByVerifiedEmail(claims.email, p.id, ip);
+    if (!user) throw new Error(`${claims.email} has no seat here yet. Ask your organisation's owner to add you with this email, then sign in with ${p.label} again.`);
+    const org = getOrg(user.orgId)!;
+    const s = newSession(user, org);
+    res.setHeader('Set-Cookie', [clear, sessionCookie(req, s)]);
+    res.redirect('/');
+  } catch (e) {
+    res.setHeader('Set-Cookie', clear);
+    toSignIn(res, e instanceof Error ? e.message : String(e));
+  }
 });
 
 app.post('/api/logout', (req, res) => {

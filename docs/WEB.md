@@ -56,6 +56,17 @@ On a server there is only Node, so a plain `npm ci` is right.
   seat count. `POST /api/me/password` changes your own password.
 - Five organisations with two seats each is the starting shape; seats are a number on the
   organisation row, so it scales by changing rows, not code.
+- Sign in with Microsoft or Google (`src/server/oidc.ts`): plain OpenID Connect code flow, ID
+  token verified here against the provider's published keys (signature, issuer, audience, expiry,
+  nonce). The verified email must already be an active person in an organisation; a provider
+  sign-in never creates a seat. On when the environment has `APEX_MS_CLIENT_ID` +
+  `APEX_MS_CLIENT_SECRET` (Entra app registration "Apex Ledger", app id
+  1aa992fe-eb0e-41da-8fcb-16041b08f81f, audience any Microsoft account, redirect
+  `https://app.apexledger.ca/api/auth/microsoft/callback`) and/or `APEX_GOOGLE_CLIENT_ID` +
+  `APEX_GOOGLE_CLIENT_SECRET` (a Google Cloud OAuth web client with redirect
+  `https://app.apexledger.ca/api/auth/google/callback`). `APEX_PUBLIC_URL` fixes the redirect
+  origin behind the proxy. The sign-in page shows a button per configured provider above the
+  password form.
 - Trial requests: the form on apexledger.ca posts to `POST /api/trial-request` (CORS for the
   site origins in `APEX_SITE_ORIGINS`, honeypot field, five per address per hour). They land in
   `trial_requests` in web-admin.db and show in Settings, Organisation & seats for the platform
