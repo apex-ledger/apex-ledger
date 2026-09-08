@@ -53,6 +53,12 @@ On a server there is only Node, so a plain `npm ci` is right.
   seat count. `POST /api/me/password` changes your own password.
 - Five organisations with two seats each is the starting shape; seats are a number on the
   organisation row, so it scales by changing rows, not code.
+- Trial requests: the form on apexledger.ca posts to `POST /api/trial-request` (CORS for the
+  site origins in `APEX_SITE_ORIGINS`, honeypot field, five per address per hour). They land in
+  `trial_requests` in web-admin.db and show in Settings, Organisation & seats for the platform
+  administrator, who can fill the New organisation and Add a person forms from one and mark it done.
+- On the web the welcome screen hides Open Company File, the demo and the test company; the header
+  hides Check for Updates and Mirror Window (`src/renderer/utils/platform.ts`, `isWeb()`).
 
 ## What differs from the desktop
 

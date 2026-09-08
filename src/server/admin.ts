@@ -51,7 +51,62 @@ export function openAdminStore(dir: string): void {
       ip TEXT,
       at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS trial_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      firm TEXT NOT NULL,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      phone TEXT NOT NULL DEFAULT '',
+      edition TEXT NOT NULL,
+      seats INTEGER NOT NULL,
+      message TEXT NOT NULL DEFAULT '',
+      ip TEXT,
+      status TEXT NOT NULL DEFAULT 'new',
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+    );
   `);
+}
+
+/** A trial request from the public website: who they are, which edition, how many seats. The
+ * platform administrator reads these in Settings and creates the organisation from them. */
+export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
+const TRIAL_EDITIONS = ['Accounting Essential', 'Ultimate Suite', 'Payroll'];
+
+export function createTrialRequest(input: Record<string, unknown>, ip: string | null): TrialRequest {
+  const text = (k: string, max: number, required = false) => {
+    const v = String(input[k] ?? '').trim().slice(0, max);
+    if (required && !v) throw new Error(`Please fill in ${k === 'firm' ? 'the firm or business name' : k === 'name' ? 'your name' : 'your email'}.`);
+    return v;
+  };
+  const firm = text('firm', 200, true);
+  const name = text('name', 120, true);
+  const email = text('email', 200, true);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('That email address does not look right.');
+  const phone = text('phone', 50);
+  const edition = TRIAL_EDITIONS.includes(String(input.edition)) ? String(input.edition) : 'Ultimate Suite';
+  const seats = Math.min(100, Math.max(1, Math.round(Number(input.seats) || 2)));
+  const message = text('message', 2000);
+  const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM trial_requests WHERE ip = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(ip ?? '') as { n: number }).n);
+  if (ip && recent >= 5) throw new Error('Too many requests from this address. Please email admin@apexledger.ca instead.');
+  const r = store().prepare('INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(firm, name, email, phone, edition, seats, message, ip);
+  return getTrialRequest(Number(r.lastInsertRowid))!;
+}
+
+function rowToTrial(r: Record<string, unknown>): TrialRequest {
+  return { id: Number(r.id), firm: String(r.firm), name: String(r.name), email: String(r.email), phone: String(r.phone), edition: String(r.edition), seats: Number(r.seats), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at) };
+}
+export function getTrialRequest(id: number): TrialRequest | null {
+  const r = store().prepare('SELECT * FROM trial_requests WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  return r ? rowToTrial(r) : null;
+}
+export function listTrialRequests(): TrialRequest[] {
+  return (store().prepare('SELECT * FROM trial_requests ORDER BY id DESC LIMIT 200').all() as Record<string, unknown>[]).map(rowToTrial);
+}
+export function setTrialRequestStatus(id: number, status: 'new' | 'done'): TrialRequest {
+  store().prepare('UPDATE trial_requests SET status = ? WHERE id = ?').run(status, id);
+  const t = getTrialRequest(id);
+  if (!t) throw new Error('Request not found.');
+  return t;
 }
 
 function store(): Database.Database {

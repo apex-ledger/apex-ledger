@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useUiStore } from '../../app/store/uiStore';
 import { Logo } from '../../components/Logo';
 import { IconLock } from '../../components/icons';
+import { isWeb } from '../../utils/platform';
 
 const LOGIN_ID = 'admin';
 const LOGIN_PASSWORD = 'NL1970';
@@ -196,34 +197,41 @@ export function WelcomePage() {
           >
             Create New Company
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => handleOpen()}
-            className="flex-1 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-          >
-            Open Company File…
-          </button>
+          {!isWeb() && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => handleOpen()}
+              className="flex-1 rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Open Company File…
+            </button>
+          )}
         </div>
 
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleInstallDemo}
-          className="mt-3 w-full rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-50"
-        >
-          Open Comprehensive Demo Company
-        </button>
+        {/* The demo and test companies ship with the desktop app; on the web a firm uploads its own files. */}
+        {!isWeb() && (
+          <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleInstallDemo}
+              className="mt-3 w-full rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-200 disabled:opacity-50"
+            >
+              Open Comprehensive Demo Company
+            </button>
 
-        <button
-          type="button"
-          disabled={busy}
-          onClick={handleOpenTestCompany}
-          className="mt-3 w-full rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-200 disabled:opacity-50"
-          title="Northwind Bookkeeping Test Co. — every flow already exercised, with a sheet of expected figures to check each screen against"
-        >
-          Open Test Company (Northwind Bookkeeping)
-        </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={handleOpenTestCompany}
+              className="mt-3 w-full rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-200 disabled:opacity-50"
+              title="Northwind Bookkeeping Test Co. — every flow already exercised, with a sheet of expected figures to check each screen against"
+            >
+              Open Test Company (Northwind Bookkeeping)
+            </button>
+          </>
+        )}
 
         <button
           type="button"

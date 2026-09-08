@@ -10,6 +10,7 @@ interface Org { id: number; name: string; slug: string; seats: number; isPlatfor
 interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; isActive: boolean; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
+interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
   try {
@@ -33,6 +34,8 @@ export function WebOrganisationSection() {
   const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner' });
   const [newOrg, setNewOrg] = useState({ name: '', seats: 2 });
   const [myPassword, setMyPassword] = useState('');
+  const [trials, setTrials] = useState<TrialRequest[]>([]);
+  const [showDoneTrials, setShowDoneTrials] = useState(false);
   const [files, setFiles] = useState<CompanyFile[]>([]);
   const [filesOrg, setFilesOrg] = useState(0);
   const [replace, setReplace] = useState(false);
@@ -52,7 +55,8 @@ export function WebOrganisationSection() {
     const [o, p] = await Promise.all([call<Org[]>('/api/admin/orgs'), call<Person[]>('/api/admin/users')]);
     if (o.ok) setOrgs(o.data); else setError(o.error);
     if (p.ok) setPeople(p.data); else setError(p.error);
-  }, [canManage]);
+    if (ctx?.org.isPlatform) { const t = await call<TrialRequest[]>('/api/admin/trial-requests'); if (t.ok) setTrials(t.data); }
+  }, [canManage, ctx?.org.isPlatform]);
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => { if (orgs.length && !newPerson.orgId) setNewPerson((n) => ({ ...n, orgId: orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id })); }, [orgs, newPerson.orgId]);
   useEffect(() => { if (orgs.length && !filesOrg) setFilesOrg(ctx?.org.isPlatform ? (orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id) : (orgs.find((o) => o.name === ctx?.org.name)?.id ?? orgs[0].id)); }, [orgs, filesOrg, ctx]);
@@ -104,6 +108,16 @@ export function WebOrganisationSection() {
     }
   }
   const sizeOf = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+  async function setTrialStatus(t: TrialRequest, status: 'new' | 'done') {
+    const r = await call<TrialRequest>(`/api/admin/trial-requests/${t.id}/status`, { status });
+    if (!r.ok) setError(r.error); else void reload();
+  }
+  function fillFromTrial(t: TrialRequest) {
+    setNewOrg({ name: t.firm, seats: t.seats });
+    setNewPerson((n) => ({ ...n, name: t.name, email: t.email }));
+    setNotice(`${t.firm} is filled in below: create the organisation, then add ${t.name} to it with a first password and email it to ${t.email}.`);
+  }
 
   async function changeMyPassword() {
     setError(null);
@@ -210,6 +224,34 @@ export function WebOrganisationSection() {
             </div>
             <p className="mt-1 text-[11px] text-gray-500">Upload the .company file from the desktop app or another firm and it opens here like any other. A file someone has open is never replaced. Download gives a consistent copy even while it is in use.</p>
           </div>
+
+          {ctx.org.isPlatform && (
+            <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-trial-requests">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-gray-600">Trial requests from apexledger.ca</div>
+                <span className="text-xs text-gray-500">{trials.filter((t) => t.status === 'new').length} new</span>
+                <label className="ml-auto flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={showDoneTrials} onChange={(e) => setShowDoneTrials(e.target.checked)} /> Show done</label>
+              </div>
+              <ul className="mt-2 divide-y divide-gray-100 text-sm">
+                {trials.filter((t) => showDoneTrials || t.status === 'new').map((t) => (
+                  <li key={t.id} className={`py-2 ${t.status === 'done' ? 'text-gray-400' : ''}`}>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className={`font-medium ${t.status === 'done' ? '' : 'text-gray-900'}`}>{t.firm}</span>
+                      <span className="text-xs text-gray-500">{t.name} · <a href={`mailto:${t.email}`} className="text-brand-700 hover:underline">{t.email}</a>{t.phone ? ` · ${t.phone}` : ''}</span>
+                      <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-800">{t.edition} · {t.seats} seat{t.seats === 1 ? '' : 's'}</span>
+                      <span className="text-xs text-gray-400">{t.createdAt.slice(0, 16)}</span>
+                      <span className="ml-auto flex gap-2 text-xs">
+                        {t.status === 'new' && <button type="button" onClick={() => fillFromTrial(t)} className="text-brand-700 hover:underline">Create organisation</button>}
+                        <button type="button" onClick={() => void setTrialStatus(t, t.status === 'new' ? 'done' : 'new')} className="text-gray-600 hover:underline">{t.status === 'new' ? 'Mark done' : 'Reopen'}</button>
+                      </span>
+                    </div>
+                    {t.message && <div className="mt-1 whitespace-pre-wrap text-xs text-gray-600">{t.message}</div>}
+                  </li>
+                ))}
+                {trials.filter((t) => showDoneTrials || t.status === 'new').length === 0 && <li className="py-1 text-xs text-gray-400">No new requests. The "Start a one-month trial" form on the website lands here.</li>}
+              </ul>
+            </div>
+          )}
 
           {ctx.org.isPlatform && (
             <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3">

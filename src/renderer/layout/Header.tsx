@@ -16,6 +16,7 @@ import { PayBillModal } from '../features/purchases/PayBillModal';
 import { QuickSearchPalette } from './QuickSearchPalette';
 import { useIpcQuery } from '../hooks/useIpcQuery';
 import { storeAccessRole } from '../utils/accessRole';
+import { isWeb } from '../utils/platform';
 import {
   IconBank,
   IconBillPlus,
@@ -583,7 +584,7 @@ function AppMenuBar({
     { label: 'Knowledge Base', onClick: () => setView({ kind: 'knowledgeBase' }) },
     { label: 'Keyboard Shortcuts', onClick: onOpenShortcuts },
     { separator: true },
-    { label: checkingForUpdates ? 'Checking for Updates…' : 'Check for Updates…', onClick: onCheckUpdates, disabled: checkingForUpdates },
+    ...(isWeb() ? [] : [{ label: checkingForUpdates ? 'Checking for Updates…' : 'Check for Updates…', onClick: onCheckUpdates, disabled: checkingForUpdates }]),
     { label: 'About & License', onClick: () => setView({ kind: 'about' }) },
     { separator: true },
     { label: 'Contact Support', onClick: () => window.open('mailto:info@pjinsuretax.ca?subject=Apex Ledger Support') },
@@ -996,15 +997,17 @@ export function Header() {
           >
             Feedback
           </button>
-          <button
-            type="button"
-            disabled={checkingForUpdate}
-            onClick={handleCheckForUpdates}
-            title="Check for a newer version of Apex Ledger"
-            className="rounded-full px-1.5 py-1 text-xs font-semibold hover:bg-brand-100 hover:text-brand-700 disabled:opacity-60"
-          >
-            {checkingForUpdate ? 'Checking…' : 'Check for Updates'}
-          </button>
+          {!isWeb() && (
+            <button
+              type="button"
+              disabled={checkingForUpdate}
+              onClick={handleCheckForUpdates}
+              title="Check for a newer version of Apex Ledger"
+              className="rounded-full px-1.5 py-1 text-xs font-semibold hover:bg-brand-100 hover:text-brand-700 disabled:opacity-60"
+            >
+              {checkingForUpdate ? 'Checking…' : 'Check for Updates'}
+            </button>
+          )}
           <button type="button" onClick={() => setSessionLocked(true)} title="Lock Apex Ledger" className="rounded-full p-1.5 hover:bg-brand-100 hover:text-brand-700">
             <IconLock width={18} height={18} />
           </button>
@@ -1068,7 +1071,7 @@ export function Header() {
         <ActionButton icon={<IconBook />} label="Journal Entry" onClick={() => setView({ kind: 'journalForm', id: 'new' })} color="violet" />
         <ActionButton icon={<IconCloudUpload />} label="Backup" onClick={handleBackup} busy={backingUp} color="purple" />
         <ActionButton icon={<IconRefresh />} label="Refresh" onClick={bumpRefreshNonce} color="gray" />
-        <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />
+        {!isWeb() && <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />}
         <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />
         {can('crm') && <ActionButton icon={<IconUserGroup />} label="Client Management (CRM)" onClick={() => setView({ kind: 'clientHub' })} color="purple" />}
       </div>

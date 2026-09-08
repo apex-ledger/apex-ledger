@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createOrg, createUser, getOrg, listOrgs, listUsers, openAdminStore, recentFailures, setUserActive, setUserPassword, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, getOrg, listOrgs, listTrialRequests, listUsers, openAdminStore, recentFailures, setTrialRequestStatus, setUserActive, setUserPassword, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -156,6 +156,29 @@ const app = express();
 app.disable('x-powered-by');
 app.set('trust proxy', true);
 app.use(express.json({ limit: '50mb' }));
+
+// ---- trial requests from the public website ----
+// The marketing site lives on another host, so this one route answers cross-origin for it.
+const SITE_ORIGINS = new Set((process.env.APEX_SITE_ORIGINS ?? 'https://apexledger.ca,https://www.apexledger.ca').split(',').map((o) => o.trim()).filter(Boolean));
+function siteCors(req: express.Request, res: express.Response): void {
+  const origin = String(req.headers.origin ?? '');
+  if (SITE_ORIGINS.has(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  }
+}
+app.options('/api/trial-request', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.post('/api/trial-request', (req, res) => {
+  siteCors(req, res);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  if (String(body.website ?? '').trim()) { res.json({ ok: true, data: { received: true } }); return; } // honeypot field: bots fill it, people never see it
+  const r = wrap(() => { const t = createTrialRequest(body, req.ip ?? null); console.log(`[trial] ${t.firm} <${t.email}> ${t.edition} x${t.seats}`); return { received: true }; });
+  res.status(r.ok ? 200 : 400).json(r);
+});
+app.get('/api/admin/trial-requests', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => listTrialRequests())); });
+app.post('/api/admin/trial-requests/:id/status', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setTrialRequestStatus(Number(req.params.id), (req.body ?? {}).status === 'done' ? 'done' : 'new'))); });
 
 app.post('/api/login', (req, res) => {
   const { email, password } = (req.body ?? {}) as { email?: string; password?: string };
