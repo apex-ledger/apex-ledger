@@ -7,7 +7,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * ones, and changes seat counts. Everyone can change their own password. The desktop app has no
  * organisations, so this section does not appear there. */
 interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number }
-interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; isActive: boolean; lastSignIn: string | null }
+type SeatType = 'full' | 'bookkeeper' | 'business';
+const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
+const SEAT_LABEL: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
+const SEAT_HINT: Record<SeatType, string> = { full: 'An accountant: everything, including year end, GIFI, T2 working papers, CRM and payroll', bookkeeper: 'A bookkeeper: daily books, bank import, invoices, bills, HST and payroll; no accountant tools', business: 'A business keeping its own books: invoices, bills, bank import, HST and reports' };
+interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
 interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
@@ -31,7 +35,11 @@ export function WebOrganisationSection() {
   const [people, setPeople] = useState<Person[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner' });
+  const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner', seatType: 'full' as SeatType });
+  const [rates, setRates] = useState<Record<SeatType, number>>({ full: 7900, bookkeeper: 5900, business: 3900 });
+  const [rateDraft, setRateDraft] = useState<Record<SeatType, string>>({ full: '', bookkeeper: '', business: '' });
+  const money = (cents: number) => `$${(cents / 100).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (rates[p.seatType] ?? 0), 0);
   const [newOrg, setNewOrg] = useState({ name: '', seats: 2 });
   const [myPassword, setMyPassword] = useState('');
   const [trials, setTrials] = useState<TrialRequest[]>([]);
@@ -56,6 +64,7 @@ export function WebOrganisationSection() {
     if (o.ok) setOrgs(o.data); else setError(o.error);
     if (p.ok) setPeople(p.data); else setError(p.error);
     if (ctx?.org.isPlatform) { const t = await call<TrialRequest[]>('/api/admin/trial-requests'); if (t.ok) setTrials(t.data); }
+    const r = await call<Record<SeatType, number>>('/api/admin/seat-rates'); if (r.ok) setRates(r.data);
   }, [canManage, ctx?.org.isPlatform]);
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => { if (orgs.length && !newPerson.orgId) setNewPerson((n) => ({ ...n, orgId: orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id })); }, [orgs, newPerson.orgId]);
@@ -70,6 +79,17 @@ export function WebOrganisationSection() {
     setNotice(`${r.data.name} added. Give them the password you typed; they can change it after signing in.`);
     setNewPerson((n) => ({ ...n, name: '', email: '', password: '' }));
     void reload();
+  }
+  async function setSeatType(p: Person, seatType: SeatType) {
+    setError(null);
+    const r = await call<Person>(`/api/admin/users/${p.id}/seat-type`, { seatType });
+    if (!r.ok) setError(r.error); else void reload();
+  }
+  async function saveRate(type: SeatType) {
+    const dollars = Number(rateDraft[type]);
+    if (!Number.isFinite(dollars)) return;
+    const r = await call<Record<SeatType, number>>('/api/admin/seat-rates', { seatType: type, dollars });
+    if (!r.ok) setError(r.error); else { setRates(r.data); setRateDraft((d) => ({ ...d, [type]: '' })); setNotice(`${SEAT_LABEL[type]} seat is now ${money(r.data[type])} a month.`); }
   }
   async function setActive(p: Person, active: boolean) {
     setError(null);
@@ -152,7 +172,7 @@ export function WebOrganisationSection() {
               <div key={o.id} className="rounded border border-gray-200 p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium text-gray-900">{o.name}</div>
-                  <div className="text-xs text-gray-500">{o.activeSeats} of {o.seats} seats used</div>
+                  <div className="text-xs text-gray-500">{o.activeSeats} of {o.seats} seats used{!o.isPlatform && o.activeSeats > 0 ? ` · ${money(monthlyFor(o.id))} a month` : ''}</div>
                 </div>
                 {ctx.org.isPlatform && (
                   <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
@@ -165,6 +185,11 @@ export function WebOrganisationSection() {
                     <li key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
                       <span className={`min-w-[8rem] ${p.isActive ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{p.name}</span>
                       <span className="text-xs text-gray-500">{p.email} · {p.role}{p.lastSignIn ? ` · last sign-in ${p.lastSignIn.slice(0, 16)}` : ''}</span>
+                      {!o.isPlatform && (
+                        <select value={p.seatType} onChange={(e) => void setSeatType(p, e.target.value as SeatType)} title={SEAT_HINT[p.seatType]} className="rounded border border-gray-300 bg-brand-50 px-1 py-0.5 text-[11px] text-brand-800">
+                          {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} · {money(rates[t])}/mo</option>)}
+                        </select>
+                      )}
                       <span className="ml-auto flex gap-2 text-xs">
                         <button type="button" onClick={() => void resetPassword(p)} className="text-brand-700 hover:underline">Reset password</button>
                         {p.email !== ctx.user.email && <button type="button" onClick={() => void setActive(p, !p.isActive)} className="text-gray-600 hover:underline">{p.isActive ? 'Deactivate' : 'Reactivate'}</button>}
@@ -192,10 +217,30 @@ export function WebOrganisationSection() {
                 <option value="member">Member</option>
                 <option value="owner">Owner</option>
               </select>
+              <select value={newPerson.seatType} onChange={(e) => setNewPerson({ ...newPerson, seatType: e.target.value as SeatType })} title={SEAT_HINT[newPerson.seatType]} className="rounded border border-gray-300 px-2 py-1">
+                {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} seat · {money(rates[t])}/mo</option>)}
+              </select>
               <button type="button" onClick={() => void addPerson()} disabled={!newPerson.email || newPerson.password.length < 8} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Add {orgName(newPerson.orgId) ? `to ${orgName(newPerson.orgId)}` : ''}</button>
             </div>
-            <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats.</p>
+            <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats. The seat type sets the monthly rate: Full accountant has everything, Bookkeeper has the daily books and payroll, Business is for a company keeping its own books. The exact screens each person may use are set inside each company under Access &amp; Permissions.</p>
           </div>
+
+          {ctx.org.isPlatform && (
+            <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-seat-rates">
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-600">Seat rates (per seat, per month, CAD before HST)</div>
+              <div className="mt-1 flex flex-wrap items-center gap-4 text-sm">
+                {SEAT_TYPES.map((t) => (
+                  <label key={t} className="flex items-center gap-2 text-xs text-gray-700" title={SEAT_HINT[t]}>
+                    <span className="min-w-[5.5rem] font-medium">{SEAT_LABEL[t]}</span>
+                    <span className="text-gray-500">{money(rates[t])}</span>
+                    <input type="number" min={0} step={1} placeholder="new" value={rateDraft[t]} onChange={(e) => setRateDraft((d) => ({ ...d, [t]: e.target.value }))} className="w-20 rounded border border-gray-300 px-1 py-0.5" />
+                    <button type="button" onClick={() => void saveRate(t)} disabled={rateDraft[t] === ''} className="rounded-full bg-brand-700 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-brand-800 disabled:opacity-50">Set</button>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Each firm's card shows its monthly total from these rates and its active seats. Changing a rate changes every firm's total from now on.</p>
+            </div>
+          )}
 
           <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-company-files">
             <div className="flex flex-wrap items-center gap-2">

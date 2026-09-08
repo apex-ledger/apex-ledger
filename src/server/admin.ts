@@ -13,7 +13,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string }
-export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; isActive: boolean; createdAt: string; lastSignIn: string | null }
+export type SeatType = 'full' | 'bookkeeper' | 'business';
+export const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
+export const SEAT_TYPE_LABELS: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
+export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; createdAt: string; lastSignIn: string | null }
 
 let db: Database.Database | null = null;
 let dataDir = '';
@@ -44,6 +47,11 @@ export function openAdminStore(dir: string): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now')),
       last_sign_in TEXT
     );
+    CREATE TABLE IF NOT EXISTS seat_rates (
+      seat_type TEXT PRIMARY KEY,
+      cents INTEGER NOT NULL
+    );
+    INSERT OR IGNORE INTO seat_rates (seat_type, cents) VALUES ('full', 7900), ('bookkeeper', 5900), ('business', 3900);
     CREATE TABLE IF NOT EXISTS sign_in_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT NOT NULL,
@@ -84,6 +92,7 @@ export function openAdminStore(dir: string): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
     );
   `);
+  ensureColumns();
 }
 
 /** Sign-ins outlive the process: a session row holds the hash of the cookie token, the person,
@@ -182,6 +191,14 @@ function store(): Database.Database {
   return db;
 }
 
+/** Columns added after the first release, applied once; older stores gain them on start. */
+function ensureColumns(): void {
+  const cols = (store().prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name);
+  if (!cols.includes('seat_type')) store().exec("ALTER TABLE users ADD COLUMN seat_type TEXT NOT NULL DEFAULT 'full'");
+  // Earlier names for the same idea, before the owner settled on Full accountant / Bookkeeper / Business.
+  store().exec("UPDATE users SET seat_type = 'bookkeeper' WHERE seat_type = 'accountant'; UPDATE users SET seat_type = 'business' WHERE seat_type = 'readonly'; DELETE FROM seat_rates WHERE seat_type IN ('accountant', 'readonly')");
+}
+
 export function slugify(name: string): string {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'org';
 }
@@ -191,7 +208,7 @@ function hash(password: string, salt: string): string {
 }
 
 const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at) });
-const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
+const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
 
 export function listOrgs(): Org[] {
   return (store().prepare('SELECT * FROM orgs ORDER BY is_platform DESC, name').all() as Record<string, unknown>[]).map(mapOrg);
@@ -240,7 +257,27 @@ export function listUsers(orgId?: number): WebUser[] {
 }
 
 /** Adds a person to an organisation, refusing when every seat is taken. */
-export function createUser(input: { orgId: number; email: string; name: string; password: string; role?: 'owner' | 'member' }): WebUser {
+/** A seat's type sets what the person is billed at: Full accountant, Bookkeeper or Business. The role inside
+ * each company file is still set there; the type is the commercial label and the rate. */
+export function seatRates(): Record<SeatType, number> {
+  const out = { full: 7900, bookkeeper: 5900, business: 3900 } as Record<SeatType, number>;
+  for (const r of store().prepare('SELECT seat_type, cents FROM seat_rates').all() as { seat_type: string; cents: number }[]) if (SEAT_TYPES.includes(r.seat_type as SeatType)) out[r.seat_type as SeatType] = Number(r.cents);
+  return out;
+}
+export function setSeatRate(type: SeatType, cents: number): Record<SeatType, number> {
+  if (!SEAT_TYPES.includes(type)) throw new Error('Unknown seat type.');
+  if (!Number.isInteger(cents) || cents < 0 || cents > 100000000) throw new Error('Enter the monthly rate in dollars, 0 or more.');
+  store().prepare('INSERT INTO seat_rates (seat_type, cents) VALUES (?, ?) ON CONFLICT(seat_type) DO UPDATE SET cents = excluded.cents').run(type, cents);
+  return seatRates();
+}
+export function setUserSeatType(id: number, type: SeatType): WebUser {
+  if (!SEAT_TYPES.includes(type)) throw new Error('Unknown seat type.');
+  const r = store().prepare('UPDATE users SET seat_type = ? WHERE id = ? RETURNING *').get(type, id) as Record<string, unknown> | undefined;
+  if (!r) throw new Error('Person not found.');
+  return mapUser(r);
+}
+
+export function createUser(input: { orgId: number; email: string; name: string; password: string; role?: 'owner' | 'member'; seatType?: SeatType }): WebUser {
   const org = getOrg(input.orgId);
   if (!org) throw new Error('Organisation not found.');
   const email = input.email.trim().toLowerCase();
@@ -248,7 +285,8 @@ export function createUser(input: { orgId: number; email: string; name: string; 
   if (input.password.length < 8) throw new Error('The password needs at least 8 characters.');
   if (!org.isPlatform && countActiveUsers(org.id) >= org.seats) throw new Error(`${org.name} has all ${org.seats} seats in use. Add a seat or deactivate someone first.`);
   const salt = crypto.randomBytes(16).toString('hex');
-  const r = store().prepare('INSERT INTO users (org_id, email, name, role, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, email, input.name.trim() || email, input.role ?? 'member', hash(input.password, salt), salt) as Record<string, unknown>;
+  const seatType = input.seatType && SEAT_TYPES.includes(input.seatType) ? input.seatType : 'full';
+  const r = store().prepare('INSERT INTO users (org_id, email, name, role, seat_type, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, email, input.name.trim() || email, input.role ?? 'member', seatType, hash(input.password, salt), salt) as Record<string, unknown>;
   return mapUser(r);
 }
 

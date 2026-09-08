@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createFeedback, createOrg, createTrialRequest, createUser, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createFeedback, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -357,10 +357,15 @@ app.post('/api/admin/orgs/:id/seats', (req, res) => { const s = requirePlatform(
 app.get('/api/admin/users', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => listUsers(s.org.isPlatform ? undefined : s.org.id))); });
 app.post('/api/admin/users', (req, res) => {
   const s = requirePlatform(req, res); if (!s) return;
-  const body = (req.body ?? {}) as { orgId?: number; email?: string; name?: string; password?: string; role?: 'owner' | 'member' };
+  const body = (req.body ?? {}) as { orgId?: number; email?: string; name?: string; password?: string; role?: 'owner' | 'member'; seatType?: SeatType };
   const orgId = s.org.isPlatform ? Number(body.orgId ?? s.org.id) : s.org.id;
-  res.json(wrap(() => createUser({ orgId, email: body.email ?? '', name: body.name ?? '', password: body.password ?? '', role: body.role })));
+  res.json(wrap(() => createUser({ orgId, email: body.email ?? '', name: body.name ?? '', password: body.password ?? '', role: body.role, seatType: body.seatType })));
 });
+// Seat types and their monthly rates: the platform administrator sets the rates; an owner may
+// change the type of their own people (it changes what the firm is billed).
+app.get('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => seatRates())); });
+app.post('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { seatType?: SeatType; dollars?: number }; res.json(wrap(() => setSeatRate(b.seatType as SeatType, Math.round(Number(b.dollars) * 100)))); });
+app.post('/api/admin/users/:id/seat-type', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); return setUserSeatType(u.id, (req.body ?? {}).seatType as SeatType); })); });
 app.post('/api/admin/users/:id/active', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); return setUserActive(u.id, Boolean((req.body ?? {}).active)); })); });
 app.post('/api/admin/users/:id/password', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); setUserPassword(u.id, String((req.body ?? {}).password ?? '')); return true; })); });
 app.post('/api/me/password', (req, res) => { const s = sessionOf(req); if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; } res.json(wrap(() => { setUserPassword(s.user.id, String((req.body ?? {}).password ?? '')); return true; })); });
