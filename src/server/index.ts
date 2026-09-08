@@ -235,6 +235,84 @@ function asDownload(result: unknown): unknown {
   return { ...r, data: { ...(r!.data as object), filePath: `/api/download/${encodeURIComponent(file)}`, download: true, fileName: file.includes('__') ? file.slice(file.indexOf('__') + 2) : file } };
 }
 
+// ---- company files: upload an existing .company, download a copy ----
+// An owner (or the platform administrator, for any organisation) can bring a company file made on
+// the desktop or in another organisation into their folder, and take a consistent copy out again.
+// Uploads must be real SQLite files with the .company extension; a name already in the folder is
+// refused unless ?replace=1, and a file that a session currently has open is never replaced.
+const SQLITE_HEADER = 'SQLite format 3\u0000';
+function orgForFiles(s: Session, req: express.Request): Org {
+  const requested = Number(req.query.org ?? s.org.id);
+  if (!s.org.isPlatform && requested !== s.org.id) throw new Error('That organisation is not yours.');
+  const org = getOrg(requested);
+  if (!org) throw new Error('Organisation not found.');
+  return org;
+}
+function safeCompanyName(name: string): string {
+  const base = path.basename(name).replace(/[<>:"/\\|?*\x00-\x1f]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const withExt = base.toLowerCase().endsWith('.company') ? base : `${base}.company`;
+  if (withExt.length < 9 || withExt.startsWith('.')) throw new Error('Give the file a name, ending in .company.');
+  return withExt;
+}
+function isOpenAnywhere(filePath: string): boolean {
+  for (const other of sessions.values()) {
+    const open = runWithCompanyContext(other.company, () => getCurrentFilePath());
+    if (open && path.resolve(open).toLowerCase() === path.resolve(filePath).toLowerCase()) return true;
+  }
+  return false;
+}
+app.get('/api/org/companies', (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  res.json(wrap(() => {
+    const org = orgForFiles(s, req);
+    const dir = companiesDirFor(org);
+    fs.mkdirSync(dir, { recursive: true });
+    return fs.readdirSync(dir).filter((f) => f.endsWith('.company')).sort().map((f) => {
+      const st = fs.statSync(path.join(dir, f));
+      return { name: f, bytes: st.size, modified: st.mtime.toISOString(), open: isOpenAnywhere(path.join(dir, f)) };
+    });
+  }));
+});
+app.put('/api/org/companies', express.raw({ type: () => true, limit: '2gb' }), (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  res.json(wrap(() => {
+    const org = orgForFiles(s, req);
+    const name = safeCompanyName(decodeURIComponent(String(req.headers['x-file-name'] ?? '')));
+    const body = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+    if (body.length < 512 || body.subarray(0, 16).toString('latin1') !== SQLITE_HEADER) throw new Error('That is not an Apex Ledger company file.');
+    const dir = companiesDirFor(org);
+    fs.mkdirSync(dir, { recursive: true });
+    const target = path.join(dir, name);
+    if (fs.existsSync(target)) {
+      if (String(req.query.replace ?? '') !== '1') throw new Error(`${name} is already in ${org.name}. Tick "replace" to overwrite it, or rename the file first.`);
+      if (isOpenAnywhere(target)) throw new Error(`${name} is open right now. Ask everyone to close it, then try again.`);
+      for (const suffix of ['-wal', '-shm']) fs.rmSync(`${target}${suffix}`, { force: true });
+    }
+    fs.writeFileSync(`${target}.uploading`, body);
+    fs.renameSync(`${target}.uploading`, target);
+    return { name, bytes: body.length, org: org.name };
+  }));
+});
+app.get('/api/org/companies/download', async (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  try {
+    const org = orgForFiles(s, req);
+    const name = safeCompanyName(String(req.query.name ?? ''));
+    const source = path.join(companiesDirFor(org), name);
+    if (!fs.existsSync(source)) { res.status(404).json({ ok: false, error: 'Company file not found.' }); return; }
+    // A consistent copy even while someone has it open: SQLite's online backup folds in the WAL.
+    const copy = path.join(DOWNLOAD_DIR, `${Date.now().toString(36)}-${crypto.randomBytes(4).toString('hex')}__${name}`);
+    const { default: Database } = await import('better-sqlite3');
+    const db = new Database(source, { readonly: true });
+    try { await db.backup(copy); } finally { db.close(); }
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${name.replace(/"/g, '')}"`);
+    res.sendFile(copy, (err) => { if (!err) fs.rm(copy, { force: true }, () => undefined); });
+  } catch (e) {
+    res.status(400).json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
 // ---- uploads: the browser's side of a file picker ----
 // The screen sends each chosen file here first (raw body, name in a header) and gets a token; the
 // request that follows names the tokens, and the stub's file picker hands the handler those files.

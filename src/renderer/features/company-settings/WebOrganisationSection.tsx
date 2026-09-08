@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** Settings → Organisation & seats, on the web only.
  *
@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number }
 interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; isActive: boolean; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
+interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
   try {
@@ -32,7 +33,19 @@ export function WebOrganisationSection() {
   const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner' });
   const [newOrg, setNewOrg] = useState({ name: '', seats: 2 });
   const [myPassword, setMyPassword] = useState('');
+  const [files, setFiles] = useState<CompanyFile[]>([]);
+  const [filesOrg, setFilesOrg] = useState(0);
+  const [replace, setReplace] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
   const canManage = !!ctx && (ctx.org.isPlatform || ctx.user.role === 'owner');
+
+  const reloadFiles = useCallback(async (orgId: number) => {
+    if (!canManage || !orgId) return;
+    const r = await call<CompanyFile[]>(`/api/org/companies?org=${orgId}`);
+    if (r.ok) setFiles(r.data); else setError(r.error);
+  }, [canManage]);
+  useEffect(() => { void reloadFiles(filesOrg); }, [filesOrg, reloadFiles]);
 
   const reload = useCallback(async () => {
     if (!canManage) return;
@@ -42,6 +55,7 @@ export function WebOrganisationSection() {
   }, [canManage]);
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => { if (orgs.length && !newPerson.orgId) setNewPerson((n) => ({ ...n, orgId: orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id })); }, [orgs, newPerson.orgId]);
+  useEffect(() => { if (orgs.length && !filesOrg) setFilesOrg(ctx?.org.isPlatform ? (orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id) : (orgs.find((o) => o.name === ctx?.org.name)?.id ?? orgs[0].id)); }, [orgs, filesOrg, ctx]);
 
   if (!ctx) return null;
 
@@ -76,6 +90,21 @@ export function WebOrganisationSection() {
     const r = await call<Org>(`/api/admin/orgs/${o.id}/seats`, { seats });
     if (!r.ok) setError(r.error); else void reload();
   }
+  async function uploadCompany(file: File) {
+    setError(null); setNotice(null); setUploading(true);
+    try {
+      const res = await fetch(`/api/org/companies?org=${filesOrg}${replace ? '&replace=1' : ''}`, { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) }, body: file });
+      const r = (await res.json()) as Result<{ name: string; org: string }>;
+      if (!r.ok) setError(r.error); else { setNotice(`${r.data.name} is now in ${r.data.org}. It appears under Open Company.`); void reloadFiles(filesOrg); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUploading(false);
+      if (fileInput.current) fileInput.current.value = '';
+    }
+  }
+  const sizeOf = (bytes: number) => bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
   async function changeMyPassword() {
     setError(null);
     const r = await call<boolean>('/api/me/password', { password: myPassword });
@@ -152,6 +181,34 @@ export function WebOrganisationSection() {
               <button type="button" onClick={() => void addPerson()} disabled={!newPerson.email || newPerson.password.length < 8} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Add {orgName(newPerson.orgId) ? `to ${orgName(newPerson.orgId)}` : ''}</button>
             </div>
             <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats.</p>
+          </div>
+
+          <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-company-files">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-600">Company files</div>
+              {ctx.org.isPlatform && (
+                <select value={filesOrg} onChange={(e) => setFilesOrg(Number(e.target.value))} className="rounded border border-gray-300 px-2 py-0.5 text-xs">
+                  {orgs.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              )}
+              <span className="text-xs text-gray-500">{files.length} file{files.length === 1 ? '' : 's'} · no limit</span>
+            </div>
+            <ul className="mt-2 divide-y divide-gray-100 text-sm">
+              {files.map((f) => (
+                <li key={f.name} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
+                  <span className="min-w-[14rem] text-gray-900">{f.name.replace(/\.company$/, '')}</span>
+                  <span className="text-xs text-gray-500">{sizeOf(f.bytes)} · changed {f.modified.slice(0, 10)}{f.open ? ' · open now' : ''}</span>
+                  <a href={`/api/org/companies/download?org=${filesOrg}&name=${encodeURIComponent(f.name)}`} className="ml-auto text-xs text-brand-700 hover:underline">Download a copy</a>
+                </li>
+              ))}
+              {files.length === 0 && <li className="py-1 text-xs text-gray-400">No company files yet. Create one from the welcome screen, or upload a .company file made on the desktop.</li>}
+            </ul>
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
+              <input ref={fileInput} type="file" accept=".company" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCompany(f); }} />
+              <button type="button" onClick={() => fileInput.current?.click()} disabled={uploading || !filesOrg} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">{uploading ? 'Uploading…' : 'Upload a company file'}</button>
+              <label className="flex items-center gap-1 text-xs text-gray-600"><input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} /> Replace a file with the same name</label>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-500">Upload the .company file from the desktop app or another firm and it opens here like any other. A file someone has open is never replaced. Download gives a consistent copy even while it is in use.</p>
           </div>
 
           {ctx.org.isPlatform && (

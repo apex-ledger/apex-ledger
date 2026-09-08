@@ -66,8 +66,12 @@ On a server there is only Node, so a plain `npm ci` is right.
   Folder pickers (second backup folder, save-all statements) stay cancelled on the web.
 - Backups: the server's disk is backed up as a whole; the in-app second backup folder is not used.
 - Voice: off by default and best left off on a server; typing does everything.
-- The demo and test companies are desktop features; upload a `.company` file into the
-  organisation's folder instead.
+- The demo and test companies are desktop features. Settings, Organisation & seats, Company
+  files lists the organisation's files, uploads a `.company` made on the desktop or elsewhere
+  (`PUT /api/org/companies`, SQLite header checked, no overwrite unless asked, never while open)
+  and downloads a consistent copy (`GET /api/org/companies/download`, SQLite online backup so an
+  open file with a WAL still copies whole). The platform administrator can do this for any
+  organisation; an owner for their own.
 
 ## Azure, Canada Central
 
