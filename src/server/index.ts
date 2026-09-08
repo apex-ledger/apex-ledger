@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, getOrg, listOrgs, listTrialRequests, listUsers, openAdminStore, recentFailures, setTrialRequestStatus, setUserActive, setUserPassword, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createOrg, createTrialRequest, createUser, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -53,16 +53,62 @@ interface Session {
   createdAt: number;
   lastSeen: number;
   listeners: Set<express.Response>;
+  /** The company file this session had open when the row was saved; reopened on the next request after a restart. */
+  pendingCompany: string | null;
+  savedCompany: string | null;
+  persistedAt: number;
 }
 const sessions = new Map<string, Session>();
 const sessionContext = new AsyncLocalStorage<Session>();
 let nextSessionId = 1;
+const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('base64url');
+const cleaned = purgeSessions();
+if (cleaned) console.log(`[web] removed ${cleaned} expired sessions`);
+
+function buildSession(token: string, user: WebUser, org: Org, pendingCompany: string | null): Session {
+  const s: Session = { id: nextSessionId++, token, user, org, company: { connection: null }, createdAt: Date.now(), lastSeen: Date.now(), listeners: new Set(), pendingCompany, savedCompany: pendingCompany, persistedAt: Date.now() };
+  sessions.set(token, s);
+  runWithAccessSession(s.id, () => setAccessIdentity({ key: `web:${user.id}`, name: user.name, email: user.email }));
+  return s;
+}
 
 function newSession(user: WebUser, org: Org): Session {
   const token = crypto.randomBytes(32).toString('base64url');
-  const s: Session = { id: nextSessionId++, token, user, org, company: { connection: null }, createdAt: Date.now(), lastSeen: Date.now(), listeners: new Set() };
-  sessions.set(token, s);
-  return s;
+  saveSession(hashToken(token), user.id);
+  return buildSession(token, user, org, null);
+}
+
+/** After a restart (or after an idle session was dropped from memory) the cookie still names a
+ * saved session: rebuild it from the row and reopen its company on the next request. */
+function restoreSession(token: string): Session | null {
+  const row = findSession(hashToken(token));
+  if (!row) return null;
+  const user = getUser(row.userId);
+  const org = user ? getOrg(user.orgId) : null;
+  if (!user || !user.isActive || !org) { deleteSession(hashToken(token)); return null; }
+  const pending = row.companyPath && fs.existsSync(row.companyPath) ? row.companyPath : null;
+  return buildSession(token, user, org, pending);
+}
+
+/** Writes last-seen and the open company to the row, at most every few minutes unless the company changed. */
+function persistSession(s: Session, force = false): void {
+  const open = runWithCompanyContext(s.company, () => getCurrentFilePath()) ?? s.pendingCompany;
+  const changed = open !== s.savedCompany;
+  if (!force && !changed && Date.now() - s.persistedAt < 5 * 60_000) return;
+  touchSession(hashToken(s.token), open);
+  s.savedCompany = open;
+  s.persistedAt = Date.now();
+}
+
+async function reopenPendingCompany(s: Session): Promise<void> {
+  const file = s.pendingCompany;
+  if (!file) return;
+  s.pendingCompany = null;
+  try {
+    await runWithCompanyContext(s.company, () => openCompany(new BrowserWindow() as never, file));
+  } catch (e) {
+    console.warn('[web] could not reopen', file, e instanceof Error ? e.message : e);
+  }
 }
 
 function readCookie(req: express.Request, name: string): string | null {
@@ -75,22 +121,27 @@ function readCookie(req: express.Request, name: string): string | null {
 
 function sessionOf(req: express.Request): Session | null {
   const token = readCookie(req, 'apex_session');
-  const s = token ? sessions.get(token) ?? null : null;
-  if (s) s.lastSeen = Date.now();
+  if (!token || !/^[A-Za-z0-9_-]{20,}$/.test(token)) return null;
+  const s = sessions.get(token) ?? restoreSession(token);
+  if (s) { s.lastSeen = Date.now(); persistSession(s); }
   return s;
 }
 
-function endSession(s: Session): void {
+/** Drops a session from memory (closing its company) and, when signing out, from the store too. */
+function endSession(s: Session, forget: boolean): void {
+  if (!forget) persistSession(s, true);
   runWithCompanyContext(s.company, () => { try { closeCompany(); } catch { /* already closed */ } });
   clearAccessSession(s.id);
   for (const res of s.listeners) res.end();
   sessions.delete(s.token);
+  if (forget) deleteSession(hashToken(s.token));
 }
 
-/** Idle sessions close their company and go away after two hours. */
+/** Idle sessions close their company and leave memory after two hours; the person is still
+ * signed in and comes back to the same company on their next request. */
 setInterval(() => {
   const cutoff = Date.now() - 2 * 60 * 60 * 1000;
-  for (const s of [...sessions.values()]) if (s.lastSeen < cutoff) endSession(s);
+  for (const s of [...sessions.values()]) if (s.lastSeen < cutoff) endSession(s, false);
 }, 60_000).unref();
 
 function sendToSession(s: Session, channel: string, payload: unknown): void {
@@ -188,14 +239,13 @@ app.post('/api/login', (req, res) => {
   if (!user) { res.status(401).json({ ok: false, error: 'Wrong email or password.' }); return; }
   const org = getOrg(user.orgId)!;
   const s = newSession(user, org);
-  runWithAccessSession(s.id, () => setAccessIdentity({ key: `web:${user.id}`, name: user.name, email: user.email }));
-  res.setHeader('Set-Cookie', `apex_session=${s.token}; HttpOnly; SameSite=Strict; Path=/${req.secure ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', `apex_session=${s.token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${SESSION_DAYS * 86400}${req.secure ? '; Secure' : ''}`);
   res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
 });
 
 app.post('/api/logout', (req, res) => {
   const s = sessionOf(req);
-  if (s) endSession(s);
+  if (s) endSession(s, true);
   res.setHeader('Set-Cookie', 'apex_session=; Max-Age=0; Path=/');
   res.json({ ok: true, data: null });
 });
@@ -371,6 +421,7 @@ app.post('/api/:channel', async (req, res) => {
   const args = Array.isArray((req.body ?? {}).args) ? (req.body.args as unknown[]) : [];
   const files = uploadedFiles(s, (req.body ?? {}).uploads);
   res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });
+  if (s.pendingCompany) await reopenPendingCompany(s);
   try {
     const result = await uploadContext.run(files, () => sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {
       const override = overrides[channel];
@@ -380,6 +431,7 @@ app.post('/api/:channel', async (req, res) => {
       return handler({ sender: { id: s.id } }, ...args);
     }))));
     res.json(asDownload(result) ?? { ok: true, data: null });
+    if (channel.startsWith('company:')) persistSession(s);
   } catch (error) {
     res.json({ ok: false, error: error instanceof Error ? error.message : String(error) });
   }

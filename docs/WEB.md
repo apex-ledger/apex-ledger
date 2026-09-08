@@ -43,8 +43,11 @@ On a server there is only Node, so a plain `npm ci` is right.
 
 ## Sign-in, organisations, seats
 
-- `POST /api/login { email, password }` sets an HttpOnly session cookie. Eight failed attempts from
-  one address in 15 minutes are refused for 15 minutes.
+- `POST /api/login { email, password }` sets an HttpOnly session cookie good for 30 days. Eight
+  failed attempts from one address in 15 minutes are refused for 15 minutes. Sessions are rows in
+  web-admin.db (token hash, person, open company), so a restart or a deploy signs nobody out: the
+  next request rebuilds the session and reopens the company it had. Sign out deletes the row.
+  Idle sessions leave memory after two hours and come back the same way.
 - Inside the app the person is already identified (the desktop's shared-PIN gate is skipped) and
   their name stamps every entry and the Activity Log.
 - Platform admin endpoints (`/api/admin/orgs`, `/api/admin/orgs/:id/seats`, `/api/admin/users`,

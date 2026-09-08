@@ -51,6 +51,13 @@ export function openAdminStore(dir: string): void {
       ip TEXT,
       at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%f', 'now'))
     );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token_hash TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      company_path TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now')),
+      last_seen TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+    );
     CREATE TABLE IF NOT EXISTS trial_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       firm TEXT NOT NULL,
@@ -65,6 +72,32 @@ export function openAdminStore(dir: string): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
     );
   `);
+}
+
+/** Sign-ins outlive the process: a session row holds the hash of the cookie token, the person,
+ * and the company they had open, so a restart or a deploy reconnects them where they were. Rows
+ * older than SESSION_DAYS without activity are gone; the cookie carries the same lifetime. */
+export const SESSION_DAYS = 30;
+export interface SessionRow { userId: number; companyPath: string | null; lastSeen: string }
+export function saveSession(tokenHash: string, userId: number): void {
+  store().prepare('INSERT OR REPLACE INTO sessions (token_hash, user_id) VALUES (?, ?)').run(tokenHash, userId);
+}
+export function findSession(tokenHash: string): SessionRow | null {
+  const r = store().prepare(`SELECT user_id, company_path, last_seen FROM sessions WHERE token_hash = ? AND last_seen > strftime('%Y-%m-%d %H:%M:%S', 'now', '-${SESSION_DAYS} days')`).get(tokenHash) as Record<string, unknown> | undefined;
+  return r ? { userId: Number(r.user_id), companyPath: r.company_path ? String(r.company_path) : null, lastSeen: String(r.last_seen) } : null;
+}
+export function touchSession(tokenHash: string, companyPath: string | null): void {
+  store().prepare("UPDATE sessions SET last_seen = strftime('%Y-%m-%d %H:%M:%S', 'now'), company_path = ? WHERE token_hash = ?").run(companyPath, tokenHash);
+}
+export function deleteSession(tokenHash: string): void {
+  store().prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenHash);
+}
+export function purgeSessions(): number {
+  return Number(store().prepare(`DELETE FROM sessions WHERE last_seen <= strftime('%Y-%m-%d %H:%M:%S', 'now', '-${SESSION_DAYS} days')`).run().changes);
+}
+export function getUser(id: number): WebUser | null {
+  const r = store().prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  return r ? mapUser(r) : null;
 }
 
 /** A trial request from the public website: who they are, which edition, how many seats. The
