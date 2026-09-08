@@ -2,7 +2,8 @@
 # Prepares an Ubuntu 22.04 VM to run the Apex Ledger web server, and (re)deploys the bundle
 # uploaded to /home/apex/apexledger-release.tgz. Safe to run again for an update.
 #
-#   sudo bash setup-vm.sh <public-host-name> <admin-email> <admin-password> [seed-orgs]
+#   sudo APP_DOMAIN=apexledger.ca bash setup-vm.sh <public-host-name> <admin-email> <admin-password> [seed-orgs]
+# APP_DOMAIN adds app.<domain> for the application and <domain> + www for the public site.
 #
 # What it does: mounts the data disk at /srv/apex (company files live there), installs Node 20 and
 # Caddy, unpacks the release into /opt/apexledger, installs production dependencies, writes the
@@ -91,8 +92,13 @@ systemctl enable apexledger >/dev/null
 systemctl restart apexledger
 
 echo "== https"
+# The public site (website/) is served from /var/www/apexledger when it has been uploaded.
+mkdir -p /var/www/apexledger
+if [ -d /home/apex/website ]; then rm -rf /var/www/apexledger/* && cp -r /home/apex/website/. /var/www/apexledger/ && chown -R www-data:www-data /var/www/apexledger; fi
+APP_HOSTS="${HOST}"
+[ -n "${APP_DOMAIN:-}" ] && APP_HOSTS="${APP_HOSTS}, app.${APP_DOMAIN}"
 cat > /etc/caddy/Caddyfile <<EOF
-${HOST} {
+${APP_HOSTS} {
 	encode gzip
 	reverse_proxy localhost:8787
 	header {
@@ -103,6 +109,20 @@ ${HOST} {
 	}
 }
 EOF
+if [ -n "${APP_DOMAIN:-}" ]; then cat >> /etc/caddy/Caddyfile <<EOF
+
+${APP_DOMAIN}, www.${APP_DOMAIN} {
+	encode gzip
+	root * /var/www/apexledger
+	file_server
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
+EOF
+fi
 systemctl enable caddy >/dev/null
 systemctl restart caddy
 
