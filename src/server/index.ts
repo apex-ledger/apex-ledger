@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
 import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
-import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
+import { runWithAccessSession, clearAccessSession, setAccessIdentity, applySeatAccess, getAccessRole, SEAT_ACCESS } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
 import { setBroadcastSink } from '../main/windows';
 import { companyGet } from '../main/ipc/company.handlers';
@@ -69,7 +69,7 @@ if (cleaned) console.log(`[web] removed ${cleaned} expired sessions`);
 function buildSession(token: string, user: WebUser, org: Org, pendingCompany: string | null): Session {
   const s: Session = { id: nextSessionId++, token, user, org, company: { connection: null }, createdAt: Date.now(), lastSeen: Date.now(), listeners: new Set(), pendingCompany, savedCompany: pendingCompany, persistedAt: Date.now() };
   sessions.set(token, s);
-  runWithAccessSession(s.id, () => setAccessIdentity({ key: `web:${user.id}`, name: user.name, email: user.email }));
+  runWithAccessSession(s.id, () => { setAccessIdentity({ key: `web:${user.id}`, name: user.name, email: user.email }); applySeatAccess(user.seatType); });
   return s;
 }
 
@@ -171,6 +171,8 @@ setBroadcastSink((channel, payload) => {
 
 /** Channels the web answers itself, where the desktop would open a file dialog. */
 const overrides: Record<string, (s: Session, args: unknown[]) => Promise<unknown>> = {
+  // The seat decides the role on the web; a screen asking for another role gets the seat's role back.
+  'access:setRole': async (s) => (s.user.seatType === 'full' ? applySeatAccess('full') : getAccessRole()),
   'company:listRecent': async (s) => {
     const dir = companiesDirFor(s.org);
     fs.mkdirSync(dir, { recursive: true });
@@ -278,7 +280,7 @@ app.post('/api/login', (req, res) => {
   const org = getOrg(user.orgId)!;
   const s = newSession(user, org);
   res.setHeader('Set-Cookie', sessionCookie(req, s));
-  res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
+  res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role, seatType: user.seatType, accessRole: SEAT_ACCESS[user.seatType].role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
 });
 
 // ---- sign in with Microsoft or Google ----
@@ -338,7 +340,7 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/session', (req, res) => {
   const s = sessionOf(req);
-  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
+  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role, seatType: s.user.seatType, accessRole: SEAT_ACCESS[s.user.seatType].role }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
 });
 
 app.get('/api/events', (req, res) => {

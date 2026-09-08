@@ -61,6 +61,25 @@ export function getAccessRole(): AccessRole {
   return sessionState().role;
 }
 
+/** On the web the seat a person was given decides what they can reach, and nothing inside the
+ * application can raise it. Full accountant: everything. Bookkeeper: the daily books, HST and
+ * payroll. Payroll Unlimited: payroll alone. Business: its own books, HST and inventory, without
+ * the accountant's tools. The desktop keeps letting the local user pick a role. */
+export type WebSeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
+export const SEAT_ACCESS: Record<WebSeatType, { role: AccessRole; permissions: AccessPermission[] }> = {
+  full: { role: 'administrator', permissions: [...ROLE_PERMISSIONS.administrator] },
+  bookkeeper: { role: 'bookkeeper', permissions: ['sales', 'purchases', 'banking', 'inventory', 'tax', 'payroll'] },
+  payroll: { role: 'payroll', permissions: ['payroll'] },
+  business: { role: 'bookkeeper', permissions: ['sales', 'purchases', 'banking', 'inventory', 'tax', 'company'] },
+};
+export function applySeatAccess(seat: WebSeatType): AccessRole {
+  const profile = SEAT_ACCESS[seat] ?? SEAT_ACCESS.full;
+  const state = sessionState();
+  state.role = profile.role;
+  state.permissions = [...profile.permissions];
+  return state.role;
+}
+
 const SALES_TOPICS = new Set(['customers', 'invoices', 'salesReceipts', 'estimates', 'deposits']);
 const PURCHASE_TOPICS = new Set(['vendors', 'bills', 'purchaseOrders']);
 const BANKING_TOPICS = new Set(['bankImport', 'bankReconciliation', 'receiptInbox']);
