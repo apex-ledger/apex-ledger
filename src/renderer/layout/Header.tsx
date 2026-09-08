@@ -1069,7 +1069,7 @@ export function Header() {
         <ActionButton icon={<IconBank />} label="Import Bank" onClick={() => setView({ kind: 'bankImport' })} color="blue" />
         <ActionButton icon={<IconCamera />} label="Scan Receipt" onClick={handleScanReceipt} busy={importingReceipt} />
         <ActionButton icon={<IconBook />} label="Journal Entry" onClick={() => setView({ kind: 'journalForm', id: 'new' })} color="violet" />
-        <ActionButton icon={<IconCloudUpload />} label="Backup" onClick={handleBackup} busy={backingUp} color="purple" />
+        {!isWeb() && <ActionButton icon={<IconCloudUpload />} label="Backup" onClick={handleBackup} busy={backingUp} color="purple" />}
         <ActionButton icon={<IconRefresh />} label="Refresh" onClick={bumpRefreshNonce} color="gray" />
         {!isWeb() && <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />}
         <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />

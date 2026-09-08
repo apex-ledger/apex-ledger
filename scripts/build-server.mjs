@@ -25,7 +25,7 @@ await build({
   },
   external: ['better-sqlite3', '@huggingface/transformers', 'tesseract.js', 'pdfjs-dist', 'pdfjs-dist/*', 'sharp', 'onnxruntime-node', 'express', 'jimp', 'pdf-lib', 'fflate', 'pngjs', 'kysely', 'zod'],
   loader: { '.sql': 'text' },
-  define: { 'import.meta.env.DEV': 'false', 'import.meta.env.PROD': 'true', 'import.meta.env.MODE': '"production"' },
+  define: { 'import.meta.env.DEV': 'false', 'import.meta.env.PROD': 'true', 'import.meta.env.MODE': '"production"', 'process.env.APEX_VERSION': JSON.stringify(JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version) },
   banner: { js: "import { createRequire as __createRequire } from 'node:module'; const require = __createRequire(import.meta.url);" },
   logLevel: 'info',
 });
