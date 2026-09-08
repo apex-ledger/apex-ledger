@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createFeedback, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -241,6 +241,14 @@ function siteCors(req: express.Request, res: express.Response): void {
   }
 }
 app.options('/api/trial-request', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.options('/api/site-feedback', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.post('/api/site-feedback', (req, res) => {
+  siteCors(req, res);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  if (String(body.website ?? '').trim()) { res.json({ ok: true, data: { received: true } }); return; }
+  const r = wrap(() => { const n = createSiteFeedback(body, req.ip ?? null); console.log(`[site-feedback] ${n.userName} <${n.email}>: ${n.message.slice(0, 120)}`); return { received: true }; });
+  res.status(r.ok ? 200 : 400).json(r);
+});
 app.post('/api/trial-request', (req, res) => {
   siteCors(req, res);
   const body = (req.body ?? {}) as Record<string, unknown>;
@@ -352,7 +360,9 @@ function requirePlatform(req: express.Request, res: express.Response): Session |
 }
 const wrap = (fn: () => unknown) => { try { return { ok: true, data: fn() }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } };
 app.get('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => (s.org.isPlatform ? listOrgs() : [s.org]).map((o) => ({ ...o, activeSeats: listUsers(o.id).filter((u) => u.isActive).length })))); });
-app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => createOrg(req.body ?? {}))); });
+app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); })); });
+app.get('/api/admin/founding', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { ...FOUNDING, used: foundingFirmsCount() } }); });
+app.post('/api/admin/orgs/:id/founding', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const on = Boolean((req.body ?? {}).on); if (on && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return setOrgFounding(Number(req.params.id), on); })); });
 app.post('/api/admin/orgs/:id/seats', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => updateOrgSeats(Number(req.params.id), Number((req.body ?? {}).seats)))); });
 app.get('/api/admin/users', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => listUsers(s.org.isPlatform ? undefined : s.org.id))); });
 app.post('/api/admin/users', (req, res) => {

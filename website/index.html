@@ -15,7 +15,7 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#081613">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ApexLedger","applicationCategory":"BusinessApplication","operatingSystem":"Web browser","url":"https://apexledger.ca/","description":"Canadian web accounting for accountants and bookkeepers: client books, bank reconciliation, GST/HST, payroll for every province, GIFI and T2 working papers, client CRM and a year-end sign-off. Hosted in Canada.","offers":[{"@type":"Offer","name":"Accounting Essential","price":"39","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Payroll","price":"49","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Ultimate Suite","price":"79","priceCurrency":"CAD","description":"Per seat per month after a free month"}],"areaServed":[{"@type":"Country","name":"Canada"},{"@type":"City","name":"Toronto"},{"@type":"City","name":"Mississauga"},{"@type":"City","name":"Brampton"},{"@type":"City","name":"Vaughan"},{"@type":"City","name":"Markham"},{"@type":"City","name":"Richmond Hill"},{"@type":"City","name":"Oakville"},{"@type":"City","name":"Burlington"},{"@type":"City","name":"Hamilton"},{"@type":"City","name":"Ottawa"},{"@type":"City","name":"London"},{"@type":"City","name":"Kitchener-Waterloo"},{"@type":"City","name":"Windsor"},{"@type":"City","name":"Barrie"},{"@type":"City","name":"Oshawa"},{"@type":"City","name":"Montreal"},{"@type":"City","name":"Laval"},{"@type":"City","name":"Quebec City"},{"@type":"City","name":"Gatineau"},{"@type":"City","name":"Vancouver"},{"@type":"City","name":"Surrey"},{"@type":"City","name":"Burnaby"},{"@type":"City","name":"Richmond"},{"@type":"City","name":"Victoria"},{"@type":"City","name":"Kelowna"},{"@type":"City","name":"Calgary"},{"@type":"City","name":"Edmonton"},{"@type":"City","name":"Red Deer"},{"@type":"City","name":"Winnipeg"},{"@type":"City","name":"Saskatoon"},{"@type":"City","name":"Regina"},{"@type":"City","name":"Halifax"},{"@type":"City","name":"Moncton"},{"@type":"City","name":"St. John's"},{"@type":"City","name":"Charlottetown"}],"provider":{"@type":"Organization","name":"ApexLedger","url":"https://apexledger.ca/","email":"admin@apexledger.ca","address":{"@type":"PostalAddress","addressLocality":"Mississauga","addressRegion":"ON","addressCountry":"CA"}}}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"ApexLedger","applicationCategory":"BusinessApplication","operatingSystem":"Web browser","url":"https://apexledger.ca/","description":"Canadian web accounting for accountants and bookkeepers: client books, bank reconciliation, GST/HST, payroll for every province, GIFI and T2 working papers, client CRM and a year-end sign-off. Hosted in Canada.","offers":[{"@type":"Offer","name":"Business seat","price":"39","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Bookkeeper seat","price":"59","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Full accountant seat","price":"79","priceCurrency":"CAD","description":"Per seat per month after a free month"}],"areaServed":[{"@type":"Country","name":"Canada"},{"@type":"City","name":"Toronto"},{"@type":"City","name":"Mississauga"},{"@type":"City","name":"Brampton"},{"@type":"City","name":"Vaughan"},{"@type":"City","name":"Markham"},{"@type":"City","name":"Richmond Hill"},{"@type":"City","name":"Oakville"},{"@type":"City","name":"Burlington"},{"@type":"City","name":"Hamilton"},{"@type":"City","name":"Ottawa"},{"@type":"City","name":"London"},{"@type":"City","name":"Kitchener-Waterloo"},{"@type":"City","name":"Windsor"},{"@type":"City","name":"Barrie"},{"@type":"City","name":"Oshawa"},{"@type":"City","name":"Montreal"},{"@type":"City","name":"Laval"},{"@type":"City","name":"Quebec City"},{"@type":"City","name":"Gatineau"},{"@type":"City","name":"Vancouver"},{"@type":"City","name":"Surrey"},{"@type":"City","name":"Burnaby"},{"@type":"City","name":"Richmond"},{"@type":"City","name":"Victoria"},{"@type":"City","name":"Kelowna"},{"@type":"City","name":"Calgary"},{"@type":"City","name":"Edmonton"},{"@type":"City","name":"Red Deer"},{"@type":"City","name":"Winnipeg"},{"@type":"City","name":"Saskatoon"},{"@type":"City","name":"Regina"},{"@type":"City","name":"Halifax"},{"@type":"City","name":"Moncton"},{"@type":"City","name":"St. John's"},{"@type":"City","name":"Charlottetown"}],"provider":{"@type":"Organization","name":"ApexLedger","url":"https://apexledger.ca/","email":"admin@apexledger.ca","address":{"@type":"PostalAddress","addressLocality":"Mississauga","addressRegion":"ON","addressCountry":"CA"}}}
 </script>
 <style>
 :root{--bg:#081613;--fg:#f9f6ec;--gold:#f2ca72;--card:#102a22;--border:#355244;--muted:#a4b6b4}
@@ -81,10 +81,11 @@ h2{font-size:clamp(34px,3.2vw,46px);line-height:1.13;letter-spacing:-2px;margin-
 .plan>svg{color:#efc96e;width:28px;height:28px}.plan .number{color:#d9bd80;font-size:9px}.plan h3{font-size:27px;letter-spacing:-1px}.plan>p{font-size:15px;line-height:1.65;color:#b8cbbd;min-height:52px;margin-top:10px}
 .price{font-size:34px;font-weight:700;letter-spacing:-1px;margin:25px 0 20px;line-height:1.1}.price .per{display:inline;font-size:14px;font-weight:500;letter-spacing:0;color:#d9bd80;margin-left:4px}.price small{display:block;font-size:12px;color:#b6c6b8;font-weight:400;margin-top:5px}.plan .button{width:100%;justify-content:space-between}
 .plan ul{border-top:1px solid #496147;margin:26px 0 0;padding:24px 0 0;list-style:none}.plan li{display:flex;align-items:center;gap:10px;margin:13px 0;font-size:13px}.plan li svg{color:#efc96e;width:16px;height:16px}.plan li.hi{color:var(--gold);font-weight:600}
-.plans .plan-note{font-size:12px;margin-top:28px}
+.plans .plan-note{font-size:12px;margin-top:22px}.founding{max-width:760px;margin:18px auto 0;padding:12px 18px;border:1px solid #c9a24a;border-radius:10px;background:#f2ca7214;color:#f8f3df;font-size:14px}.founding b{color:#ffe2a1}.price small b{color:#ffe2a1}
 .closing{text-align:center;padding-top:56px;padding-bottom:56px}.closing .eyebrow{justify-content:center}
 .details{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin:32px 0;text-align:left}.details>div{border-top:1px solid #334642;padding-top:25px;scroll-margin-top:40px}.details>div:target{border-color:var(--gold)}.details span{color:var(--gold);font-size:13px}.details h3{font-size:22px;margin:10px 0}.details p{color:#a9bab5;font-size:15px;line-height:1.8}
 .trial-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;padding:24px;border-radius:14px;background:linear-gradient(160deg,#16392c,#0d251d);border:1px solid #466148;box-shadow:0 15px 35px #0003;margin-bottom:18px}.trial-form h3{grid-column:1/-1;font-size:24px;letter-spacing:-.6px}.trial-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b7cbbd}.trial-form input,.trial-form select,.trial-form textarea{font:inherit;color:#f9f6ec;background:#0a1f18;border:1px solid #3d5c4a;border-radius:8px;padding:11px 12px}.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus{outline:2px solid #f2ca72;outline-offset:1px;border-color:#f2ca72}.trial-form textarea{min-height:88px;resize:vertical}.trial-form .full{grid-column:1/-1}.trial-form .actions{grid-column:1/-1;margin-top:6px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}.trial-form .status{font-size:14px;color:#b7cbbd}.trial-form .status.ok{color:#9be3b3}.trial-form .status.err{color:#ffb4a8}.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fb-overlay{position:fixed;inset:0;z-index:50;background:#00000088;display:flex;align-items:center;justify-content:center;padding:20px}.fb-overlay[hidden]{display:none}.fb{width:520px;max-width:100%;background:linear-gradient(160deg,#16392c,#0d251d);border:1px solid #466148;border-radius:14px;padding:24px;box-shadow:0 30px 80px #000a}.fb h3{font-size:22px;letter-spacing:-.5px}.fb p{color:#b7cbbd;font-size:14px;margin-top:6px}.fb label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b7cbbd;margin-top:12px}.fb input,.fb textarea{font:inherit;color:#f9f6ec;background:#0a1f18;border:1px solid #3d5c4a;border-radius:8px;padding:10px 12px}.fb textarea{min-height:110px;resize:vertical}.fb .row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.fb .actions{display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}.fb .status{margin-right:auto;font-size:13px;color:#b7cbbd}.fb .status.ok{color:#9be3b3}.fb .status.err{color:#ffb4a8}.fb .cancel{background:none;border:1px solid #bc9b57;color:#ffe2a1;padding:11px 16px;border-radius:7px;font:inherit;font-size:14px;cursor:pointer}@media(max-width:760px){.fb .row{grid-template-columns:1fr}}
 .contact{border-top:1px solid #293d38;background:radial-gradient(ellipse at 50% 0%,#2a6a4866,transparent 60%)}.contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.contact-grid article{background:#122226;border:1px solid #263d40;border-radius:10px;padding:26px}.contact-grid span{color:var(--gold);font-size:12px;letter-spacing:1.4px}.contact-grid h3{font-size:22px;margin:10px 0 6px}.contact-grid p,.contact-grid a{color:var(--muted);font-size:15px}.contact-grid a:hover{color:#ffe0a0}
 .cities{max-width:1440px;margin:auto;padding:16px 5% 4px;border-top:1px solid #1f322c;color:#6f8a80;font-size:12px;line-height:1.9}.cities h2{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#8aa598;margin:0 0 6px;font-weight:600}.cities p{margin:0}.cities b{color:#93aca0;font-weight:600}.cities a{color:#6f8a80}.cities a:hover{color:#ffe0a0}
 footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%;display:flex;align-items:center;justify-content:space-between;gap:25px;flex-wrap:wrap}footer>span,footer>a:not(.brand){font-size:12px;color:#82978f}footer>a:not(.brand):hover{color:#ffe0a0}footer .brand{font-size:24px}
@@ -121,7 +122,7 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
 <main id="top">
 <header class="nav">
   <a class="brand" href="#top"><img class="app-mark" src="/apexledger-mark.svg" alt="" width="42" height="42"><span class="gold-wordmark">apexledger<b>.</b></span></a>
-  <nav aria-label="Main navigation"><a href="#solutions">Solutions</a><a href="#crm">Client CRM</a><a href="#screens">Screens</a><a href="#workflows">Modules</a><a href="#canada">Data in Canada</a><a href="#plans">Compare plans</a><a href="#contact">Contact</a></nav>
+  <nav aria-label="Main navigation"><a href="#solutions">Solutions</a><a href="#crm">Client CRM</a><a href="#screens">Screens</a><a href="#workflows">Modules</a><a href="#canada">Data in Canada</a><a href="#plans">Compare plans</a><a href="#contact">Contact</a><a href="#feedback" data-feedback>Feedback</a></nav>
   <a class="button small" href="https://online.apexledger.ca">Sign in <svg class="ic"><use href="#i-arrow"/></svg></a>
 </header>
 
@@ -165,30 +166,31 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
 
 <section id="plans" class="section plans">
   <div class="eyebrow">YOUR PRACTICE. YOUR FIT.</div>
-  <h2>Tools for the way you practise.</h2>
-  <p>Try ApexLedger free for one month. Choose the edition that fits your practice. Every edition has no limit on company files.</p>
+  <h2>One price per person. No limit on company files.</h2>
+  <p>Every seat is one person with their own sign-in. Pick the seat that matches what each person does. First month free, no card.</p>
+  <div class="founding"><b>Founding firms:</b> the first 20 firms that sign up before 31 December 2026 pay <b>half price for six months</b>. After that, the normal rate.</div>
   <div class="plan-grid">
     <article class="plan">
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">BOOKS &amp; INVENTORY · NO LIMIT ON COMPANY FILES</div><h3>Accounting Essential</h3><p>Core accounting, invoicing, banking and inventory for your client books.</p>
-      <div class="price">$39 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Pay yearly and save 20%: $374 a year.</small></div>
-      <a class="button outline" href="#contact">Start with Essential <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
-      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Double-entry bookkeeping &amp; journals</li><li><svg class="ic"><use href="#i-check"/></svg>Sales invoices, bills &amp; payments</li><li><svg class="ic"><use href="#i-check"/></svg>Inventory &amp; purchase orders</li><li><svg class="ic"><use href="#i-check"/></svg>Bank import, categorisation &amp; reconciliation</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST, GIFI &amp; accountant tools</li><li><svg class="ic"><use href="#i-check"/></svg>Reports with drill-down, Excel &amp; PDF</li><li><svg class="ic"><use href="#i-check"/></svg>Help &amp; Tutor with 45 lessons</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">FOR A BUSINESS · NO LIMIT ON COMPANY FILES</div><h3>Business</h3><p>A company keeping its own books, without an accountant on staff.</p>
+      <div class="price">$39 <small class="per">per seat / month</small><small>Founding firms: <b>$19.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
+      <a class="button outline" href="#contact">Start as a business <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
+      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Invoices, bills &amp; payments</li><li><svg class="ic"><use href="#i-check"/></svg>Bank statement PDF &amp; CSV import, reconciliation</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST on every line and the return</li><li><svg class="ic"><use href="#i-check"/></svg>Quick Entry, receipts, inventory</li><li><svg class="ic"><use href="#i-check"/></svg>Reports with drill-down, Excel &amp; PDF</li><li><svg class="ic"><use href="#i-check"/></svg>Help &amp; Tutor with 45 lessons</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
     </article>
     <article class="plan featured">
-      <div class="ribbon">THE CONNECTED PRACTICE SUITE ↗</div>
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">FULL SUITE · NO LIMIT ON COMPANY FILES</div><h3>Ultimate Suite</h3><p>Accounting, payroll, inventory and client management in one edition.</p>
-      <div class="price">$79 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Pay yearly and save 20%: $758 a year.</small></div>
-      <a class="button" href="#contact">Start with Ultimate <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
-      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Accounting Essential</li><li><svg class="ic"><use href="#i-check"/></svg>Client CRM, deadlines &amp; reminders</li><li><svg class="ic"><use href="#i-check"/></svg>Document checklists &amp; return status</li><li><svg class="ic"><use href="#i-check"/></svg>Appointments, engagement letters &amp; client communication</li><li><svg class="ic"><use href="#i-check"/></svg>Canadian payroll for every province</li><li><svg class="ic"><use href="#i-check"/></svg>Custom reports &amp; budgeting</li><li><svg class="ic"><use href="#i-check"/></svg>Projects &amp; fixed assets</li><li><svg class="ic"><use href="#i-check"/></svg>User permissions &amp; approvals</li><li><svg class="ic"><use href="#i-check"/></svg>Month-end close, audit tools &amp; Year-End Sign-off</li><li><svg class="ic"><use href="#i-check"/></svg>GIFI mapping &amp; T2 working papers</li></ul>
+      <div class="ribbon">FOR ACCOUNTANTS ↗</div>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">EVERYTHING · NO LIMIT ON COMPANY FILES</div><h3>Full accountant</h3><p>Everything in the application, for an accountant running client files.</p>
+      <div class="price">$79 <small class="per">per seat / month</small><small>Founding firms: <b>$39.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
+      <a class="button" href="#contact">Start as an accountant <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
+      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Bookkeeper</li><li><svg class="ic"><use href="#i-check"/></svg>Client CRM, deadlines, reminders &amp; engagement letters</li><li><svg class="ic"><use href="#i-check"/></svg>Auditor Centre, audit exceptions &amp; workpapers</li><li><svg class="ic"><use href="#i-check"/></svg>Year-End Sign-off &amp; CPA review package</li><li><svg class="ic"><use href="#i-check"/></svg>GIFI mapping &amp; T2 working papers</li><li><svg class="ic"><use href="#i-check"/></svg>Month-end close, approvals &amp; permissions</li><li><svg class="ic"><use href="#i-check"/></svg>Custom reports, budgets, projects &amp; fixed assets</li></ul>
     </article>
     <article class="plan">
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">BOOKS &amp; PAYROLL · NO LIMIT ON COMPANY FILES</div><h3>Payroll</h3><p>Bookkeeping and Canadian payroll for your client companies.</p>
-      <div class="price">$49 <small class="per">per seat / month</small><small>After a free month. CAD, plus HST. Pay yearly and save 20%: $470 a year.</small></div>
-      <a class="button outline" href="#contact">Start with Payroll <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
-      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Bookkeeping &amp; invoicing included</li><li><svg class="ic"><use href="#i-check"/></svg>Employee records &amp; pay runs</li><li><svg class="ic"><use href="#i-check"/></svg>Pay stubs, ROE &amp; payroll journals</li><li><svg class="ic"><use href="#i-check"/></svg>Source deductions &amp; PD7A reports</li><li><svg class="ic"><use href="#i-check"/></svg>T4, T4A, T5018 &amp; T5 year-end slips</li><li><svg class="ic"><use href="#i-check"/></svg>WSIB and Ontario EHT</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST &amp; accountant tools</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">FOR A BOOKKEEPER · NO LIMIT ON COMPANY FILES</div><h3>Bookkeeper</h3><p>The daily books and payroll for clients, without the accountant's year-end tools.</p>
+      <div class="price">$59 <small class="per">per seat / month</small><small>Founding firms: <b>$29.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
+      <a class="button outline" href="#contact">Start as a bookkeeper <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
+      <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on company files</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Business</li><li><svg class="ic"><use href="#i-check"/></svg>Canadian payroll for every province</li><li><svg class="ic"><use href="#i-check"/></svg>Pay stubs, ROE, PD7A, T4, T4A, T5018 &amp; T5</li><li><svg class="ic"><use href="#i-check"/></svg>WSIB and Ontario EHT</li><li><svg class="ic"><use href="#i-check"/></svg>Direct Excel import from QuickBooks &amp; Xero</li><li><svg class="ic"><use href="#i-check"/></svg>Statements, late interest &amp; payment reminders</li><li><svg class="ic"><use href="#i-check"/></svg>Action Centre with every deadline</li></ul>
     </article>
   </div>
-  <p class="plan-note">Accounting Essential includes books and inventory. Payroll includes books and payroll. Ultimate Suite includes both, plus client CRM. A seat is one person with their own sign-in; company files are never counted. Prices are in Canadian dollars per seat per month, exclude HST, and can be cancelled at the end of any month. Pay yearly and save 20%.</p>
+  <p class="plan-note">A firm mixes seats as it likes: one Full accountant and two Bookkeepers is $197 a month. Company files are never counted. Prices are in Canadian dollars per seat per month, exclude HST, and can be cancelled at the end of any month.</p>
 </section>
 
 <section class="highlights" id="highlights">
@@ -389,9 +391,9 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
   <div class="eyebrow">BUILT AROUND YOUR PRACTICE</div>
   <h2>More clarity.<br><em>For every client.</em></h2>
   <div class="details">
-    <div id="details-0"><span>01</span><h3>Accounting Essential</h3><p>Work through invoices, bills, bank imports, categorisation and reconciliation. Review the trial balance and general ledger before closing the period.</p></div>
-    <div id="details-1"><span>02</span><h3>Ultimate Suite</h3><p>Bring client management, payroll and inventory into the full accounting workflow, with permissions, approvals, audit tools and the Year-End Sign-off.</p></div>
-    <div id="details-2"><span>03</span><h3>Payroll</h3><p>Move from employee records to pay runs, pay stubs, payroll journals and PD7A remittance reports. Prepare year-end slips alongside the client books.</p></div>
+    <div id="details-0"><span>01</span><h3>Business</h3><p>A company keeping its own books: invoices, bills, bank imports, HST and the reports the accountant asks for at year end.</p></div>
+    <div id="details-1"><span>02</span><h3>Full accountant</h3><p>Client management, payroll and inventory in the full accounting workflow, with permissions, approvals, audit tools, GIFI, T2 working papers and the Year-End Sign-off.</p></div>
+    <div id="details-2"><span>03</span><h3>Bookkeeper</h3><p>Daily books for many clients plus payroll: pay runs, pay stubs, payroll journals, PD7A remittances and year-end slips alongside the books.</p></div>
   </div>
   <a href="#contact" class="button">Start a one-month trial <svg class="ic" style="width:19px;height:19px"><use href="#i-arrow"/></svg></a>
 </section>
@@ -404,7 +406,7 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
     <label>Your name <input name="name" required maxlength="120" autocomplete="name"></label>
     <label>Email <input name="email" type="email" required maxlength="200" autocomplete="email"></label>
     <label>Phone (optional) <input name="phone" type="tel" maxlength="50" autocomplete="tel"></label>
-    <label>Edition <select name="edition"><option>Ultimate Suite</option><option>Accounting Essential</option><option>Payroll</option></select></label>
+    <label>Seat type <select name="edition"><option>Full accountant</option><option>Bookkeeper</option><option>Business</option></select></label>
     <label>Seats (people who sign in) <input name="seats" type="number" min="1" max="100" value="2"></label>
     <label class="full">Anything we should know? Moving from QuickBooks or Sage, how many client files, when you want to start. <textarea name="message" maxlength="2000"></textarea></label>
     <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
@@ -427,11 +429,35 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
   <span>Built for Canadian accountants and bookkeepers.</span>
   <a href="/privacy.html">Privacy</a>
   <a href="/terms.html">Terms</a>
+  <a href="#feedback" data-feedback>Feedback</a>
   <span>© <span id="y">2026</span> ApexLedger · apexledger.ca</span>
 </footer>
+<div class="fb-overlay" id="feedback" hidden>
+  <form class="fb" id="fb-form" novalidate>
+    <h3>Tell us what to fix</h3>
+    <p>Wrong, confusing or missing? Say what you expected. Notes go straight to the people who build ApexLedger.</p>
+    <div class="row"><label>Your name (optional) <input name="name" maxlength="120" autocomplete="name"></label><label>Email, if you want a reply <input name="email" type="email" maxlength="200" autocomplete="email"></label></div>
+    <label>Your note <textarea name="message" maxlength="4000" required></textarea></label>
+    <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+    <div class="actions"><span class="status" id="fb-status"></span><button type="button" class="cancel" data-fb-close>Close</button><button class="button small" type="submit">Send</button></div>
+  </form>
+</div>
 </main>
 <script>
 document.getElementById('y').textContent=new Date().getFullYear();
+(function(){var ov=document.getElementById('feedback'),f=document.getElementById('fb-form'),st=document.getElementById('fb-status');if(!ov)return;
+function open(e){if(e)e.preventDefault();ov.hidden=false;st.className='status';st.textContent='';f.querySelector('[name=message]').focus();}
+function close(){ov.hidden=true;}
+document.querySelectorAll('[data-feedback]').forEach(function(a){a.addEventListener('click',open);});
+document.querySelectorAll('[data-fb-close]').forEach(function(b){b.addEventListener('click',close);});
+ov.addEventListener('click',function(e){if(e.target===ov)close();});document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+if(location.hash==='#feedback')open();
+f.addEventListener('submit',function(e){e.preventDefault();var d={page:'apexledger.ca'};new FormData(f).forEach(function(v,k){d[k]=v});
+if(!d.message||d.message.trim().length<5){st.className='status err';st.textContent='Please write a few words.';return;}
+var b=f.querySelector('button[type=submit]');b.disabled=true;st.className='status';st.textContent='Sending…';
+fetch('https://online.apexledger.ca/api/site-feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(r){
+if(r.ok){st.className='status ok';st.textContent='Thank you. We read every note.';f.reset();b.disabled=false;}else{st.className='status err';st.textContent=r.error||'Could not send. Email admin@apexledger.ca.';b.disabled=false;}
+}).catch(function(){st.className='status err';st.textContent='Could not reach the server. Email admin@apexledger.ca.';b.disabled=false;});});})();
 (function(){var f=document.getElementById('trial'),st=document.getElementById('trial-status');if(!f)return;
 f.addEventListener('submit',function(e){e.preventDefault();var d={};new FormData(f).forEach(function(v,k){d[k]=v});
 if(!d.firm||!d.name||!d.email){st.className='status err';st.textContent='Please fill in the firm name, your name and your email.';return;}

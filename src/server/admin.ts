@@ -12,7 +12,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string }
+export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null }
+/** The founding-firms offer: half price for six months, for the first firms that sign up. */
+export const FOUNDING = { pct: 50, months: 6, maxFirms: 20, signUpBy: '2026-12-31' };
 export type SeatType = 'full' | 'bookkeeper' | 'business';
 export const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
 export const SEAT_TYPE_LABELS: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
@@ -131,6 +133,19 @@ export function createFeedback(user: WebUser, org: Org, input: { message?: unkno
   const r = store().prepare('INSERT INTO feedback (org_id, org_name, user_id, user_name, email, page, message) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, org.name, user.id, user.name, user.email, page, message) as Record<string, unknown>;
   return rowToNote(r);
 }
+/** Feedback from the public website: no sign-in, so the sender's own name and email are kept.
+ * Stored in the same table under the "Website" organisation so it shows with everything else. */
+export function createSiteFeedback(input: Record<string, unknown>, ip: string | null): FeedbackNote {
+  const message = String(input.message ?? '').trim().slice(0, 4000);
+  if (message.length < 5) throw new Error('Say a little more so we can act on it.');
+  const name = String(input.name ?? '').trim().slice(0, 120) || 'Website visitor';
+  const email = String(input.email ?? '').trim().slice(0, 200);
+  const page = String(input.page ?? 'apexledger.ca').trim().slice(0, 120);
+  const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM feedback WHERE org_id = 0 AND page LIKE ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(`%[${ip ?? ''}]`) as { n: number }).n);
+  if (ip && recent >= 5) throw new Error('Too many notes from this address. Please email admin@apexledger.ca instead.');
+  const r = store().prepare('INSERT INTO feedback (org_id, org_name, user_id, user_name, email, page, message) VALUES (0, ?, 0, ?, ?, ?, ?) RETURNING *').get('Website', name, email, `${page} [${ip ?? ''}]`, message) as Record<string, unknown>;
+  return rowToNote(r);
+}
 export function listFeedback(orgId?: number): FeedbackNote[] {
   const rows = orgId === undefined
     ? store().prepare('SELECT * FROM feedback ORDER BY id DESC LIMIT 300').all()
@@ -147,7 +162,7 @@ export function setFeedbackStatus(id: number, status: 'new' | 'done'): FeedbackN
 /** A trial request from the public website: who they are, which edition, how many seats. The
  * platform administrator reads these in Settings and creates the organisation from them. */
 export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
-const TRIAL_EDITIONS = ['Accounting Essential', 'Ultimate Suite', 'Payroll'];
+const TRIAL_EDITIONS = ['Full accountant', 'Bookkeeper', 'Business', 'Accounting Essential', 'Ultimate Suite', 'Payroll'];
 
 export function createTrialRequest(input: Record<string, unknown>, ip: string | null): TrialRequest {
   const text = (k: string, max: number, required = false) => {
@@ -160,7 +175,7 @@ export function createTrialRequest(input: Record<string, unknown>, ip: string | 
   const email = text('email', 200, true);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('That email address does not look right.');
   const phone = text('phone', 50);
-  const edition = TRIAL_EDITIONS.includes(String(input.edition)) ? String(input.edition) : 'Ultimate Suite';
+  const edition = TRIAL_EDITIONS.includes(String(input.edition)) ? String(input.edition) : 'Full accountant';
   const seats = Math.min(100, Math.max(1, Math.round(Number(input.seats) || 2)));
   const message = text('message', 2000);
   const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM trial_requests WHERE ip = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(ip ?? '') as { n: number }).n);
@@ -195,6 +210,9 @@ function store(): Database.Database {
 function ensureColumns(): void {
   const cols = (store().prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name);
   if (!cols.includes('seat_type')) store().exec("ALTER TABLE users ADD COLUMN seat_type TEXT NOT NULL DEFAULT 'full'");
+  const orgCols = (store().prepare('PRAGMA table_info(orgs)').all() as { name: string }[]).map((c) => c.name);
+  if (!orgCols.includes('discount_pct')) store().exec('ALTER TABLE orgs ADD COLUMN discount_pct INTEGER NOT NULL DEFAULT 0');
+  if (!orgCols.includes('discount_until')) store().exec('ALTER TABLE orgs ADD COLUMN discount_until TEXT');
   // Earlier names for the same idea, before the owner settled on Full accountant / Bookkeeper / Business.
   store().exec("UPDATE users SET seat_type = 'bookkeeper' WHERE seat_type = 'accountant'; UPDATE users SET seat_type = 'business' WHERE seat_type = 'readonly'; DELETE FROM seat_rates WHERE seat_type IN ('accountant', 'readonly')");
 }
@@ -207,7 +225,23 @@ function hash(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
 }
 
-const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at) });
+const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null });
+
+/** Founding offer on an organisation: 50% off until six months from today, or off. */
+export function setOrgFounding(id: number, on: boolean): Org {
+  if (on) {
+    const until = new Date(); until.setMonth(until.getMonth() + FOUNDING.months);
+    store().prepare('UPDATE orgs SET discount_pct = ?, discount_until = ? WHERE id = ?').run(FOUNDING.pct, until.toISOString().slice(0, 10), id);
+  } else {
+    store().prepare('UPDATE orgs SET discount_pct = 0, discount_until = NULL WHERE id = ?').run(id);
+  }
+  const o = getOrg(id);
+  if (!o) throw new Error('Organisation not found.');
+  return o;
+}
+export function foundingFirmsCount(): number {
+  return Number((store().prepare('SELECT COUNT(*) AS n FROM orgs WHERE discount_pct > 0 AND is_platform = 0').get() as { n: number }).n);
+}
 const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
 
 export function listOrgs(): Org[] {
@@ -219,7 +253,7 @@ export function getOrg(id: number): Org | null {
   return r ? mapOrg(r) : null;
 }
 
-export function createOrg(input: { name: string; seats?: number; isPlatform?: boolean }): Org {
+export function createOrg(input: { name: string; seats?: number; isPlatform?: boolean; founding?: boolean }): Org {
   const name = input.name.trim();
   if (!name) throw new Error('The organisation needs a name.');
   const seats = Math.max(1, Math.floor(input.seats ?? 2));
@@ -228,7 +262,8 @@ export function createOrg(input: { name: string; seats?: number; isPlatform?: bo
   for (let i = 2; taken.get(slug); i += 1) slug = `${slugify(name)}-${i}`;
   const r = store().prepare('INSERT INTO orgs (name, slug, seats, is_platform) VALUES (?, ?, ?, ?) RETURNING *').get(name, slug, seats, input.isPlatform ? 1 : 0) as Record<string, unknown>;
   fs.mkdirSync(companiesDirFor(mapOrg(r)), { recursive: true });
-  return mapOrg(r);
+  const created = mapOrg(r);
+  return input.founding ? setOrgFounding(created.id, true) : created;
 }
 
 export function updateOrgSeats(id: number, seats: number): Org {

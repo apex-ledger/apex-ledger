@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * them, and reset a password. The platform administrator sees every organisation, creates new
  * ones, and changes seat counts. Everyone can change their own password. The desktop app has no
  * organisations, so this section does not appear there. */
-interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number }
+interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null }
+interface Founding { pct: number; months: number; maxFirms: number; signUpBy: string; used: number }
 type SeatType = 'full' | 'bookkeeper' | 'business';
 const SEAT_TYPES: SeatType[] = ['full', 'bookkeeper', 'business'];
 const SEAT_LABEL: Record<SeatType, string> = { full: 'Full accountant', bookkeeper: 'Bookkeeper', business: 'Business' };
@@ -40,7 +41,11 @@ export function WebOrganisationSection() {
   const [rateDraft, setRateDraft] = useState<Record<SeatType, string>>({ full: '', bookkeeper: '', business: '' });
   const money = (cents: number) => `$${(cents / 100).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (rates[p.seatType] ?? 0), 0);
-  const [newOrg, setNewOrg] = useState({ name: '', seats: 2 });
+  const today = new Date().toISOString().slice(0, 10);
+  const discountActive = (o: Org) => o.discountPct > 0 && !!o.discountUntil && o.discountUntil >= today;
+  const billingLine = (o: Org) => { const full = monthlyFor(o.id); if (!o.activeSeats) return ''; if (!discountActive(o)) return ` · ${money(full)} a month`; return ` · ${money(Math.round(full * (100 - o.discountPct) / 100))} a month (founding ${o.discountPct}% off until ${o.discountUntil}, then ${money(full)})`; };
+  const [newOrg, setNewOrg] = useState({ name: '', seats: 2, founding: true });
+  const [founding, setFounding] = useState<Founding | null>(null);
   const [myPassword, setMyPassword] = useState('');
   const [trials, setTrials] = useState<TrialRequest[]>([]);
   const [showDoneTrials, setShowDoneTrials] = useState(false);
@@ -65,6 +70,7 @@ export function WebOrganisationSection() {
     if (p.ok) setPeople(p.data); else setError(p.error);
     if (ctx?.org.isPlatform) { const t = await call<TrialRequest[]>('/api/admin/trial-requests'); if (t.ok) setTrials(t.data); }
     const r = await call<Record<SeatType, number>>('/api/admin/seat-rates'); if (r.ok) setRates(r.data);
+    const f = await call<Founding>('/api/admin/founding'); if (f.ok) setFounding(f.data);
   }, [canManage, ctx?.org.isPlatform]);
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => { if (orgs.length && !newPerson.orgId) setNewPerson((n) => ({ ...n, orgId: orgs.find((o) => !o.isPlatform)?.id ?? orgs[0].id })); }, [orgs, newPerson.orgId]);
@@ -79,6 +85,11 @@ export function WebOrganisationSection() {
     setNotice(`${r.data.name} added. Give them the password you typed; they can change it after signing in.`);
     setNewPerson((n) => ({ ...n, name: '', email: '', password: '' }));
     void reload();
+  }
+  async function setFoundingOn(o: Org, on: boolean) {
+    setError(null);
+    const r = await call<Org>(`/api/admin/orgs/${o.id}/founding`, { on });
+    if (!r.ok) setError(r.error); else { setNotice(on ? `${o.name} has the founding offer until ${r.data.discountUntil}.` : `${o.name} is on normal rates.`); void reload(); }
   }
   async function setSeatType(p: Person, seatType: SeatType) {
     setError(null);
@@ -106,8 +117,8 @@ export function WebOrganisationSection() {
     setError(null);
     const r = await call<Org>('/api/admin/orgs', newOrg);
     if (!r.ok) { setError(r.error); return; }
-    setNotice(`${r.data.name} created with ${r.data.seats} seats.`);
-    setNewOrg({ name: '', seats: 2 });
+    setNotice(`${r.data.name} created with ${r.data.seats} seats${r.data.discountUntil ? `, founding offer until ${r.data.discountUntil}` : ''}.`);
+    setNewOrg({ name: '', seats: 2, founding: true });
     void reload();
   }
   async function setSeats(o: Org, seats: number) {
@@ -134,7 +145,7 @@ export function WebOrganisationSection() {
     if (!r.ok) setError(r.error); else void reload();
   }
   function fillFromTrial(t: TrialRequest) {
-    setNewOrg({ name: t.firm, seats: t.seats });
+    setNewOrg({ name: t.firm, seats: t.seats, founding: true });
     setNewPerson((n) => ({ ...n, name: t.name, email: t.email }));
     setNotice(`${t.firm} is filled in below: create the organisation, then add ${t.name} to it with a first password and email it to ${t.email}.`);
   }
@@ -172,8 +183,15 @@ export function WebOrganisationSection() {
               <div key={o.id} className="rounded border border-gray-200 p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-medium text-gray-900">{o.name}</div>
-                  <div className="text-xs text-gray-500">{o.activeSeats} of {o.seats} seats used{!o.isPlatform && o.activeSeats > 0 ? ` · ${money(monthlyFor(o.id))} a month` : ''}</div>
+                  <div className="text-xs text-gray-500">{o.activeSeats} of {o.seats} seats used{!o.isPlatform ? billingLine(o) : ''}</div>
                 </div>
+                {ctx.org.isPlatform && !o.isPlatform && (
+                  <div className="mt-1 text-xs">
+                    {discountActive(o)
+                      ? <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-800">Founding firm · {o.discountPct}% off until {o.discountUntil} <button type="button" onClick={() => void setFoundingOn(o, false)} className="ml-1 text-gray-500 hover:underline">remove</button></span>
+                      : <button type="button" onClick={() => void setFoundingOn(o, true)} className="text-brand-700 hover:underline">Give founding offer ({founding?.pct ?? 50}% off for {founding?.months ?? 6} months)</button>}
+                  </div>
+                )}
                 {ctx.org.isPlatform && (
                   <div className="mt-1 flex items-center gap-2 text-xs text-gray-600">
                     Seats
@@ -304,6 +322,7 @@ export function WebOrganisationSection() {
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                 <input value={newOrg.name} onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })} placeholder="Firm or business name" className="w-64 rounded border border-gray-300 px-2 py-1" />
                 <label className="flex items-center gap-1 text-xs text-gray-600">Seats <input type="number" min={1} value={newOrg.seats} onChange={(e) => setNewOrg({ ...newOrg, seats: Number(e.target.value) })} className="w-16 rounded border border-gray-300 px-1 py-0.5" /></label>
+                <label className="flex items-center gap-1 text-xs text-gray-600" title="Half price for six months, for the first firms"><input type="checkbox" checked={newOrg.founding} onChange={(e) => setNewOrg({ ...newOrg, founding: e.target.checked })} /> Founding firm{founding ? ` (${founding.used} of ${founding.maxFirms} used, sign up by ${founding.signUpBy})` : ''}</label>
                 <button type="button" onClick={() => void addOrg()} disabled={!newOrg.name.trim()} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Create</button>
               </div>
             </div>
