@@ -122,7 +122,7 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
 <header class="nav">
   <a class="brand" href="#top"><img class="app-mark" src="/apexledger-mark.svg" alt="" width="42" height="42"><span class="gold-wordmark">apexledger<b>.</b></span></a>
   <nav aria-label="Main navigation"><a href="#solutions">Solutions</a><a href="#crm">Client CRM</a><a href="#screens">Screens</a><a href="#workflows">Modules</a><a href="#canada">Data in Canada</a><a href="#plans">Compare plans</a><a href="#contact">Contact</a></nav>
-  <a class="button small" href="https://app.apexledger.ca">Sign in <svg class="ic"><use href="#i-arrow"/></svg></a>
+  <a class="button small" href="https://online.apexledger.ca">Sign in <svg class="ic"><use href="#i-arrow"/></svg></a>
 </header>
 
 <section class="hero">
@@ -412,7 +412,7 @@ footer{border-top:1px solid #293d38;max-width:1440px;margin:auto;padding:18px 5%
   </form>
   <div class="contact-grid">
     <article><span>EMAIL</span><h3>admin@apexledger.ca</h3><p><a href="mailto:admin@apexledger.ca?subject=One-month%20trial">Tell us your firm name, the edition and how many seats.</a></p></article>
-    <article><span>SIGN IN</span><h3>app.apexledger.ca</h3><p><a href="https://app.apexledger.ca">Already have a seat? Open the application.</a></p></article>
+    <article><span>SIGN IN</span><h3>online.apexledger.ca</h3><p><a href="https://online.apexledger.ca">Already have a seat? Open the application.</a></p></article>
     <article><span>WHERE</span><h3>Ontario, Canada</h3><p>Made in Mississauga. Hosted in Canada Central with backups in Canada East.</p></article>
   </div>
 </section>
@@ -436,7 +436,7 @@ document.getElementById('y').textContent=new Date().getFullYear();
 f.addEventListener('submit',function(e){e.preventDefault();var d={};new FormData(f).forEach(function(v,k){d[k]=v});
 if(!d.firm||!d.name||!d.email){st.className='status err';st.textContent='Please fill in the firm name, your name and your email.';return;}
 var b=f.querySelector('button');b.disabled=true;st.className='status';st.textContent='Sending…';
-fetch('https://app.apexledger.ca/api/trial-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(r){
+fetch('https://online.apexledger.ca/api/trial-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(r){
 if(r.ok){st.className='status ok';st.textContent='Thank you, '+d.name.split(' ')[0]+'. Your request is in; watch '+d.email+' for your sign-ins.';f.reset();}
 else{st.className='status err';st.textContent=r.error||'Something went wrong. Email admin@apexledger.ca and we will set you up.';b.disabled=false;}
 }).catch(function(){st.className='status err';st.textContent='Could not reach the server. Email admin@apexledger.ca and we will set you up.';b.disabled=false;});});})();

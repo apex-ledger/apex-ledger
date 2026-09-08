@@ -67,9 +67,9 @@ On a server there is only Node, so a plain `npm ci` is right.
   sign-in never creates a seat. On when the environment has `APEX_MS_CLIENT_ID` +
   `APEX_MS_CLIENT_SECRET` (Entra app registration "Apex Ledger", app id
   1aa992fe-eb0e-41da-8fcb-16041b08f81f, audience any Microsoft account, redirect
-  `https://app.apexledger.ca/api/auth/microsoft/callback`) and/or `APEX_GOOGLE_CLIENT_ID` +
+  `https://online.apexledger.ca/api/auth/microsoft/callback`) and/or `APEX_GOOGLE_CLIENT_ID` +
   `APEX_GOOGLE_CLIENT_SECRET` (a Google Cloud OAuth web client with redirect
-  `https://app.apexledger.ca/api/auth/google/callback`). `APEX_PUBLIC_URL` fixes the redirect
+  `https://online.apexledger.ca/api/auth/google/callback`). `APEX_PUBLIC_URL` fixes the redirect
   origin behind the proxy. The sign-in page shows a button per configured provider above the
   password form.
 - Trial requests: the form on apexledger.ca posts to `POST /api/trial-request` (CORS for the
@@ -119,7 +119,7 @@ virtual machine with a managed disk, not App Service's shared storage:
    `APEX_DATA_DIR`, disk encryption on. Node 20 LTS, `npm ci`, `npm run build:web`.
 2. **Process** systemd unit running `node dist-server/index.js` with the environment above;
    restart on failure.
-3. **HTTPS** Caddy in front (`app.apexledger.ca` → `localhost:8787`); it fetches and renews the
+3. **HTTPS** Caddy in front (`online.apexledger.ca` → `localhost:8787`); it fetches and renews the
    certificate itself.
 4. **Network** NSG `apexledger-appNSG`: TCP 80/443 from the internet, TCP 22 only from the
    owner's address (set 2026-09-08; if that address changes, change the rule with
