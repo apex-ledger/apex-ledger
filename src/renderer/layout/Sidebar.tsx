@@ -7,6 +7,8 @@ import { confirmDialog } from '../app/store/confirmStore';
 import { Logo } from '../components/Logo';
 import { IconBell, IconPencil, IconUserGroup } from '../components/icons';
 import { webContext } from '../features/company-settings/WebOrganisationSection';
+import { webSeat } from '../utils/platform';
+import { SEAT_NAV_HIDDEN } from '@shared/domain/seatScope';
 import {
   applyStoredOrder,
   loadColorOverrides,
@@ -618,7 +620,10 @@ function NavSection({
   const licensed = items
     .filter((item) => !item.feature || can(item.feature))
     .map((item) => ({ ...item, children: item.children?.filter((c) => !c.feature || can(c.feature)) }));
-  const visibleItems = editMode ? licensed : licensed.filter((item) => !hiddenItems.has(item.label));
+  // On the web the seat decides which doors exist at all; the server refuses the rest anyway.
+  const seatHidden = new Set(SEAT_NAV_HIDDEN[webSeat()]);
+  const seatScoped = licensed.filter((item) => !seatHidden.has(item.label));
+  const visibleItems = editMode ? seatScoped : seatScoped.filter((item) => !hiddenItems.has(item.label));
 
   // Which groups are open.
   //
@@ -774,15 +779,17 @@ export function Sidebar() {
         </div>
       </div>
 
-      <NewMenu />
+      {webSeat() !== 'payroll' && <NewMenu />}
 
-      <div className="px-2 pt-2">
-        <NavButton
-          item={QUICK_ENTRY_NAV_ITEM}
-          forceActive={currentView.kind === 'quickEntry'}
-          emphasized
-        />
-      </div>
+      {webSeat() !== 'payroll' && (
+        <div className="px-2 pt-2">
+          <NavButton
+            item={QUICK_ENTRY_NAV_ITEM}
+            forceActive={currentView.kind === 'quickEntry'}
+            emphasized
+          />
+        </div>
+      )}
       {(() => { const w = webContext(); return w && (w.org.isPlatform || w.user.role === 'owner'); })() && (
         <div className="px-2 pt-1">
           <NavButton item={ADMIN_NAV_ITEM} forceActive={currentView.kind === 'webAdmin'} emphasized />

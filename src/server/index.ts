@@ -34,6 +34,7 @@ import { getCurrentDb } from '../main/companyFile';
 import { companyCreateSchema } from '@shared/validation/schemas';
 import { WEB_LICENSE } from '../main/licensing/license';
 import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
+import { seatAllowsChannel, SEAT_LABELS } from '@shared/domain/seatScope';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 8787);
@@ -527,6 +528,7 @@ app.post('/api/:channel', async (req, res) => {
   const s = sessionOf(req);
   if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
   const channel = req.params.channel;
+  if (!seatAllowsChannel(s.user.seatType, channel)) { res.json({ ok: false, error: `Your ${SEAT_LABELS[s.user.seatType]} seat does not include this part of Apex Ledger. Ask your organisation's owner if you need it.` }); return; }
   const args = Array.isArray((req.body ?? {}).args) ? (req.body.args as unknown[]) : [];
   const files = uploadedFiles(s, (req.body ?? {}).uploads);
   res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });

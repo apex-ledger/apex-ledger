@@ -7,6 +7,8 @@ import {
   type HistoryState,
 } from './viewHistory';
 import { create } from 'zustand';
+import { seatHomeView } from '@shared/domain/seatScope';
+import { webSeat } from '../../utils/platform';
 import { loadStoredColorScheme, storeColorScheme, type ColorSchemeId } from '../../theme';
 import { loadStoredFontSize, storeFontSize, type FontSizeId } from '../../utils/fontSize';
 import { loadStoredFontFamily, storeFontFamily, type FontFamilyId } from '../../utils/fontFamily';
@@ -329,7 +331,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   setCompany: (companyPath, legalName) => {
     // Opening a different company starts a fresh trail: going "back" into screens belonging to the
     // file that was just closed would show another company's data.
-    const view: View = companyPath ? { kind: 'dashboard' } : { kind: 'welcome' };
+    const view: View = companyPath ? seatHomeView(webSeat()) : { kind: 'welcome' };
     set({ companyPath, companyLegalName: legalName, view, history: startHistory<View>(view), sessionLocked: false });
   },
   setShowNewCompanyModal: (show) => set({ showNewCompanyModal: show }),

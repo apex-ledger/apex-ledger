@@ -16,7 +16,8 @@ import { PayBillModal } from '../features/purchases/PayBillModal';
 import { QuickSearchPalette } from './QuickSearchPalette';
 import { useIpcQuery } from '../hooks/useIpcQuery';
 import { storeAccessRole } from '../utils/accessRole';
-import { isWeb } from '../utils/platform';
+import { isWeb, webSeat } from '../utils/platform';
+import { seatAllowsToolbar } from '@shared/domain/seatScope';
 import { FeedbackDialog } from './FeedbackDialog';
 
 /** Feedback: on the web a dialog that posts to the server (the Header listens for this event);
@@ -1071,20 +1072,20 @@ export function Header() {
           color="gray"
         />
         <div className="mx-1 h-6 w-px bg-gray-200" />
-        <ActionButton icon={<IconInvoicePlus />} label="New Invoice" onClick={() => setView({ kind: 'invoiceEditor', id: 'new' })} color="emerald" />
-        <ActionButton icon={<IconBillPlus />} label="New Bill" onClick={() => setView({ kind: 'purchases' })} color="orange" />
-        <ActionButton icon={<IconDollarCircle />} label="New Expense" onClick={() => setView({ kind: 'quickEntry', type: 'expense' })} color="rose" />
-        <ActionButton icon={<IconUserGroup />} label="Receive Payment" onClick={() => setShowReceivePayment(true)} color="blue" />
-        <ActionButton icon={<IconBank />} label="Make Payment" onClick={() => setShowPayBill(true)} color="purple" />
-        <ActionButton icon={<IconDollarCircle />} label="Transfer" onClick={() => setView({ kind: 'quickEntry', type: 'transfer' })} color="cyan" />
-        <ActionButton icon={<IconBank />} label="Import Bank" onClick={() => setView({ kind: 'bankImport' })} color="blue" />
-        <ActionButton icon={<IconCamera />} label="Scan Receipt" onClick={handleScanReceipt} busy={importingReceipt} />
-        <ActionButton icon={<IconBook />} label="Journal Entry" onClick={() => setView({ kind: 'journalForm', id: 'new' })} color="violet" />
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconInvoicePlus />} label="New Invoice" onClick={() => setView({ kind: 'invoiceEditor', id: 'new' })} color="emerald" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconBillPlus />} label="New Bill" onClick={() => setView({ kind: 'purchases' })} color="orange" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconDollarCircle />} label="New Expense" onClick={() => setView({ kind: 'quickEntry', type: 'expense' })} color="rose" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconUserGroup />} label="Receive Payment" onClick={() => setShowReceivePayment(true)} color="blue" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconBank />} label="Make Payment" onClick={() => setShowPayBill(true)} color="purple" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconDollarCircle />} label="Transfer" onClick={() => setView({ kind: 'quickEntry', type: 'transfer' })} color="cyan" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconBank />} label="Import Bank" onClick={() => setView({ kind: 'bankImport' })} color="blue" />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconCamera />} label="Scan Receipt" onClick={handleScanReceipt} busy={importingReceipt} />}
+        {seatAllowsToolbar(webSeat(), 'books') && <ActionButton icon={<IconBook />} label="Journal Entry" onClick={() => setView({ kind: 'journalForm', id: 'new' })} color="violet" />}
         {!isWeb() && <ActionButton icon={<IconCloudUpload />} label="Backup" onClick={handleBackup} busy={backingUp} color="purple" />}
         <ActionButton icon={<IconRefresh />} label="Refresh" onClick={bumpRefreshNonce} color="gray" />
         {!isWeb() && <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />}
-        <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />
-        {can('crm') && <ActionButton icon={<IconUserGroup />} label="Client Management (CRM)" onClick={() => setView({ kind: 'clientHub' })} color="purple" />}
+        {seatAllowsToolbar(webSeat(), 'accountant') && <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />}
+        {can('crm') && seatAllowsToolbar(webSeat(), 'crm') && <ActionButton icon={<IconUserGroup />} label="Client Management (CRM)" onClick={() => setView({ kind: 'clientHub' })} color="purple" />}
       </div>
 
       {toast && (
