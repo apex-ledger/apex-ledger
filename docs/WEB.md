@@ -40,6 +40,8 @@ Environment:
 | `APEX_DATA_DIR` | Folder for `web-admin.db`, `companies/`, `user-data/`. Put it on the encrypted data disk. |
 | `APEX_ADMIN_EMAIL`, `APEX_ADMIN_PASSWORD` | Created on first start as the platform administrator (organisation "Apex Ledger", no seat limit). |
 | `APEX_SEED_ORGS` | Optional `Name:seats,Name:seats` starter organisations, created once. |
+| `APEX_SMTP_HOST`, `APEX_SMTP_FROM` | Mail server and from address for notices to the administrator. Optional `APEX_SMTP_USER`, `APEX_SMTP_PASSWORD`, `APEX_SMTP_PORT` (587), `APEX_SMTP_SECURITY` (`starttls`, or `tls` for port 465). Microsoft 365: `smtp.office365.com`, port 587, the mailbox as user and from. |
+| `APEX_NOTIFY_EMAIL` | Where those notices go. Default `admin@apexledger.ca`. |
 | `PORT` | Listen port; put a TLS reverse proxy in front. |
 
 On this development machine better-sqlite3 is compiled for Electron. `npm rebuild better-sqlite3`
@@ -76,6 +78,14 @@ On a server there is only Node, so a plain `npm ci` is right.
   site origins in `APEX_SITE_ORIGINS`, honeypot field, five per address per hour). They land in
   `trial_requests` in web-admin.db and show in Settings, Organisation & seats for the platform
   administrator, who can fill the New organisation and Add a person forms from one and mark it done.
+  Before the form sends, the site shows the Terms of Service and then the Subscription Agreement
+  filled in with the firm and name from the form (`agreement.html?firm=&name=&email=&seat=&seats=`);
+  the visitor types their name as signature and that name and the server time land in
+  `agreed_name` / `agreed_at` on the row. The administrator's list shows "Signed <name>", linking
+  to the agreement with the signature block filled in (`&signed=&date=&where=site`).
+  With `APEX_SMTP_HOST` and `APEX_SMTP_FROM` set, each request is also emailed to
+  `APEX_NOTIFY_EMAIL` (admin@apexledger.ca) the moment it arrives (`src/server/notify.ts`); a mail
+  failure is a log line, the request is still saved and the visitor still sees "Your request is in".
 - On the web the welcome screen hides Open Company File, the demo and the test company; the header
   hides Check for Updates and Mirror Window (`src/renderer/utils/platform.ts`, `isWeb()`).
 

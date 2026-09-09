@@ -15,6 +15,8 @@
  *   APEX_ADMIN_EMAIL/APEX_ADMIN_PASSWORD   first platform admin (created on first start)
  *   APEX_SEED_ORGS        optional "Firm One:2,Firm Two:2" starter organisations
  *   PORT                  listen port (default 8787)
+ *   APEX_SMTP_HOST/APEX_SMTP_FROM (+ USER/PASSWORD/PORT/SECURITY), APEX_NOTIFY_EMAIL
+ *                         emails each website trial request to the administrator (src/server/notify.ts)
  */
 import express from 'express';
 import crypto from 'node:crypto';
@@ -34,6 +36,7 @@ import { getCurrentDb } from '../main/companyFile';
 import { companyCreateSchema } from '@shared/validation/schemas';
 import { WEB_LICENSE } from '../main/licensing/license';
 import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
+import { notifyTrialRequest } from './notify';
 import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -258,7 +261,7 @@ app.post('/api/trial-request', (req, res) => {
   siteCors(req, res);
   const body = (req.body ?? {}) as Record<string, unknown>;
   if (String(body.website ?? '').trim()) { res.json({ ok: true, data: { received: true } }); return; } // honeypot field: bots fill it, people never see it
-  const r = wrap(() => { const t = createTrialRequest(body, req.ip ?? null); console.log(`[trial] ${t.firm} <${t.email}> ${t.edition} x${t.seats}`); return { received: true }; });
+  const r = wrap(() => { const t = createTrialRequest(body, req.ip ?? null); console.log(`[trial] ${t.firm} <${t.email}> ${t.edition} x${t.seats}`); notifyTrialRequest(t); return { received: true }; });
   res.status(r.ok ? 200 : 400).json(r);
 });
 app.get('/api/admin/trial-requests', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => listTrialRequests())); });

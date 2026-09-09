@@ -73,11 +73,12 @@ class SmtpSession {
     });
   }
 
-  async command(text: string, expect: number[]): Promise<string> {
+  /** `shown` names the step in an error instead of the text sent, so a credential or the message body never lands in a log. */
+  async command(text: string, expect: number[], shown = text.split(' ')[0]): Promise<string> {
     this.socket.write(`${text}\r\n`);
     const reply = await this.read();
     const code = Number(reply.slice(0, 3));
-    if (!expect.includes(code)) throw new Error(`Mail server replied "${reply}" to ${text.split(' ')[0]}.`);
+    if (!expect.includes(code)) throw new Error(`Mail server replied "${reply}" to ${shown}.`);
     return reply;
   }
 
@@ -169,13 +170,13 @@ export async function sendSmtp(options: SmtpOptions, mail: OutgoingMail): Promis
     }
     if (options.user) {
       await session.command('AUTH LOGIN', [334]);
-      await session.command(Buffer.from(options.user, 'utf8').toString('base64'), [334]);
-      await session.command(Buffer.from(options.password, 'utf8').toString('base64'), [235]);
+      await session.command(Buffer.from(options.user, 'utf8').toString('base64'), [334], 'the user name');
+      await session.command(Buffer.from(options.password, 'utf8').toString('base64'), [235], 'the password (check the app password, and that SMTP sign-in is allowed for this mailbox)');
     }
     await session.command(`MAIL FROM:<${options.fromAddress}>`, [250]);
     await session.command(`RCPT TO:<${mail.to}>`, [250, 251]);
     await session.command('DATA', [354]);
-    await session.command(`${buildMime(options, mail)}\r\n.`, [250]);
+    await session.command(`${buildMime(options, mail)}\r\n.`, [250], 'the message');
     await session.command('QUIT', [221]).catch(() => undefined);
   } finally {
     session.end();

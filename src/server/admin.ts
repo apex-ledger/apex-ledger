@@ -189,7 +189,7 @@ export function setFeedbackStatus(id: number, status: 'new' | 'done'): FeedbackN
 
 /** A trial request from the public website: who they are, which edition, how many seats. The
  * platform administrator reads these in Settings and creates the organisation from them. */
-export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
+export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; /** The name typed as signature under the Subscription Agreement on the website, and when. */ agreedName: string | null; agreedAt: string | null }
 const TRIAL_EDITIONS = ['Business', 'Payroll Unlimited', 'Payroll only', 'Bookkeeper', 'Full accountant', 'Accounting Essential', 'Ultimate Suite', 'Payroll'];
 
 export function createTrialRequest(input: Record<string, unknown>, ip: string | null): TrialRequest {
@@ -206,15 +206,16 @@ export function createTrialRequest(input: Record<string, unknown>, ip: string | 
   const edition = TRIAL_EDITIONS.includes(String(input.edition)) ? String(input.edition) : 'Full accountant';
   const seats = Math.min(100, Math.max(1, Math.round(Number(input.seats) || 2)));
   const message = text('message', 2000);
-  if (!input.agreed) throw new Error('Please tick the box to agree to the terms and subscription agreement.');
+  if (!input.agreed) throw new Error('Please read and accept the terms and subscription agreement first.');
+  const agreedName = text('agreedName', 160) || null;
   const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM trial_requests WHERE ip = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(ip ?? '') as { n: number }).n);
   if (ip && recent >= 5) throw new Error('Too many requests from this address. Please email admin@apexledger.ca instead.');
-  const r = store().prepare('INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip, agreed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)').run(firm, name, email, phone, edition, seats, message, ip);
+  const r = store().prepare("INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip, agreed, agreed_name, agreed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, strftime('%Y-%m-%d %H:%M:%S', 'now'))").run(firm, name, email, phone, edition, seats, message, ip, agreedName);
   return getTrialRequest(Number(r.lastInsertRowid))!;
 }
 
 function rowToTrial(r: Record<string, unknown>): TrialRequest {
-  return { id: Number(r.id), firm: String(r.firm), name: String(r.name), email: String(r.email), phone: String(r.phone), edition: String(r.edition), seats: Number(r.seats), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at) };
+  return { id: Number(r.id), firm: String(r.firm), name: String(r.name), email: String(r.email), phone: String(r.phone), edition: String(r.edition), seats: Number(r.seats), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at), agreedName: r.agreed_name ? String(r.agreed_name) : null, agreedAt: r.agreed_at ? String(r.agreed_at) : null };
 }
 export function getTrialRequest(id: number): TrialRequest | null {
   const r = store().prepare('SELECT * FROM trial_requests WHERE id = ?').get(id) as Record<string, unknown> | undefined;
@@ -243,6 +244,8 @@ function ensureColumns(): void {
   if (!cols.includes('agreed_name')) store().exec('ALTER TABLE users ADD COLUMN agreed_name TEXT');
   const trialCols = (store().prepare('PRAGMA table_info(trial_requests)').all() as { name: string }[]).map((c) => c.name);
   if (!trialCols.includes('agreed')) store().exec('ALTER TABLE trial_requests ADD COLUMN agreed INTEGER NOT NULL DEFAULT 0');
+  if (!trialCols.includes('agreed_name')) store().exec('ALTER TABLE trial_requests ADD COLUMN agreed_name TEXT');
+  if (!trialCols.includes('agreed_at')) store().exec('ALTER TABLE trial_requests ADD COLUMN agreed_at TEXT');
   const orgCols = (store().prepare('PRAGMA table_info(orgs)').all() as { name: string }[]).map((c) => c.name);
   if (!orgCols.includes('discount_pct')) store().exec('ALTER TABLE orgs ADD COLUMN discount_pct INTEGER NOT NULL DEFAULT 0');
   if (!orgCols.includes('discount_until')) store().exec('ALTER TABLE orgs ADD COLUMN discount_until TEXT');

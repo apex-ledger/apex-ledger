@@ -62,6 +62,14 @@ APEX_ADMIN_EMAIL=${ADMIN_EMAIL}
 APEX_ADMIN_PASSWORD=${ADMIN_PASSWORD}
 APEX_SEED_ORGS=${SEED_ORGS}
 APEX_WEB_STATIC=/opt/apexledger/dist-web
+# Trial requests from apexledger.ca are emailed to APEX_NOTIFY_EMAIL once these are filled in
+# (Microsoft 365: smtp.office365.com, port 587, the mailbox as user and from), then: systemctl restart apexledger
+#APEX_SMTP_HOST=smtp.office365.com
+#APEX_SMTP_PORT=587
+#APEX_SMTP_USER=admin@apexledger.ca
+#APEX_SMTP_PASSWORD=
+#APEX_SMTP_FROM=admin@apexledger.ca
+#APEX_NOTIFY_EMAIL=admin@apexledger.ca
 EOF
 
 echo "== service"

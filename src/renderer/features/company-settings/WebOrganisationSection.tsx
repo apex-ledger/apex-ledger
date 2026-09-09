@@ -15,7 +15,7 @@ const SEAT_HINT: Record<SeatType, string> = { business: 'A business keeping its 
 interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
-interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
+interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; agreedName?: string | null; agreedAt?: string | null }
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
   try {
@@ -321,6 +321,7 @@ export function WebOrganisationSection() {
                       <span className="text-xs text-gray-500">{t.name} · <a href={`mailto:${t.email}`} className="text-brand-700 hover:underline">{t.email}</a>{t.phone ? ` · ${t.phone}` : ''}</span>
                       <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-800">{t.edition} · {t.seats} seat{t.seats === 1 ? '' : 's'}</span>
                       <span className="text-xs text-gray-400">{t.createdAt.slice(0, 16)}</span>
+                      {t.agreedName && <a className="text-xs text-brand-700 hover:underline" target="_blank" rel="noreferrer" title={`Subscription Agreement signed ${t.agreedName} at ${t.agreedAt ?? t.createdAt}`} href={`https://apexledger.ca/agreement.html?firm=${encodeURIComponent(t.firm)}&name=${encodeURIComponent(t.name)}&email=${encodeURIComponent(t.email)}&seat=${encodeURIComponent(t.edition)}&seats=${t.seats}&signed=${encodeURIComponent(t.agreedName)}&date=${encodeURIComponent((t.agreedAt ?? t.createdAt).slice(0, 10))}&where=site`}>Signed {t.agreedName}</a>}
                       <span className="ml-auto flex gap-2 text-xs">
                         {t.status === 'new' && <button type="button" onClick={() => fillFromTrial(t)} className="text-brand-700 hover:underline">Create organisation</button>}
                         <button type="button" onClick={() => void setTrialStatus(t, t.status === 'new' ? 'done' : 'new')} className="text-gray-600 hover:underline">{t.status === 'new' ? 'Mark done' : 'Reopen'}</button>

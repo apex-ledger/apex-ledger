@@ -71,12 +71,18 @@ table{width:100%;border-collapse:collapse;font:13px "Segoe UI",Arial,sans-serif;
 <p id="f-note" style="display:none;margin-top:14px;font:12px 'Segoe UI',Arial,sans-serif;color:#555"></p>
 </main>
 <script>
-(function(){var q=new URLSearchParams(location.search);if(!q.get('name'))return;var e=function(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
-document.getElementById('f-sub').innerHTML='Firm or business name: <b>'+e(q.get('firm')||'')+'</b> &nbsp; Contact: <b>'+e(q.get('name'))+'</b> &nbsp; Email: <b>'+e(q.get('email')||'')+'</b>'+(q.get('seat')?' &nbsp; Seat: <b>'+e(q.get('seat'))+'</b>':'');
-document.getElementById('f-sig').outerHTML='<div style="font:italic 18px Georgia,serif;margin-top:14px;padding-bottom:4px;border-bottom:1px solid #333">'+e(q.get('signed')||q.get('name'))+'</div>';
-document.getElementById('f-sigline').textContent=(q.get('signed')||q.get('name'))+' · '+(q.get('date')||'');
-var n=document.getElementById('f-note');n.style.display='block';n.textContent='Accepted electronically in the ApexLedger application on '+(q.get('date')||'')+' by '+(q.get('signed')||q.get('name'))+' ('+(q.get('email')||'')+'), who typed their name as signature after reading this agreement. Recorded by the ApexLedger server.';
-document.title='Subscription Agreement - '+(q.get('firm')||q.get('name'));})();
+// ?firm=&name=&email=&seat=&seats= fills the Subscriber row so the agreement can be read with the firm's own details
+// (the trial form on the home page shows it this way before the request is sent). The signature and the acceptance
+// note appear only with &signed=&date=, which the application and the trial record add once it has been accepted.
+(function(){var q=new URLSearchParams(location.search),g=function(k){return q.get(k)||''};if(!g('firm')&&!g('name')&&!g('email'))return;var e=function(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})};
+var seat=g('seat')?(g('seats')?e(g('seats'))+' × ':'')+e(g('seat')):'';
+document.getElementById('f-sub').innerHTML='Firm or business name: <b>'+e(g('firm'))+'</b> &nbsp; Contact: <b>'+e(g('name'))+'</b> &nbsp; Email: <b>'+e(g('email'))+'</b>'+(seat?' &nbsp; Seat'+(g('seats')&&g('seats')!=='1'?'s':'')+': <b>'+seat+'</b>':'');
+document.title='Subscription Agreement - '+(g('firm')||g('name'));
+if(!g('signed')&&!g('date'))return;
+var who=g('signed')||g('name'),where=g('where')==='site'?'on apexledger.ca when requesting a trial':'in the ApexLedger application';
+document.getElementById('f-sig').outerHTML='<div style="font:italic 18px Georgia,serif;margin-top:14px;padding-bottom:4px;border-bottom:1px solid #333">'+e(who)+'</div>';
+document.getElementById('f-sigline').textContent=who+' · '+g('date');
+var n=document.getElementById('f-note');n.style.display='block';n.textContent='Accepted electronically '+where+' on '+g('date')+' by '+who+' ('+g('email')+'), who typed their name as signature after reading this agreement. Recorded by the ApexLedger server.';})();
 </script>
 </body>
 </html>
