@@ -23,12 +23,16 @@ export const SEAT_GROUPS: Record<SeatType, '*' | string[]> = {
  * allowed for the payroll journal view but nothing else. */
 const PAYROLL_ONLY_CHANNELS = /^(reports:(employeeEarnings|activityLog|chequeRegister)|journal:(get|list|listByPeriod|listRecent))$/;
 
+/** Reports that belong to the accountant's year end, not to the books: only a Full seat runs them. */
+const ACCOUNTANT_REPORTS = /^reports:(yearEndSignoff|yearEndSignoffHistory|yearEndSignoffSign|gifiExport|gifiExportExcel|compliancePackage|auditExceptions|workingTrialBalance|changesInEquity|comprehensiveCompany)$/;
+
 export function seatAllowsChannel(seat: SeatType, channel: string): boolean {
   const groups = SEAT_GROUPS[seat] ?? SEAT_GROUPS.full;
   if (groups === '*') return true;
   const group = channel.split(':')[0];
   if (!groups.includes(group)) return false;
   if (seat === 'payroll' && (group === 'reports' || group === 'journal')) return PAYROLL_ONLY_CHANNELS.test(channel);
+  if (ACCOUNTANT_REPORTS.test(channel)) return false;
   return true;
 }
 
