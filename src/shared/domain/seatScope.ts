@@ -16,7 +16,7 @@ export const SEAT_GROUPS: Record<SeatType, '*' | string[]> = {
   full: '*',
   bookkeeper: [...COMMON_GROUPS, ...BOOKS_GROUPS, ...PAYROLL_GROUPS],
   business: [...COMMON_GROUPS, ...BOOKS_GROUPS],
-  payroll: [...COMMON_GROUPS, ...PAYROLL_GROUPS, 'reports', 'journal'],
+  payroll: [...COMMON_GROUPS, ...PAYROLL_GROUPS, 'reports', 'journal', 'actionCentre'],
 };
 
 /** Inside the reports group, a Payroll seat may run only payroll reports; a journal read is
@@ -36,6 +36,15 @@ export function seatAllowsChannel(seat: SeatType, channel: string): boolean {
   return true;
 }
 
+/** Some answers are shared by every seat but hold more than one area: a Payroll seat's Action
+ * Centre keeps only the payroll items (remittances, pay days, draft runs). */
+export function filterResultForSeat(seat: SeatType, channel: string, data: unknown): unknown {
+  if (seat !== 'payroll' || channel !== 'actionCentre:items' || !data || typeof data !== 'object') return data;
+  const report = data as { items?: Array<{ target?: { kind?: string } }> };
+  if (!Array.isArray(report.items)) return data;
+  return { ...report, items: report.items.filter((i) => i.target?.kind === 'payroll') };
+}
+
 export const SEAT_LABELS: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
 
 /** Sidebar entries a seat sees (top-level labels). Full sees all. */
@@ -44,7 +53,7 @@ export const SEAT_NAV_HIDDEN: Record<SeatType, string[]> = {
   full: [],
   bookkeeper: ACCOUNTANT_NAV,
   business: [...ACCOUNTANT_NAV, 'Payroll', 'Approvals'],
-  payroll: ['Dashboard', 'Action Centre', 'Sales & Payments', 'Expenses & Bills', 'Banking & Accounting', 'Chart of Accounts', 'Journal Entries', 'Fixed Assets', 'Approvals', 'General Ledger', 'Inventory', 'Projects', 'Sales Tax (GST/HST)', 'Auditor Centre', 'Month-End Close', 'Business Tax & GIFI', 'Settings', 'Access & Permissions', 'Audit', 'Tools', 'Quick Entry'],
+  payroll: ['Dashboard', 'Sales & Payments', 'Expenses & Bills', 'Banking & Accounting', 'Chart of Accounts', 'Journal Entries', 'Fixed Assets', 'Approvals', 'General Ledger', 'Inventory', 'Projects', 'Sales Tax (GST/HST)', 'Auditor Centre', 'Month-End Close', 'Business Tax & GIFI', 'Settings', 'Access & Permissions', 'Audit', 'Tools', 'Quick Entry'],
 };
 
 /** Toolbar buttons: which family each seat may use. */

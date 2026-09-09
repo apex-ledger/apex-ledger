@@ -34,7 +34,7 @@ import { getCurrentDb } from '../main/companyFile';
 import { companyCreateSchema } from '@shared/validation/schemas';
 import { WEB_LICENSE } from '../main/licensing/license';
 import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
-import { seatAllowsChannel, SEAT_LABELS } from '@shared/domain/seatScope';
+import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT ?? 8787);
@@ -545,6 +545,8 @@ app.post('/api/:channel', async (req, res) => {
     // A handler that "opened" a file on the web has copied it for download: hand the link back.
     const r = result as { ok?: boolean; data?: unknown } | null;
     if (opened.filePath && r && r.ok) result = { ...r, data: { ...(r.data && typeof r.data === 'object' ? (r.data as object) : {}), filePath: opened.filePath } };
+    const filtered = result as { ok?: boolean; data?: unknown } | null;
+    if (filtered && filtered.ok) result = { ...filtered, data: filterResultForSeat(s.user.seatType, channel, filtered.data) };
     res.json(asDownload(result) ?? { ok: true, data: null });
     if (channel.startsWith('company:')) persistSession(s);
   } catch (error) {
