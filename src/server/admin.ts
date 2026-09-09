@@ -19,7 +19,7 @@ export type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
 /** Lowest to highest price. */
 export const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
 export const SEAT_TYPE_LABELS: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
-export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; createdAt: string; lastSignIn: string | null }
+export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; createdAt: string; lastSignIn: string | null }
 
 let db: Database.Database | null = null;
 let dataDir = '';
@@ -136,6 +136,16 @@ export function deleteSession(tokenHash: string): void {
 export function purgeSessions(): number {
   return Number(store().prepare(`DELETE FROM sessions WHERE last_seen <= strftime('%Y-%m-%d %H:%M:%S', 'now', '-${SESSION_DAYS} days')`).run().changes);
 }
+/** The person accepted the subscription agreement and terms; recorded once, with the time. */
+export function recordAgreement(userId: number, signedName: string): WebUser {
+  const name = signedName.trim().slice(0, 160);
+  if (name.length < 3) throw new Error('Type your full name as your signature.');
+  store().prepare("UPDATE users SET agreed_at = COALESCE(agreed_at, strftime('%Y-%m-%d %H:%M:%S', 'now')), agreed_name = COALESCE(agreed_name, ?) WHERE id = ?").run(name, userId);
+  const u = getUser(userId);
+  if (!u) throw new Error('Person not found.');
+  return u;
+}
+
 export function getUser(id: number): WebUser | null {
   const r = store().prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown> | undefined;
   return r ? mapUser(r) : null;
@@ -196,9 +206,10 @@ export function createTrialRequest(input: Record<string, unknown>, ip: string | 
   const edition = TRIAL_EDITIONS.includes(String(input.edition)) ? String(input.edition) : 'Full accountant';
   const seats = Math.min(100, Math.max(1, Math.round(Number(input.seats) || 2)));
   const message = text('message', 2000);
+  if (!input.agreed) throw new Error('Please tick the box to agree to the terms and subscription agreement.');
   const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM trial_requests WHERE ip = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(ip ?? '') as { n: number }).n);
   if (ip && recent >= 5) throw new Error('Too many requests from this address. Please email admin@apexledger.ca instead.');
-  const r = store().prepare('INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(firm, name, email, phone, edition, seats, message, ip);
+  const r = store().prepare('INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip, agreed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)').run(firm, name, email, phone, edition, seats, message, ip);
   return getTrialRequest(Number(r.lastInsertRowid))!;
 }
 
@@ -228,6 +239,10 @@ function store(): Database.Database {
 function ensureColumns(): void {
   const cols = (store().prepare('PRAGMA table_info(users)').all() as { name: string }[]).map((c) => c.name);
   if (!cols.includes('seat_type')) store().exec("ALTER TABLE users ADD COLUMN seat_type TEXT NOT NULL DEFAULT 'full'");
+  if (!cols.includes('agreed_at')) store().exec('ALTER TABLE users ADD COLUMN agreed_at TEXT');
+  if (!cols.includes('agreed_name')) store().exec('ALTER TABLE users ADD COLUMN agreed_name TEXT');
+  const trialCols = (store().prepare('PRAGMA table_info(trial_requests)').all() as { name: string }[]).map((c) => c.name);
+  if (!trialCols.includes('agreed')) store().exec('ALTER TABLE trial_requests ADD COLUMN agreed INTEGER NOT NULL DEFAULT 0');
   const orgCols = (store().prepare('PRAGMA table_info(orgs)').all() as { name: string }[]).map((c) => c.name);
   if (!orgCols.includes('discount_pct')) store().exec('ALTER TABLE orgs ADD COLUMN discount_pct INTEGER NOT NULL DEFAULT 0');
   if (!orgCols.includes('discount_until')) store().exec('ALTER TABLE orgs ADD COLUMN discount_until TEXT');
@@ -260,7 +275,7 @@ export function setOrgFounding(id: number, on: boolean): Org {
 export function foundingFirmsCount(): number {
   return Number((store().prepare('SELECT COUNT(*) AS n FROM orgs WHERE discount_pct > 0 AND is_platform = 0').get() as { n: number }).n);
 }
-const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
+const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', agreedAt: r.agreed_at ? String(r.agreed_at) : null, agreedName: r.agreed_name ? String(r.agreed_name) : null, isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
 
 export function listOrgs(): Org[] {
   return (store().prepare('SELECT * FROM orgs ORDER BY is_platform DESC, name').all() as Record<string, unknown>[]).map(mapOrg);

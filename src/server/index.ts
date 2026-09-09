@@ -23,7 +23,7 @@ import path from 'node:path';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { fileURLToPath } from 'node:url';
 import { handlerRegistry, BrowserWindow, DOWNLOAD_DIR, UPLOAD_DIR, uploadContext, downloadContext } from './electronStub';
-import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, signInPaused, setSetting, deleteSessionsOfNonPlatformUsers, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
+import { authenticate, bootstrap, companiesDirFor, createFeedback, createSiteFeedback, recordAgreement, signInPaused, setSetting, deleteSessionsOfNonPlatformUsers, createOrg, createTrialRequest, createUser, seatRates, setSeatRate, setUserSeatType, setOrgFounding, foundingFirmsCount, FOUNDING, type SeatType, listFeedback, setFeedbackStatus, deleteSession, findSession, getOrg, getUser, listOrgs, listTrialRequests, listUsers, openAdminStore, purgeSessions, recentFailures, saveSession, SESSION_DAYS, setTrialRequestStatus, setUserActive, setUserPassword, signInByVerifiedEmail, touchSession, updateOrgSeats, type Org, type WebUser } from './admin';
 import { registerIpcHandlers } from '../main/ipc/registerHandlers';
 import { runWithAccessSession, clearAccessSession, setAccessIdentity, applySeatAccess, getAccessRole, SEAT_ACCESS } from '../main/accessSession';
 import { runWithCompanyContext, type CompanyContext, closeCompany, createCompanyAt, openCompany, getCurrentFilePath } from '../main/companyFile';
@@ -284,7 +284,7 @@ app.post('/api/login', (req, res) => {
   if (!org.isPlatform && signInPaused()) { res.status(403).json({ ok: false, error: PAUSED_MESSAGE }); return; }
   const s = newSession(user, org);
   res.setHeader('Set-Cookie', sessionCookie(req, s));
-  res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role, seatType: user.seatType, accessRole: SEAT_ACCESS[user.seatType].role }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
+  res.json({ ok: true, data: { sessionId: s.id, user: { name: user.name, email: user.email, role: user.role, seatType: user.seatType, accessRole: SEAT_ACCESS[user.seatType].role, agreementAccepted: Boolean(user.agreedAt) || org.isPlatform }, org: { name: org.name, seats: org.seats, isPlatform: org.isPlatform } } });
 });
 
 // ---- sign in with Microsoft or Google ----
@@ -336,6 +336,13 @@ app.get('/api/auth/:provider/callback', async (req, res) => {
   }
 });
 
+// ---- the subscription agreement: accepted once per person before the books open ----
+app.post('/api/me/agree', (req, res) => {
+  const s = sessionOf(req);
+  if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
+  res.json(wrap(() => { s.user = recordAgreement(s.user.id, String((req.body ?? {}).name ?? '')); console.log(`[agreement] ${s.user.email} accepted at ${s.user.agreedAt} signed ${s.user.agreedName}`); return { agreedAt: s.user.agreedAt, agreedName: s.user.agreedName }; }));
+});
+
 app.post('/api/logout', (req, res) => {
   const s = sessionOf(req);
   if (s) endSession(s, true);
@@ -345,7 +352,7 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/session', (req, res) => {
   const s = sessionOf(req);
-  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role, seatType: s.user.seatType, accessRole: SEAT_ACCESS[s.user.seatType].role }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
+  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role, seatType: s.user.seatType, accessRole: SEAT_ACCESS[s.user.seatType].role, agreementAccepted: Boolean(s.user.agreedAt) || s.org.isPlatform }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
 });
 
 app.get('/api/events', (req, res) => {
@@ -528,6 +535,7 @@ app.post('/api/:channel', async (req, res) => {
   const s = sessionOf(req);
   if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
   const channel = req.params.channel;
+  if (!s.org.isPlatform && !s.user.agreedAt) { res.json({ ok: false, error: 'Please accept the subscription agreement first.' }); return; }
   if (!seatAllowsChannel(s.user.seatType, channel)) { res.json({ ok: false, error: `Your ${SEAT_LABELS[s.user.seatType]} seat does not include this part of Apex Ledger. Ask your organisation's owner if you need it.` }); return; }
   const args = Array.isArray((req.body ?? {}).args) ? (req.body.args as unknown[]) : [];
   const files = uploadedFiles(s, (req.body ?? {}).uploads);

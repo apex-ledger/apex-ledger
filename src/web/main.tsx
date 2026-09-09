@@ -20,6 +20,19 @@ function Gate() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
+  const [needsAgreement, setNeedsAgreement] = useState(false);
+  const [agreeTicked, setAgreeTicked] = useState(false);
+  const [agreeing, setAgreeing] = useState(false);
+  const [signature, setSignature] = useState('');
+  const noteAgreement = (info: unknown) => { const u = (info as { user?: { agreementAccepted?: boolean } } | null)?.user; setNeedsAgreement(!!u && u.agreementAccepted === false); };
+  async function acceptAgreement() {
+    setAgreeing(true);
+    try {
+      const r = (await (await fetch('/api/me/agree', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: signature }) })).json()) as { ok: boolean; error?: string };
+      if (r.ok) { const w = (window as unknown as { __apexWeb?: { user: { agreementAccepted?: boolean } } }).__apexWeb; if (w) w.user.agreementAccepted = true; setNeedsAgreement(false); }
+      else setError(r.error ?? 'Could not record your acceptance.');
+    } finally { setAgreeing(false); }
+  }
   const [App, setApp] = useState<React.ComponentType | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [slow, setSlow] = useState(false);
@@ -30,7 +43,7 @@ function Gate() {
     const reason = q.get('signin');
     if (reason) { setError(reason); window.history.replaceState(null, '', window.location.pathname); }
     void fetch('/api/auth/options', { credentials: 'same-origin' }).then((r) => r.json()).then((b: { ok: boolean; data?: { providers: Provider[] } }) => { if (b.ok && b.data) setProviders(b.data.providers); }).catch(() => undefined);
-    void webSession().then((info) => { if (info) (window as unknown as { __apexWeb?: unknown }).__apexWeb = info; setState(info ? 'signedIn' : 'signedOut'); });
+    void webSession().then((info) => { if (info) (window as unknown as { __apexWeb?: unknown }).__apexWeb = info; noteAgreement(info); setState(info ? 'signedIn' : 'signedOut'); });
     const onSignedOut = () => setState('signedOut');
     window.addEventListener('apex:signed-out', onSignedOut);
     return () => window.removeEventListener('apex:signed-out', onSignedOut);
@@ -53,6 +66,7 @@ function Gate() {
     const r = await webSignIn(email, password);
     if (!r.ok) { setError(r.error); return; }
     (window as unknown as { __apexWeb?: unknown }).__apexWeb = r.data;
+    noteAgreement(r.data);
     setPassword('');
     setState('signedIn');
   }
@@ -86,6 +100,27 @@ function Gate() {
           <button type="submit" className="mt-4 w-full rounded-full bg-brand-700 py-2 text-sm font-medium text-white hover:bg-brand-800">Sign in</button>
           <p className="mt-3 text-[11px] text-gray-400">Your books stay on this server in Canada. Nothing is sent anywhere else.</p>
         </form>
+      </div>
+    );
+  }
+  if (needsAgreement) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-brand-900 p-4">
+        <div className="w-[34rem] max-w-full rounded-lg bg-white p-6 shadow-xl" data-testid="agreement-gate">
+          <div className="text-lg font-semibold text-brand-900">Before you start</div>
+          <p className="mt-2 text-sm text-gray-700">ApexLedger records, calculates and reports from what you and your colleagues enter. You are responsible for the accuracy and completeness of the data you put in, and for reviewing every return, remittance, pay stub, slip and report before you rely on it or file it. The full <a href="https://apexledger.ca/agreement.html" target="_blank" rel="noreferrer" className="text-brand-700 underline">Subscription Agreement</a>, <a href="https://apexledger.ca/terms.html" target="_blank" rel="noreferrer" className="text-brand-700 underline">Terms of Service</a> and <a href="https://apexledger.ca/privacy.html" target="_blank" rel="noreferrer" className="text-brand-700 underline">Privacy</a> pages say the rest.</p>
+          <label className="mt-4 flex items-start gap-2 text-sm text-gray-800"><input type="checkbox" checked={agreeTicked} onChange={(e) => setAgreeTicked(e.target.checked)} className="mt-1" /> I have read and agree to the Subscription Agreement and Terms of Service, including that my organisation is responsible for the data it enters and for checking the output.</label>
+          <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]">
+            <label className="block text-sm"><span className="text-gray-600">Type your full name as your signature</span><input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Full name" autoComplete="name" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" /></label>
+            <label className="block text-sm"><span className="text-gray-600">Date</span><input value={new Date().toLocaleDateString('en-CA')} readOnly className="mt-1 w-full rounded border border-gray-200 bg-gray-50 px-2 py-1.5 text-gray-700" /></label>
+          </div>
+          {error && <div className="mt-2 text-sm text-red-700">{error}</div>}
+          <div className="mt-4 flex items-center justify-end gap-3">
+            <button type="button" onClick={() => { void fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).then(() => window.location.reload()); }} className="text-sm text-gray-600 hover:underline">Sign out</button>
+            <button type="button" disabled={!agreeTicked || agreeing || signature.trim().length < 3} onClick={() => void acceptAgreement()} className="rounded-full bg-brand-700 px-5 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50">{agreeing ? 'Saving…' : 'I agree'}</button>
+          </div>
+          <p className="mt-3 text-[11px] text-gray-400">Your typed name, the date and time are recorded once as your signature.</p>
+        </div>
       </div>
     );
   }

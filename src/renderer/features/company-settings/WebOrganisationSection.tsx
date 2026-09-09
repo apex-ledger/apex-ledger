@@ -12,7 +12,7 @@ type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
 const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
 const SEAT_LABEL: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
 const SEAT_HINT: Record<SeatType, string> = { business: 'A business keeping its own books: invoices, bills, bank import, HST and reports', payroll: 'Payroll Unlimited: payroll only, no limit on employees: pay runs, stubs, PD7A, ROE, T4s', bookkeeper: 'A bookkeeper: daily books, bank import, invoices, bills, HST and payroll; no accountant tools', full: 'An accountant: everything, including year end, GIFI, T2 working papers, CRM and payroll' };
-interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; lastSignIn: string | null }
+interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; lastSignIn: string | null }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
 interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string }
@@ -202,7 +202,7 @@ export function WebOrganisationSection() {
                   {people.filter((p) => p.orgId === o.id).map((p) => (
                     <li key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
                       <span className={`min-w-[8rem] ${p.isActive ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{p.name}</span>
-                      <span className="text-xs text-gray-500">{p.email} · {p.role}{p.lastSignIn ? ` · last sign-in ${p.lastSignIn.slice(0, 16)}` : ''}</span>
+                      <span className="text-xs text-gray-500">{p.email} · {p.role}{p.lastSignIn ? ` · last sign-in ${p.lastSignIn.slice(0, 16)}` : ''}{!o.isPlatform ? (p.agreedAt ? ` · agreed ${p.agreedAt.slice(0, 10)} signed ${p.agreedName ?? p.name}` : ' · agreement not yet accepted') : ''}</span>
                       {!o.isPlatform && (
                         <select value={p.seatType} onChange={(e) => void setSeatType(p, e.target.value as SeatType)} title={SEAT_HINT[p.seatType]} className="rounded border border-gray-300 bg-brand-50 px-1 py-0.5 text-[11px] text-brand-800">
                           {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} · {money(rates[t])}/mo</option>)}
@@ -259,6 +259,24 @@ export function WebOrganisationSection() {
               <p className="mt-1 text-[11px] text-gray-500">Each firm's card shows its monthly total from these rates and its active seats. Changing a rate changes every firm's total from now on.</p>
             </div>
           )}
+
+          <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-agreements">
+            <div className="text-xs font-semibold uppercase tracking-wide text-gray-600">Agreements</div>
+            <p className="mt-1 text-[11px] text-gray-500">Every person accepts the Subscription Agreement and Terms at first sign-in by typing their name. The signed copy opens ready to print or save as PDF.</p>
+            <ul className="mt-2 divide-y divide-gray-100 text-sm">
+              {people.filter((p) => !orgs.find((o) => o.id === p.orgId)?.isPlatform).map((p) => (
+                <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1">
+                  <span className="min-w-[10rem] text-gray-900">{p.name}</span>
+                  <span className="text-xs text-gray-500">{orgName(p.orgId)} · {SEAT_LABEL[p.seatType]}</span>
+                  {p.agreedAt
+                    ? <span className="text-xs text-emerald-800">Signed {p.agreedName ?? p.name} · {p.agreedAt.slice(0, 16)}</span>
+                    : <span className="text-xs text-amber-700">Not yet accepted</span>}
+                  {p.agreedAt && <a className="ml-auto text-xs text-brand-700 hover:underline" target="_blank" rel="noreferrer" href={`https://apexledger.ca/agreement.html?firm=${encodeURIComponent(orgName(p.orgId))}&name=${encodeURIComponent(p.name)}&email=${encodeURIComponent(p.email)}&seat=${encodeURIComponent(SEAT_LABEL[p.seatType])}&signed=${encodeURIComponent(p.agreedName ?? p.name)}&date=${encodeURIComponent(p.agreedAt.slice(0, 10))}`}>Open signed copy</a>}
+                </li>
+              ))}
+              {people.filter((p) => !orgs.find((o) => o.id === p.orgId)?.isPlatform).length === 0 && <li className="py-1 text-xs text-gray-400">No firm people yet.</li>}
+            </ul>
+          </div>
 
           <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-company-files">
             <div className="flex flex-wrap items-center gap-2">
