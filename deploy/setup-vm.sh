@@ -138,6 +138,8 @@ ${APP_DOMAIN}, www.${APP_DOMAIN} {
 		Permissions-Policy "camera=(), geolocation=(), microphone=()"
 		-Server
 	}
+	@html path / *.html
+	header @html Cache-Control "no-cache"
 	handle_errors {
 		@notfound expression {http.error.status_code} == 404
 		rewrite @notfound /404.html
