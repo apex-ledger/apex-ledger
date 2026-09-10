@@ -133,7 +133,7 @@ ${APP_DOMAIN}, www.${APP_DOMAIN} {
 	encode gzip
 	header {
 		X-Content-Type-Options nosniff
-		X-Frame-Options DENY
+		X-Frame-Options SAMEORIGIN
 		Referrer-Policy strict-origin-when-cross-origin
 		Permissions-Policy "camera=(), geolocation=(), microphone=()"
 		-Server
