@@ -408,10 +408,14 @@ app.post('/api/admin/users/:id/password', (req, res) => { const s = requirePlatf
 app.post('/api/me/password', (req, res) => { const s = sessionOf(req); if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; } res.json(wrap(() => { setUserPassword(s.user.id, String((req.body ?? {}).password ?? '')); return true; })); });
 
 // ---- downloads: a file a handler "saved" through the stub dialog, streamed once to the browser ----
+/** A download belongs to the session whose request produced it; nobody else can fetch it. */
+const downloadOwner = new Map<string, number>();
 app.get('/api/download/:file', (req, res) => {
   const s = sessionOf(req);
   if (!s) { res.status(401).end(); return; }
   const file = path.basename(req.params.file);
+  if (downloadOwner.get(file) !== s.id) { res.status(404).json({ ok: false, error: 'That download is not yours or has expired.' }); return; }
+  downloadOwner.delete(file);
   const full = path.join(DOWNLOAD_DIR, file);
   if (!full.startsWith(DOWNLOAD_DIR) || !fs.existsSync(full)) { res.status(404).end(); return; }
   const shown = file.includes('__') ? file.slice(file.indexOf('__') + 2) : file;
@@ -420,11 +424,12 @@ app.get('/api/download/:file', (req, res) => {
 });
 
 /** A handler result that names a file under the downloads folder becomes a download link. */
-function asDownload(result: unknown): unknown {
+function asDownload(result: unknown, owner?: Session): unknown {
   const r = result as { ok?: boolean; data?: { filePath?: unknown } } | null;
   const fp = r && r.ok && r.data && typeof r.data === 'object' ? r.data.filePath : undefined;
   if (typeof fp !== 'string' || !path.resolve(fp).startsWith(DOWNLOAD_DIR)) return result;
   const file = path.basename(fp);
+  if (owner) downloadOwner.set(file, owner.id);
   return { ...r, data: { ...(r!.data as object), filePath: `/api/download/${encodeURIComponent(file)}`, download: true, fileName: file.includes('__') ? file.slice(file.indexOf('__') + 2) : file } };
 }
 
@@ -558,7 +563,7 @@ app.post('/api/:channel', async (req, res) => {
     if (opened.filePath && r && r.ok) result = { ...r, data: { ...(r.data && typeof r.data === 'object' ? (r.data as object) : {}), filePath: opened.filePath } };
     const filtered = result as { ok?: boolean; data?: unknown } | null;
     if (filtered && filtered.ok) result = { ...filtered, data: filterResultForSeat(s.user.seatType, channel, filtered.data) };
-    res.json(asDownload(result) ?? { ok: true, data: null });
+    res.json(asDownload(result, s) ?? { ok: true, data: null });
     if (channel.startsWith('company:')) persistSession(s);
   } catch (error) {
     res.json({ ok: false, error: error instanceof Error ? error.message : String(error) });
