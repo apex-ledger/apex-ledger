@@ -23,6 +23,12 @@ its own SQLite connection in WAL mode. Verified 2026-09-08 with two sessions pos
 entries simultaneously while one read the trial balance eight times: no locked-database errors,
 and the other session received data:changed over server-sent events.
 
+Firms are isolated at every route: `scripts/web-isolation-check.mjs` (run against a local server
+with the platform admin cookie in web-data/cookies.txt) signs in as two firms and tries the other's
+files by path and by traversal, uploads and downloads across organisations, people, seats, trial
+requests, rates, the sign-in pause, feedback, and 20 interleaved requests. Last run 2026-09-10: all
+refused or scoped. Download links are bound to the session that produced them and work once.
+
 ## Build and run
 
 ```bash
