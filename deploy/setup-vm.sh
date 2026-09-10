@@ -130,6 +130,19 @@ if [ -n "${APP_DOMAIN:-}" ]; then cat >> /etc/caddy/Caddyfile <<EOF
 ${APP_DOMAIN}, www.${APP_DOMAIN} {
 	encode gzip
 	root * /var/www/apexledger
+	encode gzip
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), geolocation=(), microphone=()"
+		-Server
+	}
+	handle_errors {
+		@notfound expression {http.error.status_code} == 404
+		rewrite @notfound /404.html
+		file_server
+	}
 	file_server
 	header {
 		Strict-Transport-Security "max-age=31536000"

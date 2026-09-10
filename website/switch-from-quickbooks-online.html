@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How to switch from QuickBooks Online to ApexLedger | ApexLedger</title>
+<meta name="description" content="A step-by-step for moving a client company from QuickBooks Online or Xero: export the account list and transactions as Excel, import directly, reconcile the first statement, and carry on.">
+<link rel="canonical" href="https://apexledger.ca/switch-from-quickbooks-online.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta property="og:image" content="https://apexledger.ca/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://apexledger.ca/og-image.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
+<meta property="og:title" content="How to switch from QuickBooks Online to ApexLedger"><meta property="og:description" content="A step-by-step for moving a client company from QuickBooks Online or Xero: export the account list and transactions as Excel, import directly, reconcile the first statement, and carry on."><meta property="og:url" content="https://apexledger.ca/switch-from-quickbooks-online.html"><meta property="og:type" content="article">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "How to switch from QuickBooks Online to ApexLedger", "description": "A step-by-step for moving a client company from QuickBooks Online or Xero: export the account list and transactions as Excel, import directly, reconcile the first statement, and carry on.", "datePublished": "2026-09-10", "dateModified": "2026-09-10", "author": {"@type": "Organization", "name": "ApexLedger"}, "publisher": {"@type": "Organization", "name": "ApexLedger", "logo": {"@type": "ImageObject", "url": "https://apexledger.ca/icon-512.png"}}, "mainEntityOfPage": "https://apexledger.ca/switch-from-quickbooks-online.html", "image": "https://apexledger.ca/og-image.png"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "ApexLedger", "url": "https://apexledger.ca/", "logo": "https://apexledger.ca/icon-512.png", "email": "admin@apexledger.ca", "address": {"@type": "PostalAddress", "addressLocality": "Mississauga", "addressRegion": "ON", "addressCountry": "CA"}, "areaServed": "CA"}</script>
+<style>body{margin:0;background:#f1faf4;color:#0d1f15;font:16px/1.7 "Segoe UI",Arial,Helvetica,sans-serif}
+header{max-width:1800px;margin:auto;padding:14px 4%;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:22px;letter-spacing:-1px;text-decoration:none}.brand img{width:34px;height:34px}.brand b{color:#8a6412}
+header nav{display:flex;gap:22px;font-size:15px;font-weight:700}header nav a{color:#1f5a3a;text-decoration:none}header nav a:hover{color:#8a6412}
+.cta{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(115deg,#d9aa4e,#ffe7a3 42%,#ebc165 73%,#d6a340);color:#142018;padding:12px 20px;border-radius:7px;font-weight:700;text-decoration:none;border:1px solid #f7d38a}
+main{max-width:920px;margin:auto;padding:36px 4% 70px}
+h1{font-size:40px;line-height:1.1;letter-spacing:-1.5px;margin:0 0 10px;color:#0d1f15}.lede{font-size:19px;color:#1c3a2a;max-width:800px;margin:0 0 6px}
+h2{font-size:24px;margin:34px 0 10px;color:#1f5a3a}ul{padding-left:22px}li{margin:6px 0;color:#15291d}
+.seat{margin:26px 0 0;padding:16px 20px;border-radius:12px;background:#fff;border:1px solid #cfe3d6;display:flex;flex-wrap:wrap;align-items:center;gap:14px}.seat b{font-size:22px;color:#0f3a26}.seat span{color:#2a3f33}
+.related{margin-top:40px;padding-top:18px;border-top:1px solid #cfe3d6}.related h3{font-size:14px;letter-spacing:1px;text-transform:uppercase;color:#7a5a12;margin:0 0 8px}.related a{display:block;color:#1f5a3a;font-weight:600;text-decoration:none;margin:4px 0}.related a:hover{color:#8a6412}
+footer{max-width:1800px;margin:auto;padding:20px 4%;font-size:13px;color:#2f4a3b;display:flex;flex-wrap:wrap;gap:16px}footer a{color:#2f4a3b;text-decoration:none}footer a:hover{color:#8a6412}
+@media(max-width:700px){header nav{display:none}h1{font-size:32px}}.faq{max-width:920px;margin:auto;padding:36px 4% 8px}.faq h2{font-size:28px;letter-spacing:-1px;margin:0 0 12px;color:#0f3a26}.faq details{background:#fff;border:1px solid #cfe3d6;border-radius:10px;padding:12px 18px;margin:8px 0}.faq summary{cursor:pointer;font-weight:600;color:#0f3a26;font-size:16px}.faq p{margin:8px 0 2px;color:#2a3f33;font-size:15px}
+.note{margin-top:26px;padding:12px 16px;border-left:0;background:#fff7e0;border:1px solid #e8d49a;border-radius:10px;font-size:14px;color:#5a4a1a}.date{font-size:13px;color:#2f4a3b;margin:0 0 18px}</style>
+</head>
+<body>
+<header><a class="brand" href="/"><img src="/apexledger-mark.svg" alt=""><span><span style="color:#1f5a3a">apex</span><span style="color:#b8860b">ledger</span><b>.</b></span></a><nav><a href="/#solutions">Solutions</a><a href="/client-crm-for-accountants.html">Client CRM</a><a href="/payroll-software-canada.html">Payroll</a><a href="/pricing.html">Pricing</a><a href="/security.html">Security</a><a href="/#contact">Contact</a></nav><a class="cta" href="https://online.apexledger.ca">Sign in</a></header>
+<main>
+<h1>Switching a client from QuickBooks Online, step by step</h1>
+<p class="date">Guide · updated 2026-09-10</p>
+<p class="lede">An afternoon per client, no conversion service. The imports read the Excel reports QuickBooks and Xero already produce.</p>
+<h2>Before you start</h2><ul><li>Pick the cut-over date, normally the first day of a fiscal year or a quarter, and reconcile every bank and card account in QuickBooks up to the day before.</li><li>In ApexLedger, create the company with the same fiscal year end and HST filing frequency.</li></ul><h2>Export from QuickBooks Online</h2><ul><li>Reports, Account List: export to Excel. This is the chart of accounts.</li><li>Reports, General Ledger (or Journal) for the period you want to bring across: export to Excel.</li><li>Xero: Accounting, Chart of accounts, Export; and Reporting, Account Transactions, Export.</li></ul><h2>Import</h2><ul><li>File, Import Data (QuickBooks / Xero), choose the source, and pick the Excel file; accounts first, then transactions. Map any account the importer could not match.</li><li>Customers, vendors and balances arrive with the transactions. QuickBooks Desktop users import the IIF file instead.</li></ul><h2>Check and go</h2><ul><li>Compare the trial balance at the cut-over date with QuickBooks: it should agree to the cent.</li><li>Import the first bank statement (PDF or CSV) and reconcile; set up recurring invoices and bills; add the people on their seats.</li><li>Keep QuickBooks read-only for the period you must retain, then let the subscription lapse.</li></ul>
+<p class="note">Every firm&#x27;s files are different; the Help &amp; Tutor inside ApexLedger walks through each import screen, and the Feedback button reaches us directly if a file will not map.</p>
+<div class="seat"><b>See it in the books</b><span>First month free, no card. No limit on company files.</span><a class="cta" href="/#contact">Start a one-month trial</a></div>
+<div class="related"><h3>Read next</h3><a href="/gst-hst-software.html">GST/HST, PST, QST, GIFI and T2 working papers ↗</a><a href="/payroll-software-canada.html">Canadian payroll software with no limit on employees ↗</a><a href="/bank-statement-import.html">PDF bank statement import and reconciliation ↗</a><a href="/pricing.html">Pricing ↗</a></div>
+</main>
+<footer><span>© 2026 ApexLedger · Mississauga, Ontario · Hosted in Canada</span><a href="/">Home</a><a href="/pricing.html">Pricing</a><a href="/security.html">Security</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/agreement.html">Subscription agreement</a></footer>
+</body>
+</html>
