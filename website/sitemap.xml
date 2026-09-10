@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://apexledger.ca/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://apexledger.ca/bookkeeping-software-canada.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/payroll-software-canada.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/gst-hst-software.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/client-crm-for-accountants.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/bank-statement-import.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/accounting-software-for-accountants.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/pricing.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://apexledger.ca/quickbooks-alternative-canada.html</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://apexledger.ca/security.html</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://apexledger.ca/privacy.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
   <url><loc>https://apexledger.ca/terms.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
