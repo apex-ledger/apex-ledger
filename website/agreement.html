@@ -32,9 +32,9 @@ table{width:100%;border-collapse:collapse;font:13px "Segoe UI",Arial,sans-serif;
 <table>
 <tr><th>Provider</th><td>ApexLedger ("we", "us"), Mississauga, Ontario, Canada · admin@apexledger.ca</td></tr>
 <tr><th>Subscriber</th><td id="f-sub">Firm or business name: ________________________________ &nbsp; Contact: ______________________ &nbsp; Email: ______________________</td></tr>
-<tr><th>Seats</th><td>____ Full accountant ($79) &nbsp; ____ Bookkeeper ($59) &nbsp; ____ Payroll Unlimited ($45) &nbsp; ____ Business ($39) &nbsp; per seat, per month, CAD, plus HST</td></tr>
+<tr><th>Seats</th><td id="f-seats">____ Full accountant ($79) &nbsp; ____ Bookkeeper ($59) &nbsp; ____ Payroll Unlimited ($45) &nbsp; ____ Business ($39) &nbsp; per seat, per month, CAD, plus HST</td></tr>
 <tr><th>Offer</th><td>☐ Founding firm: 50% off the seat rates for six months from the start date &nbsp; ☐ Yearly billing: 20% off, paid in advance &nbsp; First month free.</td></tr>
-<tr><th>Start date</th><td>________________ &nbsp; The trial month begins on this date; billing begins the day after it ends.</td></tr>
+<tr><th>Start date</th><td id="f-start">________________ &nbsp; The trial month begins on this date; billing begins the day after it ends.</td></tr>
 </table>
 
 <h2>1. The service</h2>
@@ -80,6 +80,9 @@ table{width:100%;border-collapse:collapse;font:13px "Segoe UI",Arial,sans-serif;
 var seat=g('seat')?(g('seats')?e(g('seats'))+' × ':'')+e(g('seat')):'';
 document.getElementById('f-sub').innerHTML='Firm or business name: <b>'+e(g('firm'))+'</b> &nbsp; Contact: <b>'+e(g('name'))+'</b> &nbsp; Email: <b>'+e(g('email'))+'</b>'+(seat?' &nbsp; Seat'+(g('seats')&&g('seats')!=='1'?'s':'')+': <b>'+seat+'</b>':'');
 document.title='Subscription Agreement - '+(g('firm')||g('name'));
+var rates={'Full accountant':'$79','Bookkeeper':'$59','Payroll Unlimited':'$45','Business':'$39'};var seat=q.get('seat')||'';var n=q.get('seats')||'';
+if(seat){document.getElementById('f-seats').innerHTML='<b>'+e(n||'1')+'</b> × <b>'+e(seat)+'</b>'+(rates[seat]?' ('+rates[seat]+' per seat, per month, CAD, plus HST)':'')+' &nbsp; Other seat types may be added later at the rates on apexledger.ca/pricing.html.';}
+var start=q.get('date')||new Date().toLocaleDateString('en-CA');document.getElementById('f-start').innerHTML='<b>'+e(start)+'</b> &nbsp; The trial month begins on this date; billing begins the day after it ends.';
 if(!g('signed')&&!g('date'))return;
 var who=g('signed')||g('name'),where=g('where')==='site'?'on apexledger.ca when requesting a trial':'in the ApexLedger application';
 document.getElementById('f-sig').outerHTML='<div style="font:italic 18px Georgia,serif;margin-top:14px;padding-bottom:4px;border-bottom:1px solid #333">'+e(who)+'</div>';
