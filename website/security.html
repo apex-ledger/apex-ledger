@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security | ApexLedger</title>
+<meta name="description" content="How ApexLedger protects client data: Canadian hosting on Microsoft Azure, encryption, one file per company, seat-based access, named sign-ins, nightly backups, and what we do not do.">
+<link rel="canonical" href="https://apexledger.ca/security.html">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+body{margin:0;background:#f1faf4;color:#0d1f15;font:16px/1.7 "Segoe UI",Arial,Helvetica,sans-serif}
+main{max-width:900px;margin:auto;padding:52px 5% 80px}a{color:#8a6412;text-decoration:none}a:hover{text-decoration:underline}
+h1{font-size:40px;letter-spacing:-1.5px;margin:0 0 6px}h2{font-size:22px;margin:34px 0 10px;color:#1f5a3a}p,li{color:#15291d}.meta{color:#2f4a3b;font-size:13px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:22px;letter-spacing:-1px;margin-bottom:34px}.brand img{width:34px;height:34px}.brand b{color:#8a6412}
+.lede{font-size:18px;color:#1c3a2a;max-width:760px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px}.card{background:#fff;border:1px solid #cfe3d6;border-radius:12px;padding:18px 20px;box-shadow:0 8px 24px #0d3a2410}.card h3{font-size:16px;margin:0 0 6px;color:#0f3a26}.card p{font-size:14px;margin:0;color:#2a3f33}.card .fact{display:block;margin-top:8px;font-size:12px;color:#7a5a12;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px;background:#fff}th,td{border:1px solid #cfe3d6;padding:9px 12px;text-align:left;vertical-align:top}th{background:#e6f4ea;color:#0f3a26;font-weight:600;width:32%}
+.no{background:#fff;border:1px solid #cfe3d6;border-radius:12px;padding:14px 20px}.no li{margin:4px 0}
+.cta{margin-top:34px;padding:18px 20px;border-radius:12px;background:#0f3a26;color:#f4f9f6}.cta a{color:#ffe2a1}
+@media(max-width:700px){.grid{grid-template-columns:1fr}h1{font-size:32px}}
+</style>
+</head>
+<body><main>
+<a class="brand" href="/"><img src="/apexledger-mark.svg" alt=""><span><span style="color:#1f5a3a">apex</span><span style="color:#b8860b">ledger</span><b>.</b></span></a>
+<h1>How your clients' data is protected</h1>
+<p class="meta">Last updated 10 September 2026 · Every statement on this page describes what is in place today, not a plan.</p>
+<p class="lede">A bookkeeping firm holds other people's books. ApexLedger was built around that responsibility: the data stays in Canada, every firm is walled off from every other, every person has their own sign-in, and every change carries a name. Here is exactly how.</p>
+
+<h2>Where the data lives</h2>
+<div class="grid">
+  <div class="card"><h3>Canada only</h3><p>The application and every company file run in Microsoft Azure's <b>Canada Central</b> region (Toronto). Backups are copied to <b>Canada East</b> (Québec City). Nothing is stored or processed outside Canada.</p><span class="fact">Azure Canada Central · Canada East</span></div>
+  <div class="card"><h3>Certified data centres</h3><p>Microsoft Azure data centres hold ISO 27001, ISO 27017, ISO 27018, SOC 1, SOC 2 and SOC 3 attestations and meet the Government of Canada's Protected B requirements. ApexLedger runs on that foundation.</p><span class="fact">Microsoft Azure compliance</span></div>
+  <div class="card"><h3>Encrypted at rest</h3><p>The disks holding company files and backups are encrypted by Azure Storage Service Encryption with 256-bit AES. Backup copies are encrypted in the same way.</p><span class="fact">AES-256 · Azure managed disks</span></div>
+  <div class="card"><h3>Encrypted in transit</h3><p>Every connection uses HTTPS with TLS 1.2 or newer and a certificate that renews automatically. Browsers are told to use HTTPS only (HSTS) for a year, so an unencrypted connection is never attempted.</p><span class="fact">TLS 1.2+ · HSTS</span></div>
+</div>
+
+<h2>One firm can never see another</h2>
+<div class="grid">
+  <div class="card"><h3>One file per company, one folder per firm</h3><p>Each client company is a separate database file in a folder that belongs to one organisation. There is no shared table of transactions across firms, so there is no filter that could ever be wrong. A request from one firm cannot name, open, upload to or download from another firm's folder; the server refuses it by path.</p><span class="fact">Verified with a two-firm test on every route</span></div>
+  <div class="card"><h3>Sessions are separate too</h3><p>Every request runs inside its own session with its own database connection, resolved from the sign-in cookie on the server, never from anything the browser sends. Two firms working at the same moment never receive each other's data.</p><span class="fact">Per-session connections</span></div>
+</div>
+
+<h2>Who can do what</h2>
+<div class="grid">
+  <div class="card"><h3>Named sign-ins, no sharing</h3><p>Every person has their own email and password, or signs in with their Microsoft account. Passwords are stored as salted scrypt hashes, never in clear. Eight failed attempts from one address lock it out for fifteen minutes.</p><span class="fact">scrypt · lockout · Microsoft sign-in</span></div>
+  <div class="card"><h3>Access follows the seat</h3><p>Business, Payroll Unlimited, Bookkeeper and Full accountant seats each reach only their part of the application. The server enforces it on every request, so a payroll clerk cannot read the ledger and a bookkeeper cannot run the accountant's year-end tools, whatever the screen shows.</p><span class="fact">Enforced on the server, not in the browser</span></div>
+  <div class="card"><h3>Every change carries a name</h3><p>The Activity Log records who did what and when, for every entry and every edit. Posted entries are voided, never deleted; filed returns lock their period.</p><span class="fact">Full audit trail</span></div>
+  <div class="card"><h3>Downloads and uploads are checked</h3><p>A download link works only for the session that asked for it, once. Uploaded company files must be genuine database files; uploaded documents are stored, never executed.</p><span class="fact">Single-use links · validated uploads</span></div>
+</div>
+
+<h2>The server and the network</h2>
+<table>
+<tr><th>Firewall</th><td>The network security group allows only HTTPS (TCP 443) from the internet. Administrative access is allowed from one address only, with key-based authentication and no password. Nothing else is reachable.</td></tr>
+<tr><th>Browser protections</th><td>Every response carries a strict Content-Security-Policy (scripts and connections only from the application itself), no-framing, no-sniff, referrer and permissions policies. The application has no inline scripts and loads nothing from third parties.</td></tr>
+<tr><th>Backups</th><td>Azure Backup takes a snapshot of the data disk every night and keeps 30 days, with the vault's geo-redundant copy in Canada East. Any firm can also download a consistent copy of any company file at any time.</td></tr>
+<tr><th>Monitoring</th><td>Azure Monitor watches the server's availability and alerts us if it is unreachable for five minutes.</td></tr>
+<tr><th>Updates</th><td>Application updates are deployed to the server; there is nothing to install or patch on your computers. Nobody is signed out by a deploy.</td></tr>
+</table>
+
+<h2>What we do not do</h2>
+<div class="no"><ul>
+<li>We do not move or process your data outside Canada.</li>
+<li>We do not use your books to train any AI. The optional assistant and voice recognition are off by default and run on the same Canadian server when turned on.</li>
+<li>We do not run analytics or tracking scripts on the application, and none on this website.</li>
+<li>We do not open a firm's company file except to support that firm at its request, and every such access is logged.</li>
+<li>We do not sell, share or aggregate customer data.</li>
+</ul></div>
+
+<h2>Your side of it</h2>
+<p>Security is shared. Keep sign-ins personal, deactivate people who leave (owners do this themselves on the Administration page), use "Sign in with Microsoft" where your firm has two-step verification, and review what you file. The <a href="/agreement.html">Subscription Agreement</a> sets this out.</p>
+
+<div class="cta">Questions from your auditor or a client? Write to <a href="mailto:admin@apexledger.ca">admin@apexledger.ca</a> and we will answer in writing, or <a href="/#contact">start a one-month trial</a> and see it for yourself.</div>
+</main></body>
+</html>
