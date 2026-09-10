@@ -586,8 +586,8 @@ if(r.ok){st.className='status ok';st.textContent='Thank you. We read every note.
 var dlg=document.getElementById('agree-dlg'),steps=[document.getElementById('agree-step1'),document.getElementById('agree-step2')],termsFrame=document.getElementById('agree-terms'),agrFrame=document.getElementById('agree-agreement'),agrLink=document.getElementById('agree-agreement-link'),sig=document.getElementById('agree-sig'),sendBtn=document.getElementById('agree-send'),stepLabel=document.getElementById('agree-steplabel'),submitBtn=f.querySelector('button[type=submit]'),pending=null;
 function esc(s){return encodeURIComponent(s||'')}
 function show(n){steps.forEach(function(s,i){s.hidden=i!==n});stepLabel.textContent='Step '+(n+1)+' of 2';(n?sig:document.getElementById('agree-next')).focus();}
-function openAgreements(d){pending=d;if(!termsFrame.getAttribute('src'))termsFrame.src='/terms.html';
-var url='/agreement.html?firm='+esc(d.firm)+'&name='+esc(d.name)+'&email='+esc(d.email)+'&seat='+esc(d.edition)+'&seats='+esc(d.seats);agrFrame.src=url;agrLink.href=url;
+function openAgreements(d){pending=d;if(!termsFrame.getAttribute('src'))termsFrame.src='/terms.html?v='+Date.now();
+var url='/agreement.html?v='+Date.now()+'&firm='+esc(d.firm)+'&name='+esc(d.name)+'&email='+esc(d.email)+'&seat='+esc(d.edition)+'&seats='+esc(d.seats);agrFrame.src=url;agrLink.href=url;
 sig.value=d.name;sendBtn.disabled=sig.value.trim().length<3;if(dlg.showModal)dlg.showModal();else dlg.setAttribute('open','');show(0);}
 function closeAgreements(){if(dlg.close)dlg.close();else dlg.removeAttribute('open');}
 function cancelled(){closeAgreements();pending=null;st.className='status';st.textContent='Your request was not sent. Read and accept the agreements to send it.';}
