@@ -22,3 +22,6 @@ demo-companies/Backups/
 .env.*
 license.json
 app-settings.json
+
+# deploy tarballs built on the workstation
+*.tgz

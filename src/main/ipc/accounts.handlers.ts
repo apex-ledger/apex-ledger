@@ -63,6 +63,39 @@ async function parentGifi(db: ReturnType<typeof getCurrentDb>, parentId: number)
   return parent?.gifiCode ?? null;
 }
 
+/** The form only offers live parents of the same type and never an account's own children, but an
+ * import, the web API or a second window can send anything. A wrong parent is not cosmetic: the
+ * balance sheet and roll-ups add a child into its master, so an expense under a bank account would
+ * be counted as cash, and a loop would send every walk of the tree round in circles. */
+async function refuseBadParent(db: ReturnType<typeof getCurrentDb>, accountId: number | null, parentId: number, accountType: string): Promise<void> {
+  if (accountId !== null && parentId === accountId) throw new Error('An account cannot be its own parent.');
+  const parent = await db.selectFrom('accounts').select(['id', 'name', 'accountType', 'isActive']).where('id', '=', parentId).executeTakeFirst();
+  if (!parent) throw new Error(`The parent account (${parentId}) does not exist.`);
+  if (parent.isActive !== 1) throw new Error(`"${parent.name}" is inactive, so nothing can be filed under it. Reactivate it first or pick another parent.`);
+  if (parent.accountType !== accountType) {
+    throw new Error(`A sub-account must be the same type as its parent: "${parent.name}" is ${parent.accountType.toLowerCase()}, this account is ${accountType.toLowerCase()}.`);
+  }
+  if (accountId === null) return;
+  // Walk up from the proposed parent; meeting the account itself means it is one of its own descendants.
+  const rows = await db.selectFrom('accounts').select(['id', 'parentId']).execute();
+  const parentOf = new Map(rows.map((r) => [r.id, r.parentId]));
+  let cursor: number | null = parentId;
+  let guard = 0;
+  while (cursor != null && guard++ < 1000) {
+    if (cursor === accountId) throw new Error(`That would make a loop: "${parent.name}" is already a sub-account of this account.`);
+    cursor = parentOf.get(cursor) ?? null;
+  }
+}
+
+/** A master with live children cannot retire: the children would roll up into nothing and the
+ * chart would show them under a parent that no longer appears. Retire the children first. */
+async function refuseRetiringMasterWithChildren(db: ReturnType<typeof getCurrentDb>, id: number): Promise<void> {
+  const children = await db.selectFrom('accounts').select('name').where('parentId', '=', id).where('isActive', '=', 1).execute();
+  if (children.length === 0) return;
+  const names = children.slice(0, 3).map((c) => `"${c.name}"`).join(', ') + (children.length > 3 ? ` and ${children.length - 3} more` : '');
+  throw new Error(`This account still has active sub-account${children.length === 1 ? '' : 's'} (${names}). Make them inactive, or move them elsewhere, before retiring it.`);
+}
+
 export async function accountsCreate(input: unknown) {
   const payload = newAccountSchema.parse(input);
   const db = getCurrentDb();
@@ -71,6 +104,7 @@ export async function accountsCreate(input: unknown) {
   // to the next free number rather than refused with an error nobody can act on.
   const code = await nextFreeCode(db, payload.code);
   await refuseDuplicateName(db, payload.name, payload.accountType, null);
+  if (payload.parentId) await refuseBadParent(db, null, payload.parentId, payload.accountType);
   // A sub-account files under its master's GIFI line: RBC Visa and TD Visa are both "credit card
   // loans" on the T2, whatever the form or an import sent. The form says so; this makes it true.
   const gifiCode = payload.parentId ? (await parentGifi(db, payload.parentId)) ?? payload.gifiCode ?? null : payload.gifiCode ?? null;
@@ -123,7 +157,10 @@ export async function accountsUpdate(input: unknown) {
     if (clash) throw new Error(`Account code ${patch.code} is already used by "${clash.name}".`);
     updateValues.code = patch.code;
   }
-  if (patch.isActive !== undefined) updateValues.isActive = patch.isActive ? 1 : 0;
+  if (patch.isActive !== undefined) {
+    if (!patch.isActive) await refuseRetiringMasterWithChildren(db, id);
+    updateValues.isActive = patch.isActive ? 1 : 0;
+  }
   if (patch.name !== undefined) {
     const current = await db.selectFrom('accounts').select('accountType').where('id', '=', id).executeTakeFirst();
     if (current) await refuseDuplicateName(db, patch.name, current.accountType, id);
@@ -131,6 +168,10 @@ export async function accountsUpdate(input: unknown) {
   }
   if (patch.accountSubtype !== undefined) updateValues.accountSubtype = patch.accountSubtype;
   if (patch.parentId !== undefined) {
+    if (patch.parentId) {
+      const current = await db.selectFrom('accounts').select('accountType').where('id', '=', id).executeTakeFirstOrThrow();
+      await refuseBadParent(db, id, patch.parentId, current.accountType);
+    }
     updateValues.parentId = patch.parentId;
     // Moving under a master adopts that master's GIFI, same as creating under it would.
     if (patch.parentId) {
@@ -170,6 +211,7 @@ export async function accountsEnsureGstHstAccount(direction: 'payable' | 'recove
 
 export async function accountsDeactivate(id: number) {
   const db = getCurrentDb();
+  await refuseRetiringMasterWithChildren(db, id);
   await db.updateTable('accounts').set({ isActive: 0 }).where('id', '=', id).execute();
   return accountsGet(id);
 }
