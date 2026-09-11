@@ -9,6 +9,7 @@ import { seedGifiCodes } from './db/seeds/gifi_codes.seed';
 import { readAppSettings } from './appSettings';
 import { seedOpeningBalanceAccounts } from './db/seeds/openingBalanceAccounts.seed';
 import { remapGifiTotalLines } from './db/seeds/gifiTotalLineRemap';
+import { backfillContactTags } from './db/seeds/contactTagBackfill';
 import { getCoaTemplate, seedChartOfAccounts } from './db/seeds/coaTemplates';
 import { seedCategoryRules } from './db/seeds/categoryRules.seed';
 import { localIsoDate } from '@shared/domain/dates/localDate';
@@ -230,6 +231,7 @@ export async function openCompany(window: BrowserWindow, filePath?: string): Pro
   // accounts' gifi_code foreign keys depend on codes that call just backfilled.
     await seedOpeningBalanceAccounts(next.db);
     await remapGifiTotalLines(next.db);
+    await backfillContactTags(next.db);
   } catch (error) {
     closeCompanyDatabase(next);
     throw error;
@@ -267,6 +269,7 @@ export async function saveCompanyAs(window: BrowserWindow): Promise<{ filePath: 
     await seedGifiCodes(next.db); // see the matching call in openCompany for why
     await seedOpeningBalanceAccounts(next.db);
     await remapGifiTotalLines(next.db);
+    await backfillContactTags(next.db);
   } catch (error) {
     closeCompanyDatabase(next);
     throw error;

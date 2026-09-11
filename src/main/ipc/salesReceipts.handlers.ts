@@ -1,3 +1,4 @@
+import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
 import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/domain/banking/bankAccountRules';
 import { assertSaleLineAccounts } from './saleLineAccounts';
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
@@ -79,7 +80,7 @@ export async function salesReceiptsCreate(input: unknown) {
   }
 
   const lineAmounts = payload.lines.map((line) => computeInvoiceLineAmountCents(line));
-  const journalLines = buildSalesReceiptJournalLines(payload.depositToAccountId, gstHstPayableId, payload.lines, lineAmounts, provincialPayableIds);
+  const journalLines = tagLinesWithContact(buildSalesReceiptJournalLines(payload.depositToAccountId, gstHstPayableId, payload.lines, lineAmounts, provincialPayableIds), { customerId: payload.customerId });
   const totalCents = journalLines[0].debitCents;
   const takenNumbers = (await db.selectFrom('salesReceipts').select('receiptNumber').execute()).map((row) => row.receiptNumber);
   const receiptNumber = resolveNewDocumentNumber('SR', payload.receiptNumber, takenNumbers, payload.receiptDate, 'Sales receipt number');

@@ -1,5 +1,6 @@
 import type { Account, JournalEntry } from '../types';
 import { filterEntriesByDateRange } from './computeAccountBalances';
+import { isGstHstControlAccount } from './gstHstAccounts';
 
 /** Reports built around who a transaction was with, rather than which account it hit.
  *
@@ -36,6 +37,8 @@ export interface ExpensesByVendorResult {
 function isSpendAccount(account: Account): boolean {
   if (account.accountType === 'Expense') return true;
   if (account.accountType !== 'Asset') return false;
+  // The input tax credit on a purchase is money coming back from the CRA, not spend with the vendor.
+  if (isGstHstControlAccount(account)) return false;
   if (account.accountSubtype === 'Cash and Bank' || account.accountSubtype === 'Credit Card') return false;
   // Subtype is optional on an account, so the name is a second line of defence for the two cases
   // that would otherwise wreck the totals.

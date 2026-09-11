@@ -1,3 +1,4 @@
+import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
 import { assertSaleLineAccounts } from './saleLineAccounts';
 import { assertPurchaseLineAccounts } from './purchaseLineAccounts';
@@ -99,7 +100,7 @@ export async function creditNotesCreate(input: unknown) {
   const memo = payload.memo ?? `${payload.kind === 'customer' ? 'Credit note' : 'Vendor credit'} ${creditNoteNumber}`;
 
   const inserted = await db.transaction().execute(async (trx) => {
-    const entry = await journalCreate({ entryDate: payload.creditNoteDate, memo, reference: creditNoteNumber, lines: built.lines }, trx);
+    const entry = await journalCreate({ entryDate: payload.creditNoteDate, memo, reference: creditNoteNumber, lines: tagLinesWithContact(built.lines, payload.kind === 'customer' ? { customerId: payload.contactId } : { vendorId: payload.contactId }) }, trx);
     const posted = await journalPost(entry.id, trx);
 
     const noteRow = await trx
@@ -215,7 +216,7 @@ export async function creditNotesRefund(input: unknown) {
       : buildVendorRefundJournalLines(await ensureAccountByName(db, ...AP_ACCOUNT_ARGS), bankAccountId, refundCents, label);
 
   await db.transaction().execute(async (trx) => {
-    const entry = await journalCreate({ entryDate: refundDate, memo: label, reference: note.creditNoteNumber, lines }, trx);
+    const entry = await journalCreate({ entryDate: refundDate, memo: label, reference: note.creditNoteNumber, lines: tagLinesWithContact(lines, note.kind === 'customer' ? { customerId: note.contactId } : { vendorId: note.contactId }) }, trx);
     const posted = await journalPost(entry.id, trx);
     await trx.updateTable('creditNotes').set({ status: 'refunded', refundJournalEntryId: posted.id }).where('id', '=', id).execute();
   });

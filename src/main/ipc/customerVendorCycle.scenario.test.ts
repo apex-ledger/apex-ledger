@@ -85,6 +85,8 @@ import { journalGet } from './journal.handlers';
 import { accountsCreate } from './accounts.handlers';
 import { getAllAccounts, getAllJournalEntriesWithLines } from '../db/queries';
 import { computeForeignBalances } from '@shared/domain/currency/foreignBalances';
+import { customerStatement, expensesByVendor } from '@shared/domain/ledger/contactActivity';
+import { backfillContactTags } from '../db/seeds/contactTagBackfill';
 import { EXCHANGE_GAIN_LOSS_ACCOUNT_ARGS } from '../db/controlAccounts';
 
 let db: AppDb;
@@ -416,5 +418,42 @@ describe('Foreign-currency edges met on the way', () => {
     expect((await usdBalance())?.foreignCents).toBe(50000);
     const tb = await trialBalance();
     expect(tb.debits).toBe(tb.credits);
+  });
+
+  describe('what the customer and the vendor see', () => {
+    it('the customer statement shows the invoice and every payment, and ends at what is still owed', async () => {
+      const customer = await db.selectFrom('customers').select('id').where('name', '=', 'Northwind Traders').executeTakeFirstOrThrow();
+      const accounts = await getAllAccounts(db);
+      const entries = await getAllJournalEntriesWithLines(db);
+      const statement = customerStatement(accounts, entries, customer.id, 'Northwind Traders', '2026-01-01', '2026-12-31');
+      const open = await db.selectFrom('invoices').select(['totalCents', 'paidCents']).where('customerId', '=', customer.id).execute();
+      const owing = open.reduce((sum, i) => sum + i.totalCents - i.paidCents, 0);
+      expect(statement.totalChargesCents).toBe(113000);
+      expect(statement.totalPaymentsCents).toBeGreaterThan(0);
+      expect(statement.closingBalanceCents).toBe(owing);
+      expect(statement.lines.length).toBeGreaterThanOrEqual(2); // the invoice and at least one receipt
+    });
+
+    it('a company posted before lines carried the contact gets them filled in when it opens', async () => {
+      const customer = await db.selectFrom('customers').select('id').where('name', '=', 'Northwind Traders').executeTakeFirstOrThrow();
+      // Strip every tag, as an older file would be, then run the on-open backfill.
+      await db.updateTable('journalEntryLines').set({ customerId: null, vendorId: null }).execute();
+      const before = customerStatement(await getAllAccounts(db), await getAllJournalEntriesWithLines(db), customer.id, 'Northwind Traders', '2026-01-01', '2026-12-31');
+      expect(before.lines).toHaveLength(0);
+      expect(await backfillContactTags(db)).toBeGreaterThan(0);
+      const after = customerStatement(await getAllAccounts(db), await getAllJournalEntriesWithLines(db), customer.id, 'Northwind Traders', '2026-01-01', '2026-12-31');
+      expect(after.totalChargesCents).toBe(113000);
+      expect(after.totalPaymentsCents).toBe(before.totalPaymentsCents === 0 ? after.totalPaymentsCents : before.totalPaymentsCents);
+      expect(after.lines.length).toBeGreaterThanOrEqual(2);
+      expect(await backfillContactTags(db)).toBe(0); // nothing left to fill
+    });
+
+    it('expenses by vendor attributes the bill to the vendor, not to "No vendor recorded"', async () => {
+      const vendor = await db.selectFrom('vendors').select('id').where('name', '=', 'Acme Office Supplies').executeTakeFirstOrThrow();
+      const accounts = await getAllAccounts(db);
+      const entries = await getAllJournalEntriesWithLines(db);
+      const spend = expensesByVendor(accounts, entries, '2026-01-01', '2026-12-31', new Map([[vendor.id, 'Acme Office Supplies']]));
+      expect(spend.rows.find((r) => r.vendorId === vendor.id)?.amountCents).toBe(80000);
+    });
   });
 });

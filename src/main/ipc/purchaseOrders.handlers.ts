@@ -1,3 +1,4 @@
+import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
 import { getCurrentDb } from '../companyFile';
 import type { AppDb } from '../db/schema';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
@@ -423,7 +424,7 @@ export async function purchaseOrdersMatchSupplierBill(input: unknown) {
     if (variance < 0) lines.push({ accountId: ppvId, debitCents: 0, creditCents: -variance, description: `PO price/tax variance — ${po.poNumber}` });
     lines.push({ accountId: apId, debitCents: 0, creditCents: invoiceTotalCents, description: `Vendor invoice — PO ${po.poNumber}` });
 
-    const entry = await journalCreate({ entryDate: date, memo: payload.memo ?? `Vendor invoice ${billNumber} matched to PO ${po.poNumber}`, reference: billNumber, lines }, trx);
+    const entry = await journalCreate({ entryDate: date, memo: payload.memo ?? `Vendor invoice ${billNumber} matched to PO ${po.poNumber}`, reference: billNumber, lines: tagLinesWithContact(lines, { vendorId: po.vendorId }) }, trx);
     const posted = await journalPost(entry.id, trx);
     const billRow = await trx.insertInto('bills').values({
       vendorId: po.vendorId,

@@ -1,3 +1,4 @@
+import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
 import { newBillSchema, payBillSchema, periodReportQuerySchema } from '@shared/validation/schemas';
 import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/domain/banking/bankAccountRules';
 import { paymentDateRefusalReason } from '@shared/domain/documents/paymentTiming';
@@ -93,10 +94,10 @@ export async function billsCreate(input: unknown, executor?: AppDb) {
       description: line.description ?? payload.memo ?? 'Vendor bill',
       foreignFields,
     });
-    lines.push(...built.lines.filter((journalLine) => journalLine.accountId !== accountsPayableId));
+    lines.push(...tagLinesWithContact(built.lines.filter((journalLine) => journalLine.accountId !== accountsPayableId), { vendorId: payload.vendorId }));
     totalCents += built.totalCents;
   }
-  lines.push({ accountId: accountsPayableId, debitCents: 0, creditCents: totalCents, description: payload.memo ?? 'Vendor bill' });
+  lines.push({ accountId: accountsPayableId, debitCents: 0, creditCents: totalCents, description: payload.memo ?? 'Vendor bill', vendorId: payload.vendorId });
 
   // The GL post and the bill row commit together: a failure anywhere in here rolls back both,
   // rather than leaving a posted journal entry with no bill behind it.
@@ -239,7 +240,7 @@ export async function billsPay(input: unknown) {
         entryDate: paymentDate,
         memo: paymentMemo,
         reference: `BILL-${bill.id}`,
-        lines,
+        lines: tagLinesWithContact(lines, { vendorId: bill.vendorId }),
       },
       trx,
     );

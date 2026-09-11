@@ -1,3 +1,4 @@
+import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
 import { depositRefusalReason, isAwaitingDeposit } from '@shared/domain/sales/undepositedFunds';
 import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/domain/banking/bankAccountRules';
 import { depositDateRefusalReason, paymentDateRefusalReason } from '@shared/domain/documents/paymentTiming';
@@ -89,7 +90,7 @@ export async function invoicesCreate(input: unknown, executor?: AppDb) {
   const discountAccountId = payload.discountCents > 0 ? await ensureAccountByName(db, ...CUSTOMER_DISCOUNT_ACCOUNT_ARGS) : null;
 
   const lineAmounts = payload.lines.map((line) => computeInvoiceLineAmountCents(line));
-  const journalLines = buildInvoiceJournalLines(
+  const journalLines = tagLinesWithContact(buildInvoiceJournalLines(
     accountsReceivableId,
     gstHstPayableId,
     payload.lines,
@@ -97,7 +98,7 @@ export async function invoicesCreate(input: unknown, executor?: AppDb) {
     discountAccountId === null ? undefined : { accountId: discountAccountId, amountCents: payload.discountCents, customerId: payload.customerId },
   
     provincialPayableIds,
-  );
+  ), { customerId: payload.customerId });
   // AR debit (the journal's first line) is the true invoice total: base + tax across every line.
   const totalCents = journalLines[0].debitCents;
 
@@ -336,7 +337,7 @@ export async function invoicesReceivePayment(input: unknown) {
         entryDate: paymentDate,
         memo: paymentMemo,
         reference: `INVOICE-${invoice.id}`,
-        lines,
+        lines: tagLinesWithContact(lines, { customerId: invoice.customerId }),
       },
       trx,
     );
