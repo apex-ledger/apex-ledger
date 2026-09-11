@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Security | ApexLedger</title>
-<meta name="description" content="How ApexLedger protects client data: Canadian hosting on Microsoft Azure, encryption, one file per company, seat-based access, named sign-ins, nightly backups, and what we do not do.">
+<meta name="description" content="How ApexLedger protects client data: Canadian hosting, encryption, one file per company, seat-based access, named sign-ins, nightly backups, and what we do not do.">
 <link rel="canonical" href="https://apexledger.ca/security.html">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta property="og:image" content="https://apexledger.ca/og-image.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://apexledger.ca/og-image.png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
@@ -30,9 +30,9 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px;backg
 
 <h2>Where the data lives</h2>
 <div class="grid">
-  <div class="card"><h3>Canada only</h3><p>The application and every company file run in Microsoft Azure's <b>Canada Central</b> region (Toronto). Backups are copied to <b>Canada East</b> (Québec City). Nothing is stored or processed outside Canada.</p><span class="fact">Azure Canada Central · Canada East</span></div>
-  <div class="card"><h3>Certified data centres</h3><p>Microsoft Azure data centres hold ISO 27001, ISO 27017, ISO 27018, SOC 1, SOC 2 and SOC 3 attestations and meet the Government of Canada's Protected B requirements. ApexLedger runs on that foundation.</p><span class="fact">Microsoft Azure compliance</span></div>
-  <div class="card"><h3>Encrypted at rest</h3><p>The disks holding company files and backups are encrypted by Azure Storage Service Encryption with 256-bit AES. Backup copies are encrypted in the same way.</p><span class="fact">AES-256 · Azure managed disks</span></div>
+  <div class="card"><h3>Canada only</h3><p>The application and every company file run in <b>Canadian data centres</b>. Backups are kept in a <b>second Canadian location</b>. Nothing is stored or processed outside Canada.</p><span class="fact">Hosted and backed up in Canada</span></div>
+  <div class="card"><h3>Certified data centres</h3><p>The data centres hold ISO 27001, ISO 27017, ISO 27018, SOC 1, SOC 2 and SOC 3 attestations and meet the Government of Canada's Protected B requirements. ApexLedger runs on that foundation.</p><span class="fact">Certified hosting</span></div>
+  <div class="card"><h3>Encrypted at rest</h3><p>The disks holding company files and backups are encrypted at rest with 256-bit AES. Backup copies are encrypted in the same way.</p><span class="fact">AES-256 at rest</span></div>
   <div class="card"><h3>Encrypted in transit</h3><p>Every connection uses HTTPS with TLS 1.2 or newer and a certificate that renews automatically. Browsers are told to use HTTPS only (HSTS) for a year, so an unencrypted connection is never attempted.</p><span class="fact">TLS 1.2+ · HSTS</span></div>
 </div>
 
@@ -52,10 +52,10 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px;backg
 
 <h2>The server and the network</h2>
 <table>
-<tr><th>Firewall</th><td>The network security group allows only HTTPS (TCP 443) from the internet. Administrative access is allowed from one address only, with key-based authentication and no password. Nothing else is reachable.</td></tr>
+<tr><th>Firewall</th><td>The firewall allows only HTTPS (TCP 443) from the internet. Administrative access is allowed from one address only, with key-based authentication and no password. Nothing else is reachable.</td></tr>
 <tr><th>Browser protections</th><td>Every response carries a strict Content-Security-Policy (scripts and connections only from the application itself), no-framing, no-sniff, referrer and permissions policies. The application has no inline scripts and loads nothing from third parties.</td></tr>
-<tr><th>Backups</th><td>Azure Backup takes a snapshot of the data disk every night and keeps 30 days, with the vault's geo-redundant copy in Canada East. Any firm can also download a consistent copy of any company file at any time.</td></tr>
-<tr><th>Monitoring</th><td>Azure Monitor watches the server's availability and alerts us if it is unreachable for five minutes.</td></tr>
+<tr><th>Backups</th><td>A snapshot of the data disk is taken every night and kept for 30 days, with a second copy held in another Canadian location. Any firm can also download a consistent copy of any company file at any time.</td></tr>
+<tr><th>Monitoring</th><td>Automated monitoring watches the server's availability and alerts us if it is unreachable for five minutes.</td></tr>
 <tr><th>Updates</th><td>Application updates are deployed to the server; there is nothing to install or patch on your computers. Nobody is signed out by a deploy.</td></tr>
 </table>
 
