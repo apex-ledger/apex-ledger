@@ -84,6 +84,8 @@ import { getAllAccounts, getAllJournalEntriesWithLines } from '../db/queries';
 import { trialBalance } from '@shared/domain/ledger/trialBalance';
 import { balanceSheet } from '@shared/domain/ledger/balanceSheet';
 import { computeHstSummary } from '@shared/domain/ledger/hstSummary';
+import { accountsGet } from './accounts.handlers';
+import { remapGifiTotalLines } from '../db/seeds/gifiTotalLineRemap';
 
 let db: AppDb;
 const byCode = async (code: string) => (await db.selectFrom('accounts').select('id').where('code', '=', code).executeTakeFirstOrThrow()).id;
@@ -259,5 +261,14 @@ describe('At the end', () => {
     expect(total.itc).toBe(2_600 + 13_000);
     expect(total.collected).toBe(13_000);
     expect(await balance(hstRecoverable)).toBe(15_600);
+  });
+
+  it('an older chart’s cost-of-sales account on CRA total line 8518 is moved to 8320 when the company opens', async () => {
+    const cogs = await accountsGet(await byCode('5035')); // the template's Cost of Goods Sold
+    await db.updateTable('accounts').set({ gifiCode: '8518' }).where('id', '=', cogs.id).execute(); // as an older template left it
+    expect(await remapGifiTotalLines(db)).toBe(1);
+    expect((await accountsGet(cogs.id)).gifiCode).toBe('8320');
+    expect((await accountsGet(officeSupplies)).gifiCode).toBe('8810'); // everything else untouched
+    expect(await remapGifiTotalLines(db)).toBe(0); // and running again does nothing
   });
 });
