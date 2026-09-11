@@ -1,6 +1,8 @@
-import type { Account, JournalEntry, TaxCode } from '../types';
+import type { Account, JournalEntry, JournalEntryLine, TaxCode } from '../types';
 import { filterEntriesByDateRange } from './computeAccountBalances';
 import { gstHstPortionOfInclusive, taxCodeDefinition, taxCodeLabel } from './taxCodes';
+import { isGstHstControlAccount, isGstHstReturnAccount } from './gstHstAccounts';
+import { allocateByBase, signedAmountCents } from './hstSummary';
 
 /** Every line behind a GST/HST return figure, listed.
  *
@@ -68,12 +70,65 @@ export function salesTaxDetail(
   const paid: SalesTaxDetailLine[] = [];
   let manualPendingCount = 0;
 
+  const push = (entry: JournalEntry, line: JournalEntryLine, account: Account, direction: 'collected' | 'paid', amountCents: number, gstHstCents: number) => {
+    const contactId = line.customerId ?? line.vendorId;
+    const detail: SalesTaxDetailLine = {
+      entryId: entry.id,
+      entryDate: entry.entryDate,
+      createdAt: entry.createdAt,
+      memo: entry.memo,
+      accountId: line.accountId,
+      accountCode: account.code,
+      accountName: account.name,
+      contactName: contactId != null ? contactNames.get(contactId) ?? null : null,
+      taxCode: line.taxCode as TaxCode,
+      taxCodeLabel: taxCodeLabel(line.taxCode),
+      amountCents,
+      gstHstCents,
+      direction,
+    };
+    (direction === 'collected' ? collected : paid).push(detail);
+  };
+
   for (const entry of filterEntriesByDateRange(entries, periodStart, periodEnd)) {
     if (entry.status !== 'posted') continue;
+    // Filing a return moves the control accounts into "filed"; it is bookkeeping about a return,
+    // not tax charged or paid, and the HST summary skips it for the same reason.
+    if (entry.lines.length > 0 && entry.lines.every((l) => { const a = byId.get(l.accountId); return a !== undefined && isGstHstReturnAccount(a); })) continue;
+
+    // Entries posted since tax was split onto its own GST/HST line carry the real tax there: read
+    // it, and attribute it to the revenue/expense lines it was charged on in proportion to their
+    // amounts. This keeps the detail equal to the summary (and to the ledger) to the cent. The
+    // category lines of such entries hold the before-tax amount, so extracting "tax included" from
+    // them, as the legacy path below does, would understate the return by the tax rate.
+    const gstLines = entry.lines.filter((l) => { const a = byId.get(l.accountId); return a !== undefined && isGstHstControlAccount(a); });
+    if (gstLines.length > 0) {
+      const gstIds = new Set(gstLines.map((l) => l.accountId));
+      for (const gstLine of gstLines) {
+        const gstAccount = byId.get(gstLine.accountId)!;
+        const hstDirection = gstAccount.name.toLowerCase() === 'gst/hst payable' ? 'collected' : 'itc';
+        const direction: 'collected' | 'paid' = hstDirection === 'collected' ? 'collected' : 'paid';
+        const hstCents = signedAmountCents(gstLine, hstDirection);
+        if (hstCents === 0) continue;
+        const categoryLines = entry.lines.filter((l) => !gstIds.has(l.accountId) && l.taxCode);
+        if (categoryLines.length === 0) { push(entry, gstLine, gstAccount, direction, 0, hstCents); continue; }
+        const bases = categoryLines.map((l) => signedAmountCents(l, hstDirection));
+        const shares = allocateByBase(hstCents, bases);
+        categoryLines.forEach((categoryLine, i) => {
+          const account = byId.get(categoryLine.accountId) ?? gstAccount;
+          push(entry, categoryLine, account, direction, bases[i], shares[i]);
+        });
+      }
+      continue;
+    }
+
     for (const line of entry.lines) {
       if (!line.taxCode) continue;
       const account = byId.get(line.accountId);
       if (!account) continue;
+      // A line written by the tax split (baseCents recorded) with no control-account line in the
+      // entry carries no tax at all (tax deliberately zero); deriving some would invent it.
+      if (line.baseCents !== null) continue;
 
       // Revenue is tax collected from customers; expenses and assets are tax paid to vendors.
       // Anything else carrying a tax code is not part of a return.
@@ -96,24 +151,7 @@ export function salesTaxDetail(
       } else {
         gstHstCents = gstHstPortionOfInclusive(line.taxCode, amountCents);
       }
-
-      const contactId = line.customerId ?? line.vendorId;
-      const detail: SalesTaxDetailLine = {
-        entryId: entry.id,
-        entryDate: entry.entryDate,
-        createdAt: entry.createdAt,
-        memo: entry.memo,
-        accountId: line.accountId,
-        accountCode: account.code,
-        accountName: account.name,
-        contactName: contactId != null ? contactNames.get(contactId) ?? null : null,
-        taxCode: line.taxCode,
-        taxCodeLabel: taxCodeLabel(line.taxCode),
-        amountCents,
-        gstHstCents,
-        direction,
-      };
-      (direction === 'collected' ? collected : paid).push(detail);
+      push(entry, line, account, direction, amountCents, gstHstCents);
     }
   }
 

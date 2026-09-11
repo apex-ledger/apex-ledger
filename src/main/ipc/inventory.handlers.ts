@@ -250,12 +250,15 @@ export async function movementsCreate(input: unknown) {
     throw new Error('Choose the bank, Accounts Payable, or other account that funded this inventory receipt.');
   }
 
-  // The average a sale leaves at depends on everything that came before it, so the prior movements
-  // are read BEFORE this one is written.
+  // The average a sale leaves at depends on everything that came before it BY DATE, so the prior
+  // movements are read before this one is written and limited to its date: a sale entered today
+  // but dated in February must not be costed at an average that includes a May purchase, or the
+  // ledger's cost of sales drifts from the valuation report, which replays movements in date order.
   const priorRows = await db
     .selectFrom('inventoryMovements')
     .selectAll()
     .where('productId', '=', payload.productId)
+    .where('movementDate', '<=', payload.movementDate)
     .execute();
 
   if (payload.quantityDelta < 0) {

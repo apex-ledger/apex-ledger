@@ -50,7 +50,7 @@ export function taxPortionCents(taxCode: TaxCode | null, amountCents: number): n
  * side happened to be non-zero (as this used to) counted every remittance as another sale's worth
  * of tax and overstated the next period's net payable.
  */
-function signedAmountCents(line: JournalEntryLine, direction: HstDirection): number {
+export function signedAmountCents(line: JournalEntryLine, direction: HstDirection): number {
   return direction === 'collected' ? line.creditCents - line.debitCents : line.debitCents - line.creditCents;
 }
 
@@ -62,7 +62,7 @@ function signedAmountCents(line: JournalEntryLine, direction: HstDirection): num
  * breakdown was not. The largest share absorbs any rounding remainder so the parts always sum back
  * to the posted total exactly.
  */
-function allocateByBase(totalCents: number, baseCents: number[]): number[] {
+export function allocateByBase(totalCents: number, baseCents: number[]): number[] {
   const baseSum = baseCents.reduce((sum, b) => sum + b, 0);
   if (baseSum <= 0) {
     // No usable bases to weight by (all zero, or a reversal that nets out) — put it all on the

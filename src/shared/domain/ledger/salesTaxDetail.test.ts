@@ -23,7 +23,10 @@ function acct(id: number, code: string, name: string, accountType: Account['acco
 const BANK = acct(1, '1000', 'Chequing', 'Asset');
 const SALES = acct(2, '4000', 'Sales', 'Revenue');
 const SUPPLIES = acct(3, '5200', 'Supplies', 'Expense');
-const ACCOUNTS = [BANK, SALES, SUPPLIES];
+const HST_PAYABLE = acct(4, '2300', 'GST/HST Payable', 'Liability');
+const HST_RECOVERABLE = acct(5, '1300', 'GST/HST Recoverable', 'Asset');
+const HST_FILED = acct(6, '2310', 'GST/HST Filed Payable', 'Liability');
+const ACCOUNTS = [BANK, SALES, SUPPLIES, HST_PAYABLE, HST_RECOVERABLE, HST_FILED];
 
 let nextId = 1;
 function line(accountId: number, debitCents: number, creditCents: number, extra: Partial<JournalEntryLine> = {}): JournalEntryLine {
@@ -155,5 +158,25 @@ describe('salesTaxDetail', () => {
   it('respects the reporting period', () => {
     const entries = [entry('2024-12-31', [line(BANK.id, 113_00, 0), line(SALES.id, 0, 113_00, { taxCode: 'HST' })])];
     expect(salesTaxDetail(ACCOUNTS, entries, '2025-01-01', '2025-12-31').collected).toEqual([]);
+  });
+
+  it('reads posted tax from the GST/HST line when the entry was split, not from the before-tax amount', () => {
+    // A $200 expense with $26 HST posted the modern way: 200 on Supplies (baseCents recorded), 26 on Recoverable.
+    const purchase = entry('2026-09-11', [line(SUPPLIES.id, 20000, 0, { taxCode: 'HST', baseCents: 20000 }), line(HST_RECOVERABLE.id, 2600, 0, { taxCode: 'HST' }), line(BANK.id, 0, 22600)]);
+    // A $1,000 sale with $130 HST: 1,000 on Sales, 130 on Payable.
+    const sale = entry('2026-09-11', [line(BANK.id, 113000, 0), line(SALES.id, 0, 100000, { taxCode: 'HST', baseCents: 100000 }), line(HST_PAYABLE.id, 0, 13000, { taxCode: 'HST' })]);
+    const r = salesTaxDetail(ACCOUNTS, [purchase, sale], '2026-01-01', '2026-12-31', new Map());
+    expect(r.totalPaidCents).toBe(2600);
+    expect(r.totalCollectedCents).toBe(13000);
+    expect(r.paid[0].amountCents).toBe(20000);
+    expect(r.collected[0].accountName).toBe('Sales');
+    expect(r.netCents).toBe(10400);
+  });
+
+  it('skips the journal that files a return (control accounts only)', () => {
+    const filing = entry('2026-10-15', [line(HST_PAYABLE.id, 13000, 0, { taxCode: 'HST' }), line(HST_RECOVERABLE.id, 0, 2600, { taxCode: 'HST' }), line(HST_FILED.id, 0, 10400)]);
+    const r = salesTaxDetail(ACCOUNTS, [filing], '2026-01-01', '2026-12-31', new Map());
+    expect(r.totalCollectedCents).toBe(0);
+    expect(r.totalPaidCents).toBe(0);
   });
 });
