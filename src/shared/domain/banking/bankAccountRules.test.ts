@@ -62,4 +62,12 @@ describe('which currency an account may move', () => {
   it('refuses a document in a different foreign currency, offering that currency or CAD', () => {
     expect(currencyMatchRefusalReason(usd, 'EUR', 'bill 7')).toMatch(/Choose a EUR or Canadian-dollar account instead/);
   });
+
+  it('lets a bill be paid with a credit card, but never a deposit into one', () => {
+    const visa: MoneyAccountCandidate = { id: 9, name: 'Visa', accountSubtype: 'Credit Card', isActive: true };
+    expect(moneyAccountRefusalReason(visa, 'pay this bill', { allowCreditCard: true })).toBeNull();
+    expect(moneyAccountRefusalReason(visa, 'make this deposit')).toMatch(/not a bank account/);
+    const supplies: MoneyAccountCandidate = { id: 10, name: 'Office Supplies', accountSubtype: 'Operating Expense', isActive: true };
+    expect(moneyAccountRefusalReason(supplies, 'pay this bill', { allowCreditCard: true })).toMatch(/Cash and Bank account or Credit Card/);
+  });
 });

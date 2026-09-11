@@ -215,7 +215,7 @@ export async function billsPay(input: unknown) {
   if (timingRefusal) throw new Error(timingRefusal);
 
   const bank = await db.selectFrom('accounts').select(['id', 'name', 'accountSubtype', 'isActive', 'currency']).where('id', '=', bankAccountId).executeTakeFirst();
-  const bankRefusal = moneyAccountRefusalReason(bank && { ...bank, isActive: Boolean(bank.isActive) }, 'pay this bill');
+  const bankRefusal = moneyAccountRefusalReason(bank && { ...bank, isActive: Boolean(bank.isActive) }, 'pay this bill', { allowCreditCard: true });
   if (bankRefusal) throw new Error(bankRefusal);
   const currencyRefusal = bank ? currencyMatchRefusalReason(bank, bill.foreignCurrency, bill.billNumber ? `vendor invoice ${bill.billNumber}` : `bill ${bill.id}`) : null;
   if (currencyRefusal) throw new Error(currencyRefusal);

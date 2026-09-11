@@ -19,9 +19,14 @@ export interface MoneyAccountOptions {
    * receive-payment, which park cash until a deposit). Everywhere else it is refused, because
    * Undeposited Funds is not a bank. */
   undepositedFundsAccountId?: number | null;
+  /** Paying a vendor bill with a company credit card is ordinary: the payable is settled and the
+   * card is owed instead. Money never lands IN a credit card, so deposits, receipts and refunds
+   * keep refusing it; only the callers that pay something out set this. */
+  allowCreditCard?: boolean;
 }
 
 export const CASH_AND_BANK_SUBTYPE = 'Cash and Bank';
+export const CREDIT_CARD_SUBTYPE = 'Credit Card';
 
 /** Why a document in one currency cannot be settled through this account, or null if it can.
  *
@@ -54,8 +59,9 @@ export function moneyAccountRefusalReason(
   if (!account) return `Choose an account to ${purpose}.`;
   if (account.id === options.undepositedFundsAccountId) return null;
   if (!account.isActive) return `${account.name} is inactive. Reactivate it in the Chart of Accounts or choose another account to ${purpose}.`;
+  if (options.allowCreditCard && account.accountSubtype === CREDIT_CARD_SUBTYPE) return null;
   if (account.accountSubtype !== CASH_AND_BANK_SUBTYPE) {
-    const hint = options.undepositedFundsAccountId ? ' or Undeposited Funds' : '';
+    const hint = options.undepositedFundsAccountId ? ' or Undeposited Funds' : options.allowCreditCard ? ' or Credit Card' : '';
     return `${account.name} is not a bank account. Choose an active Cash and Bank account${hint} to ${purpose}.`;
   }
   return null;

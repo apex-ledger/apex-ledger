@@ -60,7 +60,9 @@ export function PayBillModal({
     setRateNote(null);
     Promise.all([window.api.accounts.list({ activeOnly: true }), window.api.bills.list(), window.api.vendors.list()]).then(([a, b, v]) => {
       if (a.ok) {
-        const banks = a.data.filter((x) => x.accountSubtype === 'Cash and Bank');
+        // Bank accounts first, then the company credit cards: a bill paid by card settles the payable
+        // and owes the card instead, which is how most small firms pay their suppliers.
+        const banks = [...a.data.filter((x) => x.accountSubtype === 'Cash and Bank'), ...a.data.filter((x) => x.accountSubtype === 'Credit Card')];
         setBankAccounts(banks);
         setBankAccountId(banks.length === 1 ? banks[0].id : null);
       }

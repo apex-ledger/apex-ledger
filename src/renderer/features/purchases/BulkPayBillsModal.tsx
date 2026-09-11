@@ -41,7 +41,7 @@ export function BulkPayBillsModal({
     setPaymentDate(today());
     window.api.accounts.list({ activeOnly: true }).then((r) => {
       if (!r.ok) return;
-      const banks = paymentSourceAccounts(r.data);
+      const banks = [...paymentSourceAccounts(r.data), ...r.data.filter((x) => x.accountSubtype === 'Credit Card')];
       setBankAccounts(banks);
       setBankAccountId(banks[0]?.id ?? null);
     });
