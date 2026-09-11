@@ -80,7 +80,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Cell Phone', accountSubtype: 'Operating Expense', gifiCode: '9225' },
     { name: 'Telephone & Utilities', accountSubtype: 'Operating Expense', gifiCode: '9225' },
     { name: 'Travel Expenses', accountSubtype: 'Operating Expense', gifiCode: '9200' },
-    { name: 'Cost of Goods Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of Goods Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Other Operating Expenses', accountSubtype: 'Operating Expense', gifiCode: '9270' },
     { name: 'Commission Income', accountSubtype: 'Revenue', gifiCode: '8120' },
     { name: 'Consulting / Professional Fees', accountSubtype: 'Revenue', gifiCode: '8000' },
@@ -111,7 +111,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   restaurant: [
-    { name: 'Food & Beverage Costs', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Food & Beverage Costs', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Kitchen Supplies', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Restaurant Equipment', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Smallwares', accountSubtype: 'Operating Expense', gifiCode: '9130' },
@@ -122,9 +122,9 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Liquor Licence Fees', accountSubtype: 'Operating Expense', gifiCode: '9270' },
   ],
   car_repair_collision: [
-    { name: 'Auto Parts', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Auto Parts', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Shop Supplies', accountSubtype: 'Operating Expense', gifiCode: '9130' },
-    { name: 'Paint & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Paint & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Equipment Repairs', accountSubtype: 'Operating Expense', gifiCode: '8960' },
     { name: 'Tool Purchases', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Waste Disposal', accountSubtype: 'Operating Expense', gifiCode: '9270' },
@@ -133,7 +133,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   hvac_technician: [
-    { name: 'Refrigerant & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Refrigerant & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Tools & Equipment', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Vehicle Fuel', accountSubtype: 'Operating Expense', gifiCode: '9281' },
     { name: 'Vehicle Maintenance', accountSubtype: 'Operating Expense', gifiCode: '8962' },
@@ -142,7 +142,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   plumber: [
-    { name: 'Pipes & Fittings', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Pipes & Fittings', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Tools & Equipment', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Vehicle Fuel', accountSubtype: 'Operating Expense', gifiCode: '9281' },
     { name: 'Vehicle Maintenance', accountSubtype: 'Operating Expense', gifiCode: '8962' },
@@ -151,7 +151,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   handyman_construction: [
-    { name: 'Lumber & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Lumber & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Subcontractor Labour', accountSubtype: 'Operating Expense', gifiCode: '9110' },
     { name: 'Tools & Equipment', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Vehicle Fuel', accountSubtype: 'Operating Expense', gifiCode: '9281' },
@@ -214,7 +214,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   landscaping_lawn_care: [
-    { name: 'Plants, Sod & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Plants, Sod & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Equipment Fuel', accountSubtype: 'Operating Expense', gifiCode: '9224' },
     { name: 'Equipment Repairs & Maintenance', accountSubtype: 'Operating Expense', gifiCode: '8960' },
     { name: 'Tools & Equipment Purchases', accountSubtype: 'Operating Expense', gifiCode: '8810' },
@@ -223,7 +223,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   cleaning_services: [
-    { name: 'Cleaning Supplies', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cleaning Supplies', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Equipment Purchases', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Equipment Repairs', accountSubtype: 'Operating Expense', gifiCode: '8960' },
     { name: 'Vehicle Fuel & Mileage', accountSubtype: 'Operating Expense', gifiCode: '9281' },
@@ -232,7 +232,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   salon_spa_barber: [
-    { name: 'Salon Product Inventory', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Salon Product Inventory', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Chair / Booth Rental', accountSubtype: 'Operating Expense', gifiCode: '8910' },
     { name: 'Equipment & Supplies', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Licensing & Continuing Education', accountSubtype: 'Operating Expense', gifiCode: '9270' },
@@ -248,7 +248,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   daycare_childcare: [
-    { name: 'Childcare Supplies & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Childcare Supplies & Materials', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Food & Snacks', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Toys & Educational Materials', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Licensing & Inspection Fees', accountSubtype: 'Operating Expense', gifiCode: '9270' },
@@ -261,7 +261,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Editing Software Subscriptions', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Studio Rent', accountSubtype: 'Operating Expense', gifiCode: '8910' },
     { name: 'Props & Backdrops', accountSubtype: 'Operating Expense', gifiCode: '9130' },
-    { name: 'Photo Printing & Album Costs', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Photo Printing & Album Costs', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Travel for Shoots', accountSubtype: 'Operating Expense', gifiCode: '9200' },
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
@@ -274,7 +274,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   retail_store: [
-    { name: 'Merchandise Purchases', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Merchandise Purchases', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Store Rent', accountSubtype: 'Operating Expense', gifiCode: '8910' },
     { name: 'Point of Sale & Payment Processing Fees', accountSubtype: 'Operating Expense', gifiCode: '8710' },
     { name: 'Store Supplies & Bags', accountSubtype: 'Operating Expense', gifiCode: '9130' },
@@ -283,7 +283,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   ecommerce_online_store: [
-    { name: 'Product / Inventory Purchases', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Product / Inventory Purchases', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Shipping & Fulfillment', accountSubtype: 'Cost of Sales', gifiCode: '9274' },
     { name: 'Platform & Payment Processing Fees', accountSubtype: 'Operating Expense', gifiCode: '8710' },
     { name: 'Packaging Supplies', accountSubtype: 'Operating Expense', gifiCode: '9130' },
@@ -292,7 +292,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   farming_agriculture: [
-    { name: 'Seed, Feed & Fertilizer', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Seed, Feed & Fertilizer', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Fuel & Equipment Operating Costs', accountSubtype: 'Operating Expense', gifiCode: '9224' },
     { name: 'Equipment Repairs & Maintenance', accountSubtype: 'Operating Expense', gifiCode: '8960' },
     { name: 'Land / Equipment Lease Payments', accountSubtype: 'Operating Expense', gifiCode: '8910' },
@@ -301,7 +301,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   medical_dental_professional: [
-    { name: 'Medical / Dental Supplies', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Medical / Dental Supplies', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Clinic Rent', accountSubtype: 'Operating Expense', gifiCode: '8910' },
     { name: 'Malpractice / Liability Insurance', accountSubtype: 'Operating Expense', gifiCode: '8690' },
     { name: 'Licensing & Continuing Education', accountSubtype: 'Operating Expense', gifiCode: '9270' },
@@ -364,9 +364,9 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   auto_dealer: [
-    { name: 'Cost of New Vehicles Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
-    { name: 'Cost of Used Vehicles Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
-    { name: 'Reconditioning Costs', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of New Vehicles Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
+    { name: 'Cost of Used Vehicles Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
+    { name: 'Reconditioning Costs', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Floorplan Interest Expense', accountSubtype: 'Operating Expense', gifiCode: '8710' },
     { name: 'Sales Commissions', accountSubtype: 'Operating Expense', gifiCode: '9060' },
     { name: 'Licensing & Dealer Fees', accountSubtype: 'Operating Expense', gifiCode: '8760' },
@@ -374,7 +374,7 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   grocery_store: [
-    { name: 'Cost of Groceries Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of Groceries Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Spoilage & Shrinkage', accountSubtype: 'Cost of Sales', gifiCode: '8458' },
     { name: 'Refrigeration Repairs & Maintenance', accountSubtype: 'Operating Expense', gifiCode: '8960' },
     { name: 'Point of Sale & Payment Processing Fees', accountSubtype: 'Operating Expense', gifiCode: '8710' },
@@ -383,8 +383,8 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   convenience_store: [
-    { name: 'Cost of Merchandise Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
-    { name: 'Cost of Tobacco Products Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of Merchandise Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
+    { name: 'Cost of Tobacco Products Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Point of Sale & Payment Processing Fees', accountSubtype: 'Operating Expense', gifiCode: '8710' },
     { name: 'Security & Surveillance', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Store Supplies', accountSubtype: 'Operating Expense', gifiCode: '9130' },
@@ -393,8 +393,8 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   drug_store: [
-    { name: 'Cost of Prescription Drugs Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
-    { name: 'Cost of Front Store Merchandise Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of Prescription Drugs Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
+    { name: 'Cost of Front Store Merchandise Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { name: 'Pharmacist Wages & Benefits', accountSubtype: 'Operating Expense', gifiCode: '9060' },
     { name: 'Professional Liability Insurance', accountSubtype: 'Operating Expense', gifiCode: '8690' },
     { name: 'Pharmacy Licensing Fees', accountSubtype: 'Operating Expense', gifiCode: '8760' },
@@ -403,8 +403,8 @@ export const BUSINESS_TYPE_EXPENSE_CATEGORIES: Record<string, SuggestedCategory[
     { name: 'Meals & Entertainment', accountSubtype: 'Operating Expense', gifiCode: '8523' },
   ],
   cannabis_retail: [
-    { name: 'Cost of Cannabis Products Sold', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
-    { name: 'Cannabis Excise Duty (Cost of Sales)', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { name: 'Cost of Cannabis Products Sold', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
+    { name: 'Cannabis Excise Duty (Cost of Sales)', accountSubtype: 'Cost of Sales', gifiCode: '8450' },
     { name: 'Security & Surveillance', accountSubtype: 'Operating Expense', gifiCode: '9130' },
     { name: 'Compliance & Seed-to-Sale Software', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { name: 'Retail Cannabis Licence Fees', accountSubtype: 'Operating Expense', gifiCode: '8760' },

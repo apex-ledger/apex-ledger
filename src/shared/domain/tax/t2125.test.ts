@@ -73,6 +73,50 @@ describe('t2125LineFor', () => {
     // 9270 is a real line on the form, so nothing goes missing.
     expect(t2125LineFor(acct(9, '5', 'Sundry bits and pieces', 'Expense')).line).toBe('9270');
   });
+
+  it('uses the account’s own GIFI item when it is a T2125 line, over a guess from the name', () => {
+    expect(t2125LineFor({ ...acct(9, '5', 'Postage & Delivery', 'Expense'), gifiCode: '9275' }).line).toBe('9275');
+    expect(t2125LineFor({ ...acct(9, '5', 'Merchant / Credit Card Processing Fees', 'Expense'), gifiCode: '8710' }).line).toBe('8710');
+    expect(t2125LineFor({ ...acct(9, '5', 'Software & Subscriptions', 'Expense'), gifiCode: '8810' }).line).toBe('8810');
+    // A GIFI item that is not a T2125 line falls back to the name.
+    expect(t2125LineFor({ ...acct(9, '5', 'Dues & Subscriptions', 'Expense'), gifiCode: '8761' }).line).toBe('8760');
+  });
+
+  it('files a vehicle lease under motor vehicle, and telephone and internet under utilities', () => {
+    expect(t2125LineFor(acct(9, '5', 'Vehicle Lease', 'Expense')).line).toBe('9281');
+    expect(t2125LineFor(acct(9, '5', 'Rent', 'Expense')).line).toBe('8910');
+    expect(t2125LineFor(acct(9, '5', 'Telephone', 'Expense')).line).toBe('9220');
+    expect(t2125LineFor(acct(9, '5', 'Internet', 'Expense')).line).toBe('9220');
+  });
+});
+
+describe('computeT2125 — what the form does not deduct as booked', () => {
+  const MEALS = acct(7, '5300', 'Meals & Entertainment', 'Expense');
+  const AMORT = acct(8, '5400', 'Amortization Expense', 'Expense');
+  const DONATIONS = acct(10, '5500', 'Charitable Donations', 'Expense');
+
+  it('claims half of meals and entertainment, and shows the books’ figure', () => {
+    const entries = [entry('2025-03-01', BANK.id, SALES.id, 50_000_00), entry('2025-03-02', MEALS.id, BANK.id, 1_000_00)];
+    const r = computeT2125([...ACCOUNTS, MEALS], entries, '2025-01-01', '2025-12-31', NO_EXTRAS);
+    expect(r.expenses.find((e) => e.line === '8523')?.amountCents).toBe(500_00);
+    expect(r.mealsBookAmountCents).toBe(1_000_00);
+    expect(r.totalExpensesCents).toBe(500_00);
+  });
+
+  it('leaves amortization and donations off the expense lines and lists them with the reason', () => {
+    const entries = [
+      entry('2025-03-01', BANK.id, SALES.id, 50_000_00),
+      entry('2025-03-02', AMORT.id, BANK.id, 2_000_00),
+      entry('2025-03-03', DONATIONS.id, BANK.id, 300_00),
+      entry('2025-03-04', RENT.id, BANK.id, 1_000_00),
+    ];
+    const r = computeT2125([...ACCOUNTS, AMORT, DONATIONS], entries, '2025-01-01', '2025-12-31', { ...NO_EXTRAS, ccaClaimedCents: 1_500_00 });
+    expect(r.totalExpensesCents).toBe(1_000_00);
+    expect(r.excluded.map((x) => [x.name, x.amountCents])).toEqual([['Amortization Expense', 2_000_00], ['Charitable Donations', 300_00]]);
+    expect(r.excluded[0].reason).toMatch(/9936/);
+    // CCA is the deduction that replaces amortization; it is taken once, from the input.
+    expect(r.netBeforeHomeCents).toBe(50_000_00 - 1_000_00 - 1_500_00);
+  });
 });
 
 describe('computeT2125', () => {

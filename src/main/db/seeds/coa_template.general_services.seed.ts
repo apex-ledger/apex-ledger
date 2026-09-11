@@ -157,7 +157,7 @@ export const GENERAL_SERVICES_TEMPLATE: CoaTemplate = {
     { code: '5015', name: 'Merchant / Credit Card Processing Fees', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8710' },
     { code: '5020', name: 'Insurance', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8690' },
     { code: '5030', name: 'Interest & Bank Charges - Long-Term Debt', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8710' },
-    { code: '5035', name: 'Cost of Goods Sold', accountType: 'Expense', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { code: '5035', name: 'Cost of Goods Sold', accountType: 'Expense', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
     { code: '5040', name: 'Office Supplies', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { code: '5041', name: 'Office Expenses', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8810' },
     { code: '5045', name: 'Software & Subscriptions', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8810' },

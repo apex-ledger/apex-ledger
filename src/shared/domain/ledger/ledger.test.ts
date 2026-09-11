@@ -356,4 +356,44 @@ describe('gifiExport', () => {
     expect(result.rows.filter((r) => !r.isComputedTotal)).toHaveLength(0);
     expect(result.unmappedAccounts).toHaveLength(0);
   });
+
+  it('derives cost of sales (8518), gross profit (8519) and operating expenses (9367) from the detail items', () => {
+    const purchases = account(20, '5000', 'Purchases', 'Expense', '8320');
+    const cogs = account(21, '5090', 'Cost of Goods Sold', 'Expense', '8518'); // an older chart mapped straight to the total
+    const codes: GifiCode[] = [
+      ...GIFI_CODES,
+      { code: '8320', description: 'Purchases/cost of materials', statementType: 'IncomeStatement', category: 'Cost of Sales', isCustom: false },
+      { code: '8518', description: 'Total cost of sales', statementType: 'IncomeStatement', category: 'Cost of Sales', isCustom: false },
+    ];
+    const entries = [
+      entry(1, '2026-01-05', 'posted', [{ accountId: CASH.id, debitCents: 100_000 }, { accountId: SALES_REVENUE.id, creditCents: 100_000 }]),
+      entry(2, '2026-01-06', 'posted', [{ accountId: purchases.id, debitCents: 30_000 }, { accountId: CASH.id, creditCents: 30_000 }]),
+      entry(3, '2026-01-07', 'posted', [{ accountId: cogs.id, debitCents: 10_000 }, { accountId: CASH.id, creditCents: 10_000 }]),
+      entry(4, '2026-01-08', 'posted', [{ accountId: SUPPLIES_EXPENSE.id, debitCents: 5_000 }, { accountId: CASH.id, creditCents: 5_000 }]),
+    ];
+    const result = gifiExport([...ALL_ACCOUNTS, purchases, cogs], entries, codes, '2026-01-01', '2026-01-31');
+    const row = (code: string) => result.rows.find((r) => r.gifiCode === code);
+    expect(row('8320')?.amountCents).toBe(30_000);
+    expect(row('8518')?.isComputedTotal).toBe(true);
+    expect(row('8518')?.amountCents).toBe(40_000); // purchases + the account mapped straight to 8518
+    expect(row('8519')?.amountCents).toBe(60_000);
+    expect(row('9367')?.amountCents).toBe(5_000);
+    expect(row('9368')?.amountCents).toBe(45_000);
+    // The direct mapping is flagged with a hint, and blocks "filing ready" until fixed.
+    expect(result.statementTypeMismatches.map((m) => m.account.id)).toContain(cogs.id);
+    expect(result.statementTypeMismatches.find((m) => m.account.id === cogs.id)?.actual).toMatch(/8320/);
+    expect(result.filingReady).toBe(false);
+  });
+
+  it('flips the sign of an expense account filed on a revenue item, so a loss reads as negative revenue', () => {
+    const fxLoss = account(22, '5950', 'Exchange Gain/Loss', 'Expense', '8231');
+    const fxGain = account(23, '4700', 'Foreign Exchange Gain/Loss', 'Revenue', '8231');
+    const codes: GifiCode[] = [...GIFI_CODES, { code: '8231', description: 'Foreign exchange gains/losses', statementType: 'IncomeStatement', category: 'Revenue', isCustom: false }];
+    const entries = [
+      entry(1, '2026-01-05', 'posted', [{ accountId: fxLoss.id, debitCents: 700 }, { accountId: CASH.id, creditCents: 700 }]), // a $7 loss
+      entry(2, '2026-01-06', 'posted', [{ accountId: CASH.id, debitCents: 1_000 }, { accountId: fxGain.id, creditCents: 1_000 }]), // a $10 gain
+    ];
+    const result = gifiExport([...ALL_ACCOUNTS, fxLoss, fxGain], entries, codes, '2026-01-01', '2026-01-31');
+    expect(result.rows.find((r) => r.gifiCode === '8231')?.amountCents).toBe(300); // net gain of $3, not $17
+  });
 });

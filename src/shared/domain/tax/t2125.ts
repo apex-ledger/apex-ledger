@@ -29,12 +29,13 @@ export const T2125_EXPENSE_LINES: { line: string; label: string; match: RegExp }
   { line: '8811', label: 'Office stationery and supplies', match: /supplies/i },
   { line: '8860', label: 'Professional fees', match: /professional|legal|account(ing|ant)|bookkeep/i },
   { line: '8871', label: 'Management and administration fees', match: /management fee|admin(istration)? fee/i },
-  { line: '8910', label: 'Rent', match: /^rent|premises|lease(?! improve)/i },
+  { line: '8910', label: 'Rent', match: /^(?!.*(vehicle|auto|car\b|truck)).*(^rent|premises|lease(?! improve))/i },
   { line: '8960', label: 'Repairs and maintenance', match: /repair|maintenance/i },
   { line: '9060', label: 'Salaries, wages, and benefits', match: /salar|wage|payroll|benefit|cpp|ei /i },
   { line: '9180', label: 'Property taxes', match: /property tax/i },
   { line: '9200', label: 'Travel', match: /travel|airfare|hotel|accommodation/i },
-  { line: '9220', label: 'Utilities', match: /utilit|hydro|electric|gas|water|heat/i },
+  // CRA's T4002 guide puts telephone and internet on the utilities line.
+  { line: '9220', label: 'Utilities', match: /utilit|hydro|electric|gas|water|heat|telephone|phone|internet|cell|mobile/i },
   // Line 9224 is fuel that is NOT motor vehicle fuel — furnace oil, propane for equipment. The
   // exclusion has to look at the whole account name, not just what follows the word: "Vehicle &
   // Fuel" would otherwise land here instead of on the motor vehicle line below it.
@@ -65,6 +66,18 @@ export interface T2125Input {
   ccaClaimedCents: number;
 }
 
+/** Book expenses that are not deductible on a T2125 as such: amortization is replaced by the CCA
+ * claim (line 9936), and a sole proprietor's donations are a personal credit, not a business
+ * expense. They are listed rather than dropped so the reconciliation to the books is visible. */
+export const T2125_NOT_DEDUCTIBLE = /amortization|depreciation|charitable|donation|income tax(?!es payable)/i;
+
+export interface T2125ExcludedRow {
+  accountId: number;
+  name: string;
+  amountCents: number;
+  reason: string;
+}
+
 export interface T2125Result {
   periodStart: string;
   periodEnd: string;
@@ -73,6 +86,10 @@ export interface T2125Result {
   grossProfitCents: number;
   expenses: T2125ExpenseRow[];
   totalExpensesCents: number;
+  /** Book expenses left off the form: amortization (CCA is claimed instead) and donations. */
+  excluded: T2125ExcludedRow[];
+  /** The books' meal and entertainment total; line 8523 carries half of it. */
+  mealsBookAmountCents: number;
   ccaClaimedCents: number;
   vehicleClaimCents: number;
   /** Net income before the home-office claim — the figure the home cap is measured against. */
@@ -97,6 +114,10 @@ function amountFor(account: Account, balances: ReturnType<typeof computeAccountB
  * gets abandoned halfway through. Anything unmatched lands in "Other expenses" (9270), which is a
  * real line on the form, so nothing is dropped. */
 export function t2125LineFor(account: Account): { line: string; label: string } {
+  // The chart's own GIFI item is a deliberate mapping; when it is one of the T2125 lines it beats
+  // any guess from the name ("Postage & Delivery" filed on 9275 stays on 9275).
+  const byGifi = account.gifiCode ? T2125_EXPENSE_LINES.find((c) => c.line === account.gifiCode && c.line !== '9270') : undefined;
+  if (byGifi) return { line: byGifi.line, label: byGifi.label };
   for (const candidate of T2125_EXPENSE_LINES) {
     if (candidate.line === '9270') continue;
     if (candidate.match.test(account.name)) return { line: candidate.line, label: candidate.label };
@@ -115,7 +136,9 @@ export function computeT2125(
 
   let grossRevenueCents = 0;
   let costOfGoodsSoldCents = 0;
+  let mealsBookAmountCents = 0;
   const byLine = new Map<string, T2125ExpenseRow>();
+  const excluded: T2125ExcludedRow[] = [];
 
   for (const account of accounts) {
     const amountCents = amountFor(account, balances);
@@ -133,10 +156,22 @@ export function computeT2125(
       continue;
     }
 
+    if (T2125_NOT_DEDUCTIBLE.test(account.name)) {
+      const reason = /amortization|depreciation/i.test(account.name)
+        ? 'Not deductible: capital cost allowance is claimed on line 9936 instead'
+        : /income tax/i.test(account.name)
+          ? 'Not deductible: income tax is not a business expense'
+          : 'Not deductible: donations are claimed as a personal credit on the T1';
+      excluded.push({ accountId: account.id, name: account.name, amountCents, reason });
+      continue;
+    }
+
     const { line, label } = t2125LineFor(account);
     if (!byLine.has(line)) byLine.set(line, { line, label, amountCents: 0, accountIds: [] });
     const row = byLine.get(line)!;
-    row.amountCents += amountCents;
+    // Meals and entertainment: the form takes 50% of the books' figure (T4002, line 8523).
+    if (line === '8523') mealsBookAmountCents += amountCents;
+    row.amountCents += line === '8523' ? Math.round(amountCents / 2) : amountCents;
     row.accountIds.push(account.id);
   }
 
@@ -163,6 +198,8 @@ export function computeT2125(
     grossProfitCents,
     expenses,
     totalExpensesCents,
+    excluded,
+    mealsBookAmountCents,
     ccaClaimedCents: input.ccaClaimedCents,
     vehicleClaimCents,
     netBeforeHomeCents,

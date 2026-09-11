@@ -150,7 +150,7 @@ export const RETAIL_TEMPLATE: CoaTemplate = {
     // correction) — posted as a credit here to net against Cost of Sales instead of showing up as
     // new revenue, which would overstate both what you spent and what you earned.
     { code: '5020', name: 'Purchase Refunds & Rebates', accountType: 'Expense', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
-    { code: '5090', name: 'Cost of Goods Sold', accountType: 'Expense', accountSubtype: 'Cost of Sales', gifiCode: '8518' },
+    { code: '5090', name: 'Cost of Goods Sold', accountType: 'Expense', accountSubtype: 'Cost of Sales', gifiCode: '8320' },
 
     // Operating Expenses
     { code: '6000', name: 'Advertising & Promotion', accountType: 'Expense', accountSubtype: 'Operating Expense', gifiCode: '8521' },

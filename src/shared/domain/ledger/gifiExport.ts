@@ -33,7 +33,23 @@ export interface GifiExportResult {
   filingReady: boolean;
 }
 
-const REQUIRED_TOTAL_CODES = new Set(['2599', '3499', '3620', '8299', '9368', '9999']);
+// 8518 (cost of sales) is a total on Schedule 125 like the others: CRA derives it from items 8300 to
+// 8517, so an account mapped straight to it is reported here and flagged, and the total is built
+// from the detail lines. 8519 (gross profit) and 9367 (operating expenses) are derived the same way.
+const REQUIRED_TOTAL_CODES = new Set(['2599', '3499', '3620', '8299', '8518', '8519', '9367', '9368', '9999']);
+
+/** An expense account mapped to a revenue-side item (an "Exchange Gain/Loss" expense on 8231,
+ * say) must land on the schedule as negative revenue, and a revenue account on an expense item as
+ * a negative expense. Balances arrive signed in the account's own normal direction, so the sign
+ * flips when the item belongs to the other side of the income statement. */
+function schedule125Sign(account: Account, gifiCode: string): 1 | -1 {
+  const item = Number(gifiCode);
+  if (!Number.isFinite(item)) return 1;
+  const revenueItem = item >= 8000 && item <= 8299;
+  if (account.accountType === 'Expense' && revenueItem) return -1;
+  if (account.accountType === 'Revenue' && item >= 8300) return -1;
+  return 1;
+}
 
 function statementForAccount(account: Account): 'BalanceSheet' | 'IncomeStatement' {
   return account.accountType === 'Revenue' || account.accountType === 'Expense' ? 'IncomeStatement' : 'BalanceSheet';
@@ -77,6 +93,7 @@ export function gifiExport(
   let totalExpensesCents = 0;
   let cumulativeRevenueCents = 0;
   let cumulativeExpensesCents = 0;
+  let directCostOfSalesCents = 0;
 
   for (const account of accounts) {
     const expectedStatement = statementForAccount(account);
@@ -115,9 +132,13 @@ export function gifiExport(
     }
 
     // CRA total lines are generated below from the ledger itself. An account mapped directly to one
-    // is omitted here to prevent double-counting and surfaced as a mapping mismatch for correction.
+    // is surfaced as a mapping mismatch for correction. Cost of sales mapped straight to 8518 (the
+    // way older charts did it) still counts in that total so the schedule is not understated while
+    // the mapping is being fixed; the other totals omit the account to prevent double-counting.
     if (REQUIRED_TOTAL_CODES.has(account.gifiCode)) {
-      statementTypeMismatches.push({ account, gifiCode: account.gifiCode, expected: expectedStatement, actual: 'Reserved CRA total line' });
+      const hint = account.gifiCode === '8518' ? 'CRA total line for cost of sales; map to a detail item such as 8320 Purchases/cost of materials' : 'Reserved CRA total line';
+      statementTypeMismatches.push({ account, gifiCode: account.gifiCode, expected: expectedStatement, actual: hint });
+      if (account.gifiCode === '8518') directCostOfSalesCents += bal * schedule125Sign(account, account.gifiCode);
       continue;
     }
 
@@ -132,8 +153,9 @@ export function gifiExport(
       };
       rowsByCode.set(account.gifiCode, row);
     }
-    row.amountCents += bal;
-    row.accounts.push({ account, amountCents: bal });
+    const signed = bal * schedule125Sign(account, account.gifiCode);
+    row.amountCents += signed;
+    row.accounts.push({ account, amountCents: signed });
   }
 
   const unclosedNetIncomeCents = cumulativeRevenueCents - cumulativeExpensesCents;
@@ -174,6 +196,12 @@ export function gifiExport(
   addComputedTotal('3499', totalLiabilitiesCents);
   addComputedTotal('3620', totalEquityCents);
   addComputedTotal('8299', totalRevenueCents);
+  // Schedule 125 subtotals, each from the detail items CRA defines it by.
+  const sumRows = (from: number, to: number) => Array.from(rowsByCode.values()).filter((r) => !r.isComputedTotal && Number(r.gifiCode) >= from && Number(r.gifiCode) <= to).reduce((sum, r) => sum + r.amountCents, 0);
+  const costOfSalesCents = sumRows(8300, 8517) + directCostOfSalesCents;
+  addComputedTotal('8518', costOfSalesCents);
+  addComputedTotal('8519', totalRevenueCents - costOfSalesCents);
+  addComputedTotal('9367', sumRows(8520, 9366));
   addComputedTotal('9368', totalExpensesCents);
   addComputedTotal('9999', totalRevenueCents - totalExpensesCents);
 
