@@ -9,6 +9,7 @@
     '.ax-fab{position:fixed;right:22px;bottom:22px;z-index:60;display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border-radius:999px;border:1px solid #f7d38a;background:linear-gradient(115deg,#d9aa4e,#ffe7a3 42%,#ebc165 73%,#d6a340);color:#142018;font:700 15px "Segoe UI",Arial,sans-serif;box-shadow:0 12px 30px #1a3a2a33;cursor:pointer}' +
     '.ax-fab svg{width:18px;height:18px}.ax-fab:hover{filter:brightness(1.04)}' +
     '.ax-panel{position:fixed;right:22px;bottom:84px;z-index:61;width:372px;max-width:calc(100vw - 32px);height:540px;max-height:calc(100vh - 110px);display:flex;flex-direction:column;background:#fff;border:1px solid #cfe3d6;border-radius:18px;box-shadow:0 30px 80px #0d241833;overflow:hidden;font:15px/1.5 "Segoe UI",Arial,sans-serif;color:#0d1f15}' +
+    '.ax-panel[hidden]{display:none}' +
     '.ax-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px 12px 18px;background:linear-gradient(100deg,#e3f3e9,#eef8f1);border-bottom:1px solid #cfe3d6}' +
     '.ax-head b{color:#1f5a3a;font-size:15px}.ax-head small{display:block;color:#2f4a3b;font-size:12px}' +
     '.ax-x{border:0;background:none;font-size:22px;line-height:1;color:#2f4a3b;cursor:pointer;padding:4px 8px;border-radius:999px}.ax-x:hover{background:#d9f0e2}' +
@@ -101,7 +102,8 @@
       '<form class="ax-form"><input placeholder="Type your question…" maxlength="1000" autocomplete="off"><button type="submit" class="ax-send">Send</button></form>';
     document.body.appendChild(panel);
     log = panel.querySelector('.ax-log'); input = panel.querySelector('input'); send = panel.querySelector('.ax-send');
-    panel.querySelector('.ax-x').onclick = function () { panel.hidden = true; };
+    panel.querySelector('.ax-x').onclick = function () { panel.hidden = true; fab.focus(); };
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel && !panel.hidden) panel.hidden = true; });
     panel.querySelector('form').onsubmit = function (e) { e.preventDefault(); ask(input.value); };
     if (turns.length === 0) { add('a', 'Hello. Ask me about seats and pricing, moving from QuickBooks or Sage, payroll, GST/HST, or how your data is protected.'); }
     else { turns.forEach(function (t) { add(t.role === 'user' ? 'u' : 'a', t.content); }); }
