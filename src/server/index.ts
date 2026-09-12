@@ -39,6 +39,8 @@ import { WEB_LICENSE } from '../main/licensing/license';
 import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
 import { notifySiteQuestion, notifyTrialRequest } from './notify';
 import { IpLimiter, answerSiteQuestion, limitTurns } from './siteChat';
+import { answerFromSite } from './siteAnswers';
+import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
 import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -259,10 +261,16 @@ const chatLimiter = new IpLimiter(30, 10 * 60 * 1000);
 app.post('/api/site-chat', async (req, res) => {
   siteCors(req, res);
   const apiKey = (process.env.APEX_ANTHROPIC_API_KEY ?? '').trim();
-  if (!apiKey) { res.json({ ok: true, data: { configured: false, answer: '', handoff: true } }); return; }
   if (!chatLimiter.allow(req.ip ?? 'unknown')) { res.status(429).json({ ok: false, error: 'That is a lot of questions in a short time. Email admin@apexledger.ca and we will answer.' }); return; }
   let turns;
   try { turns = limitTurns((req.body ?? {}).messages); } catch (e) { res.status(400).json({ ok: false, error: e instanceof Error ? e.message : String(e) }); return; }
+  if (!apiKey) {
+    // No outside service: the answer is a passage quoted from the website itself.
+    const a = answerFromSite(turns[turns.length - 1].content, SITE_KNOWLEDGE);
+    console.log(`[site-chat] ${req.ip} q="${turns[turns.length - 1].content.slice(0, 80)}" local handoff=${a.handoff}`);
+    res.json({ ok: true, data: { configured: true, ...a } });
+    return;
+  }
   try {
     const a = await answerSiteQuestion(turns, { apiKey, model: (process.env.APEX_CHAT_MODEL ?? '').trim() || undefined });
     console.log(`[site-chat] ${req.ip} q="${turns[turns.length - 1].content.slice(0, 80)}" handoff=${a.handoff}`);

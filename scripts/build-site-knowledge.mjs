@@ -11,7 +11,7 @@ import path from 'node:path';
 const root = process.cwd();
 const site = path.join(root, 'website');
 const SKIP = new Set(['404.html', 'agreement.html', 'terms.html']);
-const MAX_PER_PAGE = 7000;
+const MAX_PER_PAGE = 40000;
 
 function textOf(html) {
   let s = html

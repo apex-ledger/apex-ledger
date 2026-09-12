@@ -85,9 +85,9 @@
         log.removeChild(thinking);
         if (!r.ok) throw new Error(r.error || 'No answer right now.');
         var d = r.data || {};
-        if (d.configured === false) { add('a', 'The assistant is not switched on yet. Leave your question and we will answer by email.'); offerEmail(q); return; }
         add('a', d.answer || 'I am not sure about that one.');
         turns.push({ role: 'assistant', content: d.answer || '' }); save();
+        if (d.alsoSee && d.alsoSee.length) { var also = add('a', ''); also.innerHTML = 'See also: ' + d.alsoSee.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.heading) + '</a>'; }).join(' · '); }
         if (d.handoff) { var m = add('s', ''); m.innerHTML = 'Want a person to answer? <button type="button" class="ax-link">Email ApexLedger</button>'; m.querySelector('button').onclick = function () { offerEmail(q); }; }
       })
       .catch(function (e) { if (thinking.parentNode) log.removeChild(thinking); add('s', (e && e.message) || 'No answer right now.'); offerEmail(q); })
@@ -97,7 +97,7 @@
   function open() {
     if (panel) { panel.hidden = !panel.hidden; if (!panel.hidden) input.focus(); return; }
     panel = document.createElement('div'); panel.className = 'ax-panel'; panel.setAttribute('role', 'dialog'); panel.setAttribute('aria-label', 'Ask a question');
-    panel.innerHTML = '<div class="ax-head"><div><b>Ask ApexLedger</b><small>Answers from this website. For a person, use the email option.</small></div><button type="button" class="ax-x" aria-label="Close">×</button></div>' +
+    panel.innerHTML = '<div class="ax-head"><div><b>Ask ApexLedger</b><small>Answers quoted from this website. For a person, use the email option.</small></div><button type="button" class="ax-x" aria-label="Close">×</button></div>' +
       '<div class="ax-log"></div>' +
       '<form class="ax-form"><input placeholder="Type your question…" maxlength="1000" autocomplete="off"><button type="submit" class="ax-send">Send</button></form>';
     document.body.appendChild(panel);
