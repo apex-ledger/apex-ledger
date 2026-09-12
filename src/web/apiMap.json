@@ -161,7 +161,9 @@
       "readCsvFile": "qbImport:readCsvFile"
     },
     "qbExport": {
-      "toIif": "qbExport:toIif"
+      "toIif": "qbExport:toIif",
+      "toXero": "qbExport:toXero",
+      "toSage": "qbExport:toSage"
     },
     "clients": {
       "list": "clients:list",

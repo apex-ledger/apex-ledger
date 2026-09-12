@@ -669,6 +669,8 @@ const api = {
   },
   qbExport: {
     toIif: invoke<{ saved: false } | { saved: true; filePath: string; accountCount: number; transactionCount: number }>('qbExport:toIif'),
+    toXero: invoke<{ saved: false } | { saved: true; filePath: string; accountCount: number; transactionCount: number }>('qbExport:toXero'),
+    toSage: invoke<{ saved: false } | { saved: true; filePath: string; accountCount: number; transactionCount: number }>('qbExport:toSage'),
   },
   clients: {
     list: invoke<ClientRecord[]>('clients:list'),

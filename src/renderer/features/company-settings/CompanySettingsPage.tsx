@@ -373,10 +373,10 @@ export function CompanySettingsPage() {
     setTemplateMessage(`Deleted the "${label}" template.`);
   }
 
-  async function handleQbExport() {
+  async function handleQbExport(target: 'quickbooks' | 'xero' | 'sage' = 'quickbooks') {
     setQbExportBusy(true);
     setQbExportMessage(null);
-    const result = await window.api.qbExport.toIif();
+    const result = target === 'xero' ? await window.api.qbExport.toXero() : target === 'sage' ? await window.api.qbExport.toSage() : await window.api.qbExport.toIif();
     setQbExportBusy(false);
     if (!result.ok) return setQbExportMessage(result.error);
     if (!result.data.saved) return;
@@ -1064,18 +1064,22 @@ export function CompanySettingsPage() {
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Data Portability</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
           <p className="text-sm text-gray-500">
-            Export this company's Chart of Accounts, complete posted general ledger, customers, and vendors to a QuickBooks Desktop-compatible
-            file (.iif) — so this client isn't locked into Apex Ledger if they ever switch software. Import it in QuickBooks via File → Utilities →
-            Import → IIF Files.
+            Take this company's Chart of Accounts, complete posted general ledger, customers and vendors to another system, so a client is never
+            locked in. QuickBooks Desktop gets an .iif file (File → Utilities → Import → IIF Files). Xero gets its own CSV import templates
+            (chart, manual journals, contacts) zipped with a README. Sage gets the Sage 50 (Canada) general journal text plus account and
+            contact CSVs, zipped with a README. Tax is exported as posted, on its own lines, so the other system must not add it again.
           </p>
-          <button
-            type="button"
-            disabled={qbExportBusy}
-            onClick={handleQbExport}
-            className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-          >
-            {qbExportBusy ? 'Exporting…' : 'Export to QuickBooks (.iif)'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={qbExportBusy} onClick={() => void handleQbExport('quickbooks')} className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50">
+              {qbExportBusy ? 'Exporting…' : 'Export to QuickBooks (.iif)'}
+            </button>
+            <button type="button" disabled={qbExportBusy} onClick={() => void handleQbExport('xero')} className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50" data-testid="export-xero">
+              {qbExportBusy ? 'Exporting…' : 'Export to Xero (.zip)'}
+            </button>
+            <button type="button" disabled={qbExportBusy} onClick={() => void handleQbExport('sage')} className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 disabled:opacity-50" data-testid="export-sage">
+              {qbExportBusy ? 'Exporting…' : 'Export to Sage (.zip)'}
+            </button>
+          </div>
           {qbExportMessage && <p className="text-sm text-gray-600">{qbExportMessage}</p>}
 
           <div className="border-t border-gray-100 pt-3">

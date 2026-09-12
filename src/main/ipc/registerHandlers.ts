@@ -274,6 +274,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('qbImport:readIifFile', () => toResult(() => qbImportHandlers.qbImportReadIifFile(mainWindow)));
   ipcMain.handle('qbImport:readCsvFile', () => toResult(() => qbImportHandlers.qbImportReadCsvFile(mainWindow)));
   ipcMain.handle('qbExport:toIif', () => toResult(() => qbExportHandlers.qbExportIif(mainWindow)));
+  ipcMain.handle('qbExport:toXero', () => toResult(() => qbExportHandlers.exportToXero(mainWindow)));
+  ipcMain.handle('qbExport:toSage', () => toResult(() => qbExportHandlers.exportToSage(mainWindow)));
 
   ipcMain.handle('updater:checkForUpdates', () => toResult(() => checkForUpdatesNow()));
   ipcMain.handle('updater:quitAndInstall', () => toResult(() => quitAndInstallUpdate()));
