@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null }
+export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string }
 /** The founding-firms offer: half price for six months, for the first firms that sign up. */
 export const FOUNDING = { pct: 50, months: 6, maxFirms: 20, signUpBy: '2026-12-31' };
 export type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
@@ -249,6 +249,25 @@ function ensureColumns(): void {
   const orgCols = (store().prepare('PRAGMA table_info(orgs)').all() as { name: string }[]).map((c) => c.name);
   if (!orgCols.includes('discount_pct')) store().exec('ALTER TABLE orgs ADD COLUMN discount_pct INTEGER NOT NULL DEFAULT 0');
   if (!orgCols.includes('discount_until')) store().exec('ALTER TABLE orgs ADD COLUMN discount_until TEXT');
+  // Subscription details the administrator keeps by hand: who is billed, from when, how often, and whether it is still running.
+  if (!orgCols.includes('billing_email')) store().exec("ALTER TABLE orgs ADD COLUMN billing_email TEXT NOT NULL DEFAULT ''");
+  if (!orgCols.includes('billing_start')) store().exec('ALTER TABLE orgs ADD COLUMN billing_start TEXT');
+  if (!orgCols.includes('billing_cycle')) store().exec("ALTER TABLE orgs ADD COLUMN billing_cycle TEXT NOT NULL DEFAULT 'monthly'");
+  if (!orgCols.includes('billing_status')) store().exec("ALTER TABLE orgs ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'active'");
+  if (!orgCols.includes('billing_end')) store().exec('ALTER TABLE orgs ADD COLUMN billing_end TEXT');
+  if (!orgCols.includes('billing_notes')) store().exec("ALTER TABLE orgs ADD COLUMN billing_notes TEXT NOT NULL DEFAULT ''");
+  store().exec(`CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id INTEGER NOT NULL REFERENCES orgs(id),
+    paid_on TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    method TEXT NOT NULL DEFAULT 'etransfer',
+    reference TEXT NOT NULL DEFAULT '',
+    period_from TEXT,
+    period_to TEXT,
+    note TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+  )`);
   // Earlier names for the same idea, before the owner settled on Full accountant / Bookkeeper / Business.
   store().exec("UPDATE users SET seat_type = 'bookkeeper' WHERE seat_type = 'accountant'; UPDATE users SET seat_type = 'business' WHERE seat_type = 'readonly'; DELETE FROM seat_rates WHERE seat_type IN ('accountant', 'readonly')");
 }
@@ -261,7 +280,7 @@ function hash(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
 }
 
-const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null });
+const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null, billingEmail: String(r.billing_email ?? ''), billingStart: r.billing_start ? String(r.billing_start) : null, billingCycle: r.billing_cycle === 'yearly' ? 'yearly' : 'monthly', billingStatus: r.billing_status === 'paused' || r.billing_status === 'cancelled' ? (r.billing_status as 'paused' | 'cancelled') : 'active', billingEnd: r.billing_end ? String(r.billing_end) : null, billingNotes: String(r.billing_notes ?? '') });
 
 /** Founding offer on an organisation: 50% off until six months from today, or off. */
 export function setOrgFounding(id: number, on: boolean): Org {
@@ -426,4 +445,50 @@ export function bootstrap(env: NodeJS.ProcessEnv): { created: string[] } {
     if (!listOrgs().some((o) => o.name === name.trim())) { const org = createOrg({ name: name.trim(), seats: Number(seatsText) || 2 }); created.push(`org ${org.name} (${org.seats} seats)`); }
   }
   return { created };
+}
+
+// ---- subscriptions: billing details and payments, kept by the platform administrator ----
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+const dayOrNull = (v: unknown): string | null => { const t = String(v ?? '').trim(); if (!t) return null; if (!ISO_DAY.test(t)) throw new Error('Dates are YYYY-MM-DD.'); return t; };
+
+export function setOrgBilling(id: number, input: Record<string, unknown>): Org {
+  const org = getOrg(id);
+  if (!org) throw new Error('Organisation not found.');
+  const cycle = input.billingCycle === 'yearly' ? 'yearly' : 'monthly';
+  const status = input.billingStatus === 'paused' || input.billingStatus === 'cancelled' ? String(input.billingStatus) : 'active';
+  const end = status === 'active' ? null : (dayOrNull(input.billingEnd) ?? new Date().toISOString().slice(0, 10));
+  store().prepare('UPDATE orgs SET billing_email = ?, billing_start = ?, billing_cycle = ?, billing_status = ?, billing_end = ?, billing_notes = ? WHERE id = ?')
+    .run(String(input.billingEmail ?? '').trim().slice(0, 200), dayOrNull(input.billingStart), cycle, status, end, String(input.billingNotes ?? '').trim().slice(0, 2000), id);
+  return getOrg(id)!;
+}
+
+export interface PaymentRow { id: number; orgId: number; paidOn: string; amountCents: number; method: string; reference: string; periodFrom: string | null; periodTo: string | null; note: string; createdAt: string }
+const mapPayment = (r: Record<string, unknown>): PaymentRow => ({ id: Number(r.id), orgId: Number(r.org_id), paidOn: String(r.paid_on), amountCents: Number(r.amount_cents), method: String(r.method), reference: String(r.reference ?? ''), periodFrom: r.period_from ? String(r.period_from) : null, periodTo: r.period_to ? String(r.period_to) : null, note: String(r.note ?? ''), createdAt: String(r.created_at) });
+
+export function listPayments(orgId?: number): PaymentRow[] {
+  const rows = orgId === undefined ? store().prepare('SELECT * FROM payments ORDER BY paid_on DESC, id DESC').all() : store().prepare('SELECT * FROM payments WHERE org_id = ? ORDER BY paid_on DESC, id DESC').all(orgId);
+  return (rows as Record<string, unknown>[]).map(mapPayment);
+}
+
+export function addPayment(orgId: number, input: Record<string, unknown>): PaymentRow {
+  if (!getOrg(orgId)) throw new Error('Organisation not found.');
+  const paidOn = dayOrNull(input.paidOn);
+  if (!paidOn) throw new Error('Enter the date the payment was received.');
+  const amountCents = Math.round(Number(input.amountCents));
+  if (!Number.isFinite(amountCents) || amountCents === 0) throw new Error('Enter the amount received (a refund is a negative amount).');
+  const method = ['etransfer', 'cheque', 'card', 'bank', 'cash', 'other'].includes(String(input.method)) ? String(input.method) : 'other';
+  const r = store().prepare('INSERT INTO payments (org_id, paid_on, amount_cents, method, reference, period_from, period_to, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *')
+    .get(orgId, paidOn, amountCents, method, String(input.reference ?? '').trim().slice(0, 120), dayOrNull(input.periodFrom), dayOrNull(input.periodTo), String(input.note ?? '').trim().slice(0, 500)) as Record<string, unknown>;
+  return mapPayment(r);
+}
+
+export function deletePayment(id: number): void {
+  const n = Number(store().prepare('DELETE FROM payments WHERE id = ?').run(id).changes);
+  if (n === 0) throw new Error('Payment not found.');
+}
+
+/** When someone from the organisation was last seen: the newest sign-in or session activity. */
+export function lastActivityFor(orgId: number): string | null {
+  const r = store().prepare('SELECT MAX(m) AS m FROM (SELECT MAX(u.last_sign_in) AS m FROM users u WHERE u.org_id = ? UNION ALL SELECT MAX(s.last_seen) FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.org_id = ?)').get(orgId, orgId) as { m: string | null };
+  return r?.m ?? null;
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { WebOrganisationSection, webContext } from './WebOrganisationSection';
 import { WebFeedbackSection } from './WebFeedbackSection';
+import { WebSubscriptionsSection } from './WebSubscriptionsSection';
 
 /** Administration, on the web only: one clean page for the platform administrator (every firm,
  * seats, company files, trial requests) and for a firm's owner (their own people and files).
@@ -60,6 +61,7 @@ export function WebAdminPage() {
         )}
       </div>
 
+      {ctx.org.isPlatform && <WebSubscriptionsSection />}
       <WebFeedbackSection />
       <WebOrganisationSection />
     </div>

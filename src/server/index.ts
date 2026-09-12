@@ -40,6 +40,8 @@ import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToke
 import { notifySiteQuestion, notifyTrialRequest } from './notify';
 import { IpLimiter, answerSiteQuestion, limitTurns } from './siteChat';
 import { answerFromSite } from './siteAnswers';
+import { addPayment, deletePayment, lastActivityFor, listPayments, setOrgBilling } from './admin';
+import { billingTotals, computeOrgBilling } from './billing';
 import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
 import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
@@ -415,6 +417,37 @@ function requirePlatform(req: express.Request, res: express.Response): Session |
   return s;
 }
 const wrap = (fn: () => unknown) => { try { return { ok: true, data: fn() }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } };
+// ---- the administrator's subscriptions dashboard ----
+function orgBillingRow(o: ReturnType<typeof listOrgs>[number], today: string) {
+  const users = listUsers(o.id);
+  const payments = listPayments(o.id);
+  const billing = computeOrgBilling(o, users.map((u) => ({ seatType: u.seatType, isActive: u.isActive })), seatRates(), payments, today);
+  let companies = 0;
+  try { companies = fs.readdirSync(companiesDirFor(o)).filter((n) => n.endsWith('.company')).length; } catch { companies = 0; }
+  const agreed = users.filter((u) => u.isActive && u.agreedAt).length;
+  return { org: o, billing, people: users, payments, companies, agreedCount: agreed, activeCount: users.filter((u) => u.isActive).length, lastActivity: lastActivityFor(o.id) };
+}
+app.get('/api/admin/subscriptions', (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  if (!s.org.isPlatform) { res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  res.json(wrap(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = listOrgs().filter((o) => !o.isPlatform).map((o) => orgBillingRow(o, today));
+    return { today, rates: seatRates(), totals: billingTotals(rows.map((r) => r.billing)), rows };
+  }));
+});
+app.post('/api/admin/orgs/:id/billing', (req, res) => {
+  const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  res.json(wrap(() => setOrgBilling(Number(req.params.id), (req.body ?? {}) as Record<string, unknown>)));
+});
+app.post('/api/admin/orgs/:id/payments', (req, res) => {
+  const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  res.json(wrap(() => addPayment(Number(req.params.id), (req.body ?? {}) as Record<string, unknown>)));
+});
+app.post('/api/admin/payments/:id/delete', (req, res) => {
+  const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  res.json(wrap(() => { deletePayment(Number(req.params.id)); return { deleted: true }; }));
+});
 app.get('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => (s.org.isPlatform ? listOrgs() : [s.org]).map((o) => ({ ...o, activeSeats: listUsers(o.id).filter((u) => u.isActive).length })))); });
 app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); })); });
 app.get('/api/admin/signin-pause', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { paused: signInPaused() } }); });
