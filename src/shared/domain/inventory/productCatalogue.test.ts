@@ -40,3 +40,12 @@ describe('product catalogue', () => {
     expect(categoriesInUse([{ category: ' Tools ' }, { category: 'Hardware' }, { category: null }, { category: 'Tools' }])).toEqual(['Hardware', 'Tools']);
   });
 });
+
+describe('standard product categories', () => {
+  it('offers a broad, de-duplicated starting list that covers goods, services and other lines', async () => {
+    const { STANDARD_PRODUCT_CATEGORIES } = await import('./productCatalogue');
+    expect(STANDARD_PRODUCT_CATEGORIES.length).toBeGreaterThan(35);
+    expect(new Set(STANDARD_PRODUCT_CATEGORIES).size).toBe(STANDARD_PRODUCT_CATEGORIES.length);
+    expect(STANDARD_PRODUCT_CATEGORIES).toEqual(expect.arrayContaining(['Parts & components', 'Labour', 'Bundles & kits', 'Plumbing', 'Consulting & professional fees']));
+  });
+});

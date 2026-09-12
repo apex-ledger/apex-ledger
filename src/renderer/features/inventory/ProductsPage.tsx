@@ -1,4 +1,6 @@
 import { UnitSelect } from '../../components/UnitSelect';
+import { CategorySelect } from './CategorySelect';
+import { categoriesInUse } from '@shared/domain/inventory/productCatalogue';
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { useUiStore } from '../../app/store/uiStore';
 import type { Account, TaxCode } from '@shared/domain/types';
@@ -291,7 +293,7 @@ export function ProductsPage() {
                 </select>
               </td>
               <td className="px-3 py-1.5">
-                <input className={cell} placeholder="optional" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} aria-label="New product category" />
+                <CategorySelect className={cell} value={draft.category} onChange={(category) => setDraft({ ...draft, category })} inUse={categoriesInUse(products ?? [])} ariaLabel="New product category" placeholder="optional" />
               </td>
               <td className="px-3 py-1.5">
                 <UnitSelect className={cell} value={draft.unit} onChange={(unit) => setDraft({ ...draft, unit })} />
@@ -395,7 +397,7 @@ export function ProductsPage() {
                     </select>
                   </td>
                   <td className="px-3 py-1.5">
-                    <input defaultValue={p.category ?? ''} placeholder="—" onBlur={(e) => { if ((e.target.value.trim() || null) !== (p.category ?? null)) void patchProduct(p, { category: e.target.value.trim() || null }); }} className={`${cell} text-xs`} aria-label={`${p.name} category`} />
+                    <CategorySelect value={p.category ?? ''} onChange={(next) => { if ((next.trim() || null) !== (p.category ?? null)) void patchProduct(p, { category: next.trim() || null }); }} inUse={categoriesInUse(products ?? [])} className={`${cell} text-xs`} ariaLabel={`${p.name} category`} placeholder="—" />
                   </td>
                   <td className="px-3 py-1.5">
                     <input

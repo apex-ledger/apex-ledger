@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Account, Contact, TaxCode } from '@shared/domain/types';
 import type { InventoryMovementRow, Product } from '../../../preload/index';
+import { CategorySelect } from './CategorySelect';
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, categoriesInUse, productTypeOf, type BundleComponent, type ProductType } from '@shared/domain/inventory/productCatalogue';
 import { TAX_CODE_SELECT_OPTIONS } from '@shared/domain/ledger/taxCodes';
 import { Combobox } from '../../components/Combobox';
@@ -173,8 +174,7 @@ export function ItemMasterModal({ product, onClose, onSaved }: { product: Produc
             <label className="block"><span className="text-gray-600">Barcode / UPC</span><input value={draft.barcode} onChange={(e) => set('barcode', e.target.value)} className={`${field} font-mono`} /></label>
             <label className="block"><span className="text-gray-600">Unit</span><UnitSelect value={draft.unit} onChange={(v) => set('unit', v)} className={field} /></label>
             <label className="block"><span className="text-gray-600">Category</span>
-              <input list="item-master-categories" value={draft.category} onChange={(e) => set('category', e.target.value)} className={field} placeholder="e.g. Hardware" />
-              <datalist id="item-master-categories">{categories.map((c) => <option key={c} value={c} />)}</datalist>
+              <CategorySelect value={draft.category} onChange={(v) => set('category', v)} inUse={categories} className={`${field} bg-white`} ariaLabel="Category" />
             </label>
             <label className="block"><span className="text-gray-600">Manufacturer / brand</span><input value={draft.manufacturer} onChange={(e) => set('manufacturer', e.target.value)} className={field} /></label>
             <label className="block"><span className="text-gray-600">Manufacturer part #</span><input value={draft.manufacturerPartNumber} onChange={(e) => set('manufacturerPartNumber', e.target.value)} className={`${field} font-mono`} /></label>

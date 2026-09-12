@@ -1,5 +1,6 @@
 import { UnitSelect } from '../../components/UnitSelect';
 import { useEffect, useMemo, useState } from 'react';
+import { CategorySelect } from './CategorySelect';
 import { PRODUCT_TYPES, PRODUCT_TYPE_LABELS, categoriesInUse, type BundleComponent, type ProductType } from '@shared/domain/inventory/productCatalogue';
 import type { Account, TaxCode } from '@shared/domain/types';
 import type { Product } from '../../../preload/index';
@@ -118,10 +119,7 @@ export function NewProductModal({
           </label>
           <label className="text-sm">
             <span className="text-gray-600">Category (optional)</span>
-            <input list="product-category-suggestions" value={category} onChange={(event) => setCategory(event.target.value)} placeholder="e.g. Hardware, Labour" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" />
-            <datalist id="product-category-suggestions">
-              {categories.map((c) => <option key={c} value={c} />)}
-            </datalist>
+            <CategorySelect value={category} onChange={setCategory} inUse={categories} className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1.5" ariaLabel="Category" />
           </label>
           <label className="text-sm">
             <span className="text-gray-600">SKU (optional)</span>

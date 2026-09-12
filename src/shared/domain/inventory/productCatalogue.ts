@@ -117,6 +117,24 @@ export function expandBundle(bundle: CatalogueProduct, products: CatalogueProduc
   return { lines, missing };
 }
 
+/** A starting set of product and service categories a business of any kind can pick from. Broad
+ * enough to cover a plumber, a retailer, a clinic or a consultancy without reading like someone
+ * else's chart, following the segments the UNSPSC classification and common point-of-sale systems
+ * use. A firm adds its own beside these; a category is never required. */
+export const STANDARD_PRODUCT_CATEGORIES: readonly string[] = [
+  // Goods sold or used
+  'Finished goods', 'Raw materials', 'Parts & components', 'Materials & supplies', 'Consumables', 'Packaging',
+  'Tools & equipment', 'Hardware', 'Electrical', 'Plumbing', 'HVAC & refrigeration', 'Building materials', 'Paint & finishes',
+  'Automotive parts', 'Electronics', 'Computers & accessories', 'Software & licences', 'Office supplies', 'Furniture & fixtures',
+  'Food & beverage', 'Health & beauty', 'Medical & dental supplies', 'Pharmacy', 'Apparel & footwear', 'Home & garden', 'Pet supplies',
+  'Cleaning & janitorial', 'Safety & PPE', 'Books & media', 'Gift cards',
+  // Services
+  'Labour', 'Installation', 'Repair & maintenance', 'Consulting & professional fees', 'Design & creative', 'Training & education',
+  'Bookkeeping & accounting', 'Tax preparation', 'Payroll services', 'Delivery & freight', 'Rentals', 'Subscriptions & memberships',
+  // Other lines
+  'Bundles & kits', 'Shipping & handling', 'Deposits & retainers',
+];
+
 /** Distinct categories in use, for the category field's suggestions. */
 export function categoriesInUse(products: Array<{ category?: string | null }>): string[] {
   return [...new Set(products.map((p) => p.category?.trim()).filter((c): c is string => Boolean(c)))].sort((a, b) => a.localeCompare(b));
