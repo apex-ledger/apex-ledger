@@ -63,7 +63,7 @@
     var shown = all ? list : list.slice(0, 5);
     shown.forEach(function (q) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ax-chip'; b.textContent = q; b.onclick = function () { asked[q] = true; ask(q); }; wrap.appendChild(b); });
     if (!all && list.length > shown.length) { var m = document.createElement('button'); m.type = 'button'; m.className = 'ax-more'; m.textContent = 'More questions (' + (list.length - shown.length) + ')'; m.onclick = function () { showChips(true); }; wrap.appendChild(m); }
-    log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+    log.appendChild(wrap);
   }
 
   function offerEmail(question) {
@@ -107,9 +107,11 @@
         log.removeChild(thinking);
         if (!r.ok) throw new Error(r.error || 'No answer right now.');
         var d = r.data || {};
-        add('a', d.answer || 'I am not sure about that one.');
+        var qEl = log.lastElementChild; // the visitor's question stays in view, with the answer under it
+        var ans = add('a', d.answer || 'I am not sure about that one.');
         turns.push({ role: 'assistant', content: d.answer || '' }); save();
         showChips(false);
+        log.scrollTop = Math.max(0, (qEl && qEl.className.indexOf('ax-m u') === 0 ? qEl : ans).offsetTop - log.offsetTop - 10);
         if (d.alsoSee && d.alsoSee.length) { var also = add('a', ''); also.innerHTML = 'See also: ' + d.alsoSee.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.heading) + '</a>'; }).join(' · '); }
         if (d.handoff) { var m = add('s', ''); m.innerHTML = 'Want a person to answer? <button type="button" class="ax-link">Email ApexLedger</button>'; m.querySelector('button').onclick = function () { offerEmail(q); }; }
       })
