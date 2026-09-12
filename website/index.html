@@ -212,8 +212,8 @@ footer{border-top-color:var(--line)}footer>span,footer>a:not(.brand){color:#2f4a
 .hero p b{color:#1f5a3a;font-size:1.06em}
 
 /* watermark in the empty side space, bigger small text, tighter spacing (2026-09-12) */
-body:before,body:after{content:'';position:fixed;top:0;bottom:0;width:max(4%,calc((100% - 1720px)/2));z-index:1;pointer-events:none;background:url("data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill-opacity=%220.22%22%3E%3Ctspan fill=%22%231f5a3a%22%3Eapex%3C/tspan%3E%3Ctspan fill=%22%23b8860b%22%3Eledger.%3C/tspan%3E%3C/text%3E%3C/svg%3E") 0 0/360px 360px}
-body:before{left:0}body:after{right:0}
+body:before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background:url("data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill-opacity=%220.22%22%3E%3Ctspan fill=%22%231f5a3a%22%3Eapex%3C/tspan%3E%3Ctspan fill=%22%23b8860b%22%3Eledger.%3C/tspan%3E%3C/text%3E%3C/svg%3E") 0 0/420px 420px}
+
 .nav,.hero>div,.section>*,.highlights>*,.cities>*,footer>*{position:relative;z-index:2}
 .eyebrow,.plans .eyebrow,.highlights .eyebrow{font-size:14px}
 .plan li{font-size:15px;margin:8px 0}.plan .number,.number{font-size:13px;letter-spacing:1.2px;line-height:1.35}.ribbon{font-size:13px}.module-edition{font-size:13px}.price small{font-size:14px}.plans .plan-note{font-size:14px}.details span{font-size:15px}
@@ -224,7 +224,7 @@ body:before{left:0}body:after{right:0}
 .cities,.cities h2,.explore h2,footer>span,footer>a:not(.brand){font-size:14px}
 .section{padding-top:30px;padding-bottom:30px}.hero{padding-bottom:28px}.highlights{padding-top:26px}.intro{margin-bottom:14px}
 .contact.section{padding:26px 4% 22px}.contact .intro{margin-bottom:10px}.faq details{padding:10px 16px;margin:6px 0}
-@media(max-width:760px){body:before,body:after{display:none}}
+
 /* wide screens: the content uses the width instead of leaving side gaps */.plan-grid-4{max-width:1500px}.faq{max-width:1180px}.explore{max-width:1720px}.hl-grid,.feature-grid,.capability-grid,.canada-grid,.shots,.explore-grid{max-width:none}@media(min-width:1500px){.hero{padding-top:22px}}.hero{padding-top:22px}
 /* bigger logo */.nav .brand{font-size:38px;letter-spacing:-1.8px}.nav .app-mark{width:56px;height:56px;margin-right:14px}@media(max-width:760px){.nav .brand{font-size:28px}.nav .app-mark{width:40px;height:40px}}
 </style>
