@@ -68,6 +68,9 @@ APEX_WEB_STATIC=/opt/apexledger/dist-web
 #APEX_SMTP_PORT=587
 #APEX_SMTP_USER=admin@apexledger.ca
 #APEX_SMTP_PASSWORD=
+# The website question-and-answer assistant (chat bubble on apexledger.ca); off until the key is set.
+#APEX_ANTHROPIC_API_KEY=
+#APEX_CHAT_MODEL=claude-sonnet-5
 #APEX_SMTP_FROM=admin@apexledger.ca
 #APEX_NOTIFY_EMAIL=admin@apexledger.ca
 EOF

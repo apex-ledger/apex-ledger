@@ -18,7 +18,7 @@
     "seed:test-company": "npm run build && node scripts/create-fictitious-company.mjs",
     "check:flow": "npm run build && node scripts/check-data-flow.mjs",
     "api:map": "node scripts/gen-api-map.mjs",
-    "build:web": "node scripts/gen-api-map.mjs && vite build --config vite.web.config.ts && node scripts/build-server.mjs",
+    "build:web": "node scripts/gen-api-map.mjs && node scripts/build-site-knowledge.mjs && vite build --config vite.web.config.ts && node scripts/build-server.mjs",
     "start:web": "node dist-server/index.js"
   },
   "build": {

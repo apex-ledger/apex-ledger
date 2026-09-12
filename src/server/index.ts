@@ -16,6 +16,7 @@
  *   APEX_SEED_ORGS        optional "Firm One:2,Firm Two:2" starter organisations
  *   PORT                  listen port (default 8787)
  *   APEX_SMTP_HOST/APEX_SMTP_FROM (+ USER/PASSWORD/PORT/SECURITY), APEX_NOTIFY_EMAIL
+ *   APEX_ANTHROPIC_API_KEY, APEX_CHAT_MODEL   the website's question-and-answer assistant (off until the key is set)
  *                         emails each website trial request to the administrator (src/server/notify.ts)
  */
 import express from 'express';
@@ -36,7 +37,8 @@ import { getCurrentDb } from '../main/companyFile';
 import { companyCreateSchema } from '@shared/validation/schemas';
 import { WEB_LICENSE } from '../main/licensing/license';
 import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToken } from './oidc';
-import { notifyTrialRequest } from './notify';
+import { notifySiteQuestion, notifyTrialRequest } from './notify';
+import { IpLimiter, answerSiteQuestion, limitTurns } from './siteChat';
 import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -250,6 +252,35 @@ function siteCors(req: express.Request, res: express.Response): void {
 }
 app.options('/api/trial-request', (req, res) => { siteCors(req, res); res.status(204).end(); });
 app.options('/api/site-feedback', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.options('/api/site-chat', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.options('/api/site-chat/handoff', (req, res) => { siteCors(req, res); res.status(204).end(); });
+// The question-and-answer assistant on the website (see siteChat.ts). Off until APEX_ANTHROPIC_API_KEY is set.
+const chatLimiter = new IpLimiter(30, 10 * 60 * 1000);
+app.post('/api/site-chat', async (req, res) => {
+  siteCors(req, res);
+  const apiKey = (process.env.APEX_ANTHROPIC_API_KEY ?? '').trim();
+  if (!apiKey) { res.json({ ok: true, data: { configured: false, answer: '', handoff: true } }); return; }
+  if (!chatLimiter.allow(req.ip ?? 'unknown')) { res.status(429).json({ ok: false, error: 'That is a lot of questions in a short time. Email admin@apexledger.ca and we will answer.' }); return; }
+  let turns;
+  try { turns = limitTurns((req.body ?? {}).messages); } catch (e) { res.status(400).json({ ok: false, error: e instanceof Error ? e.message : String(e) }); return; }
+  try {
+    const a = await answerSiteQuestion(turns, { apiKey, model: (process.env.APEX_CHAT_MODEL ?? '').trim() || undefined });
+    console.log(`[site-chat] ${req.ip} q="${turns[turns.length - 1].content.slice(0, 80)}" handoff=${a.handoff}`);
+    res.json({ ok: true, data: { configured: true, ...a } });
+  } catch (e) {
+    console.error(`[site-chat] ${e instanceof Error ? e.message : String(e)}`);
+    res.status(502).json({ ok: false, error: 'The assistant is unavailable right now. Leave your question and we will answer by email.' });
+  }
+});
+app.post('/api/site-chat/handoff', (req, res) => {
+  siteCors(req, res);
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const transcript = Array.isArray(body.transcript) ? (body.transcript as { role?: unknown; content?: unknown }[]).filter((t) => typeof t.content === 'string').map((t) => `${t.role === 'assistant' ? 'Assistant' : 'Visitor'}: ${String(t.content).slice(0, 600)}`).join('\n') : '';
+  const question = String(body.question ?? '').trim().slice(0, 2000);
+  const message = transcript ? `${question}\n\n--- conversation with the assistant ---\n${transcript}` : question;
+  const r = wrap(() => { const n = createSiteFeedback({ name: body.name, email: body.email, page: `Website chat ${String(body.page ?? '')}`.trim(), message }, req.ip ?? null); console.log(`[site-chat] hand-off from ${n.userName} <${n.email}>`); notifySiteQuestion(n); return { received: true }; });
+  res.status(r.ok ? 200 : 400).json(r);
+});
 app.post('/api/site-feedback', (req, res) => {
   siteCors(req, res);
   const body = (req.body ?? {}) as Record<string, unknown>;

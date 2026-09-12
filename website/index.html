@@ -192,6 +192,22 @@ footer{border-top-color:var(--line)}footer>span,footer>a:not(.brand){color:#2f4a
 /* gold text reads bold */.agree-lead a,.agree-sign input:focus,.brand b,.button.outline,.canada-grid svg,.capability-grid article>span,.contact-grid span,.crm-extra svg,.crm-highlight>svg,.desktop-note a,.details span,.details>div:target,.explore h2,.fb .cancel,.feature-icon,.flow-bottom>a,.founding b,.gold-wordmark b,.hero-note svg,.highlights .eyebrow,.hl b,.hl svg,.mini span:last-child,.module-edition,.module-features article>svg,.orbit,.plan .number,.plan li svg,.plan li.hi,.plan>svg,.plans .eyebrow,.price .per,.price small b,.sec-link a,.shot figcaption span,.strip svg,.trial-form .agree a,.trial-form .agree-note a,.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus,em{font-weight:700}
 
 /* rounded buttons */.button,.cta,.actions button,.actions a,.fb .send,.fb .cancel,.agree-actions button,.agree-cancel,.agree-x,.flow-tabs button,.button.outline,.ribbon,.module-edition{border-radius:999px}
+
+/* hero: entry to balance sheet */
+.flow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px}
+.flow3>div{position:relative;background:#fff;border:1px solid #dce5de;border-radius:10px;padding:9px 10px 9px 34px;min-width:0}
+.flow3 i{position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:999px;background:linear-gradient(115deg,#d9aa4e,#ffe7a3 42%,#ebc165 73%,#d6a340);color:#142018;font:700 11px/19px "Segoe UI",Arial,sans-serif;text-align:center;font-style:normal}
+.flow3 b{display:block;font-size:12px;color:#183033}.flow3 small{display:block;font-size:9.5px;line-height:1.35;color:#6d7c71;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.flow3>div:not(:last-child):after{content:'›';position:absolute;right:-9px;top:50%;transform:translateY(-55%);color:#b48a24;font-weight:700;font-size:16px}
+.metrics3{grid-template-columns:1fr 1fr 1fr;margin:12px 0}.metrics3 strong{font-size:18px}.metrics3 em.ok{color:#2f9e5f;font-weight:700}
+.charts2{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
+.donut{--c1:#2f9e5f;--c2:#e0b34a;--c3:#2f7fb5;--c4:#e0763a;width:112px;height:112px;margin:12px auto 8px;border-radius:50%;background:conic-gradient(var(--c1) 0 38%,var(--c2) 38% 60%,var(--c3) 60% 87%,var(--c4) 87% 100%);display:grid;place-items:center;box-shadow:0 8px 20px #1a3a2a1f}
+.donut span{width:64px;height:64px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;color:#183033}
+.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 6px;font-size:9.5px;color:#4b5b50}.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.chart-c{height:118px;margin:12px 0 30px}
+.chart-c .bars>div:first-child{background:linear-gradient(180deg,#2f9e5f,#7fcf9c)!important;border-radius:4px 4px 0 0}
+.chart-c .bars>div:nth-child(2){background:linear-gradient(180deg,#e0b34a,#f4dd9a)!important;border-radius:4px 4px 0 0}
+@media(max-width:760px){.charts2{grid-template-columns:1fr}.flow3 small{white-space:normal}}
 </style>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Where is my data stored?", "acceptedAnswer": {"@type": "Answer", "text": "In Canadian data centres, with backups copied to a second Canadian location (Qu\u00e9bec City). Nothing is stored or processed outside Canada."}}, {"@type": "Question", "name": "Is there a limit on company files or employees?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every seat keeps as many client company files as you have, and payroll runs for any number of employees. Only people (seats) are counted."}}, {"@type": "Question", "name": "What does a seat cost?", "acceptedAnswer": {"@type": "Answer", "text": "Per person per month in Canadian dollars plus HST: Business $39, Payroll Unlimited $45, Bookkeeper $59, Full accountant $79. The first month is free, yearly billing is 20% less, and founding firms pay half price for six months."}}, {"@type": "Question", "name": "Can I move from QuickBooks Online or Xero?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Export the chart of accounts and the transactions as Excel and import them directly; QuickBooks Desktop IIF files import too. Customers, vendors, balances and history come across."}}, {"@type": "Question", "name": "Can it read PDF bank statements?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Select one statement or a whole year of them; the transactions are read into the review table and the statement's opening and closing balances are checked. OFX, QFX, QBO and CSV downloads work as well."}}, {"@type": "Question", "name": "Does it do Canadian payroll?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, for every province: CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT, pay stubs, direct deposit, PD7A, ROE, T4, T4A, T5018 and T5."}}, {"@type": "Question", "name": "Can one firm see another firm's clients?", "acceptedAnswer": {"@type": "Answer", "text": "No. Each firm's company files sit in their own folder on the server and every request is resolved from the sign-in, never from anything the browser sends. Before every update goes live, we check that a person signed in to one firm cannot reach any other firm's files."}}, {"@type": "Question", "name": "How safe is my data?", "acceptedAnswer": {"@type": "Answer", "text": "Every connection is encrypted (HTTPS only), and the disks holding company files and backups are encrypted at rest with 256-bit AES. Only the web port is open to the internet. Every person has their own sign-in, each seat reaches only its part of the application, and every change is recorded with a name in the Activity Log. The server is monitored for threats and scanned for viruses every night."}}, {"@type": "Question", "name": "Is my data backed up?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every company file is backed up every night and kept for 30 days, with a second copy in another Canadian location. You can also download a complete copy of any company file yourself at any time."}}, {"@type": "Question", "name": "Who at ApexLedger can see my books?", "acceptedAnswer": {"@type": "Answer", "text": "Nobody, unless you ask us for help with a specific file. Every such access is logged, and the Subscription Agreement says so in writing."}}, {"@type": "Question", "name": "Do you sell or share my data?", "acceptedAnswer": {"@type": "Answer", "text": "Never. Your books belong to you. We do not sell, rent or share your information with anyone, and we handle personal information under PIPEDA. When you leave, you download your files and we delete ours."}}, {"@type": "Question", "name": "Do I need to install anything?", "acceptedAnswer": {"@type": "Answer", "text": "No. It runs in the browser on any computer. Updates arrive on the server and nobody is signed out by them."}}, {"@type": "Question", "name": "How do I cancel?", "acceptedAnswer": {"@type": "Answer", "text": "At the end of any month, from your Administration page or by email. You can download every company file at any time, before or after."}}]}</script>
 </head>
@@ -234,22 +250,33 @@ footer{border-top-color:var(--line)}footer>span,footer>a:not(.brand){color:#2f4a
     <div class="dashboard">
       <aside><svg class="ic"><use href="#i-layers"/></svg><svg class="ic"><use href="#i-wallet"/></svg><svg class="ic"><use href="#i-users"/></svg><svg class="ic"><use href="#i-receipt"/></svg><svg class="ic"><use href="#i-bell"/></svg><span>AL</span></aside>
       <div class="dash-content">
-        <div class="dash-top">Client overview <small>WORKFLOW ILLUSTRATION</small></div>
-        <h3>Lakeshore Plumbing &amp; Heating <span>↗</span></h3>
-        <p>Your client's finances at a glance.</p>
-        <div class="metrics"><div><span>Total income</span><strong>$48,250<small> CAD</small></strong><em>↗ 18.6% this month</em></div><div><span>Net profit</span><strong>$18,420</strong><em>↗ 12.4% this month</em></div></div>
-        <div class="chart-title">Cash flow <small>Last 6 months ↗</small></div>
-        <div class="chart" aria-label="Illustrative cash flow chart">
-          <div class="bars"><div style="height:42%"></div><div style="height:27%"></div><span>Apr</span></div>
-          <div class="bars"><div style="height:56%"></div><div style="height:36%"></div><span>May</span></div>
-          <div class="bars"><div style="height:48%"></div><div style="height:31%"></div><span>Jun</span></div>
-          <div class="bars"><div style="height:72%"></div><div style="height:47%"></div><span>Jul</span></div>
-          <div class="bars"><div style="height:62%"></div><div style="height:40%"></div><span>Aug</span></div>
-          <div class="bars"><div style="height:88%"></div><div style="height:57%"></div><span>Sep</span></div>
+        <div class="dash-top">From entry to balance sheet <small>WORKFLOW ILLUSTRATION</small></div>
+        <div class="flow3">
+          <div><i>1</i><b>Entry</b><small>Fuel, Petro-Canada · $89.00 · HST 13%</small></div>
+          <div><i>2</i><b>Ledger</b><small>Vehicle $78.76 · HST recoverable $10.24 · Visa</small></div>
+          <div><i>3</i><b>Balance sheet</b><small>Updated the moment it posts</small></div>
         </div>
-        <div class="chart-title">Recent activity <small>All transactions ↗</small></div>
-        <div class="transaction"><svg class="ic"><use href="#i-receipt"/></svg><div>Invoice #1042 paid<small>Lakeshore Plumbing · Today</small></div><b>+$2,400.00</b></div>
-        <div class="transaction"><svg class="ic"><use href="#i-zap"/></svg><div>Fuel, Petro-Canada<small>Auto-categorised · Vehicle · HST 13%</small></div><b>−$89.00</b></div>
+        <div class="metrics metrics3"><div><span>Assets</span><strong>$184,320</strong><em>Cash, receivables, equipment</em></div><div><span>Liabilities</span><strong>$61,905</strong><em>Payables, GST/HST, card</em></div><div><span>Equity</span><strong>$122,415</strong><em class="ok">✓ Balanced to the cent</em></div></div>
+        <div class="charts2">
+          <div class="donut-wrap">
+            <div class="chart-title">Assets by type</div>
+            <div class="donut" role="img" aria-label="Assets by type: cash 38%, receivables 22%, equipment 27%, inventory 13%"><span>$184k</span></div>
+            <ul class="legend"><li><i style="background:#2f9e5f"></i>Cash 38%</li><li><i style="background:#e0b34a"></i>Receivables 22%</li><li><i style="background:#2f7fb5"></i>Equipment 27%</li><li><i style="background:#e0763a"></i>Inventory 13%</li></ul>
+          </div>
+          <div class="bars-wrap">
+            <div class="chart-title">Income vs expenses <small>6 months</small></div>
+            <div class="chart chart-c" aria-label="Illustrative income and expense chart">
+              <div class="bars"><div style="height:42%"></div><div style="height:27%"></div><span>Apr</span></div>
+              <div class="bars"><div style="height:56%"></div><div style="height:36%"></div><span>May</span></div>
+              <div class="bars"><div style="height:48%"></div><div style="height:31%"></div><span>Jun</span></div>
+              <div class="bars"><div style="height:72%"></div><div style="height:47%"></div><span>Jul</span></div>
+              <div class="bars"><div style="height:62%"></div><div style="height:40%"></div><span>Aug</span></div>
+              <div class="bars"><div style="height:88%"></div><div style="height:57%"></div><span>Sep</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="transaction"><svg class="ic"><use href="#i-receipt"/></svg><div>Invoice #1042 paid<small>Lakeshore Plumbing · Today · Receivables ↓ Cash ↑</small></div><b>+$2,400.00</b></div>
+        <div class="transaction"><svg class="ic"><use href="#i-zap"/></svg><div>Fuel, Petro-Canada<small>Auto-categorised · Vehicle · HST 13% · Visa</small></div><b>−$89.00</b></div>
       </div>
     </div>
     <div class="float"><span><svg class="ic" style="width:20px;height:20px;color:#142018"><use href="#i-check"/></svg></span><div>One less thing to do.<small>12 transactions auto-categorised</small></div><b>✦</b></div>
@@ -612,5 +639,6 @@ else{st.className='status err';st.textContent=r.error||'Something went wrong. Em
 (function(){var tabs=document.querySelectorAll('.flow-tabs [role=tab]');function show(t){tabs.forEach(function(b){var on=b===t;b.setAttribute('aria-selected',on?'true':'false');document.getElementById(b.getAttribute('aria-controls')).hidden=!on;});}
 tabs.forEach(function(b,i){b.addEventListener('click',function(){show(b);});b.addEventListener('keydown',function(e){var n=e.key==='ArrowRight'?i+1:e.key==='ArrowLeft'?i-1:-1;if(n>=0&&n<tabs.length){tabs[n].focus();show(tabs[n]);}});});})();
 </script>
+<script src="/chat.js" defer></script>
 </body>
 </html>

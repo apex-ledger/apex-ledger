@@ -1,5 +1,5 @@
 import { sendSmtp, type SmtpOptions } from '../main/email/smtpClient';
-import type { TrialRequest } from './admin';
+import type { FeedbackNote, TrialRequest } from './admin';
 
 /**
  * Emails the platform administrator when something arrives from the public website. A trial
@@ -63,4 +63,31 @@ export function notifyTrialRequest(t: TrialRequest): void {
   sendSmtp(config.smtp, { to: config.to, subject, body })
     .then(() => console.log(`[notify] trial request #${t.id} emailed to ${config.to}`))
     .catch((e: unknown) => console.error(`[notify] could not email trial request #${t.id} to ${config.to}: ${e instanceof Error ? e.message : String(e)}`));
+}
+
+/** A question the website assistant could not answer, left with a name and email for a reply. */
+export function siteQuestionMail(n: FeedbackNote): { subject: string; body: string } {
+  return {
+    subject: `Website question from ${n.userName}${n.email ? ` <${n.email}>` : ''}`,
+    body: [
+      'A visitor asked the assistant on apexledger.ca something it could not answer, and asked for a reply by email.',
+      '',
+      `Name:   ${n.userName}`,
+      `Email:  ${n.email || '-'}`,
+      `Page:   ${n.page}`,
+      `When:   ${n.createdAt} (server time)`,
+      '',
+      n.message,
+      '',
+      `Reply to them directly; then mark note #${n.id} done under Feedback on https://online.apexledger.ca/.`,
+    ].join('\n'),
+  };
+}
+
+export function notifySiteQuestion(n: FeedbackNote): void {
+  if (!config) return;
+  const { subject, body } = siteQuestionMail(n);
+  sendSmtp(config.smtp, { to: config.to, subject, body })
+    .then(() => console.log(`[notify] website question #${n.id} emailed to ${config.to}`))
+    .catch((e: unknown) => console.error(`[notify] could not email website question #${n.id}: ${e instanceof Error ? e.message : String(e)}`));
 }
