@@ -150,7 +150,7 @@ function Gate() {
       </div>
     );
   }
-  return <App />;
+  return <><UpdateBar /><App /></>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -158,3 +158,37 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <Gate />
   </React.StrictMode>,
 );
+
+/** A deploy does not sign anyone out, so a browser can keep running the previous bundle for days.
+ * This asks the server every few minutes which build it is serving and, when that changes, shows
+ * a bar offering a reload, so new screens appear without anyone having to know to press Ctrl+F5. */
+function UpdateBar() {
+  const [stale, setStale] = useState(false);
+  useEffect(() => {
+    let first: string | null = null;
+    let stop = false;
+    const check = async () => {
+      try {
+        const r = await fetch('/api/health', { cache: 'no-store' });
+        const b = (await r.json()) as { ok: boolean; data?: { build?: string } };
+        const build = b.ok ? b.data?.build ?? null : null;
+        if (!build || stop) return;
+        if (first === null) first = build;
+        else if (build !== first) setStale(true);
+      } catch { /* offline for a moment: try again next time */ }
+    };
+    void check();
+    const t = window.setInterval(() => void check(), 3 * 60 * 1000);
+    const onFocus = () => void check();
+    window.addEventListener('focus', onFocus);
+    return () => { stop = true; window.clearInterval(t); window.removeEventListener('focus', onFocus); };
+  }, []);
+  if (!stale) return null;
+  return (
+    <div className="fixed inset-x-0 top-0 z-[70] flex items-center justify-center gap-3 bg-brand-900 px-4 py-2 text-sm text-white shadow-lg" role="status">
+      <span>A new version of Apex Ledger is ready.</span>
+      <button type="button" onClick={() => window.location.reload()} className="rounded-full bg-gold-400 px-3 py-1 text-xs font-semibold text-brand-900 hover:bg-gold-300">Reload now</button>
+      <button type="button" onClick={() => setStale(false)} className="text-xs text-brand-100 underline">Later</button>
+    </div>
+  );
+}

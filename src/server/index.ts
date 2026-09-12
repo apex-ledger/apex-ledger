@@ -233,7 +233,9 @@ app.use((_req, res, next) => {
   next();
 });
 // For a monitor or load balancer: no sign-in, no details beyond "up" and the version.
-app.get('/api/health', (_req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ ok: true, data: { status: 'ok', version: process.env.APEX_VERSION ?? null, uptimeSeconds: Math.round(process.uptime()) } }); });
+// Changes on every deploy (the bundle's own timestamp), so a browser still running the previous bundle can offer a reload.
+const BUILD_ID = (() => { try { return String(Math.round(fs.statSync(path.join(STATIC_DIR, 'index.html')).mtimeMs)); } catch { return String(Date.now()); } })();
+app.get('/api/health', (_req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ ok: true, data: { status: 'ok', version: process.env.APEX_VERSION ?? null, build: BUILD_ID, uptimeSeconds: Math.round(process.uptime()) } }); });
 app.use(express.json({ limit: '50mb' }));
 // A body that is not JSON (or too large) gets a JSON answer, not Express's HTML stack trace.
 app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
