@@ -38,7 +38,7 @@ table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0 4px;backg
 
 <h2>One firm can never see another</h2>
 <div class="grid">
-  <div class="card"><h3>One file per company, one folder per firm</h3><p>Each client company is a separate database file in a folder that belongs to one organisation. There is no shared table of transactions across firms, so there is no filter that could ever be wrong. A request from one firm cannot name, open, upload to or download from another firm's folder; the server refuses it by path.</p><span class="fact">Verified with a two-firm test on every route</span></div>
+  <div class="card"><h3>One file per company, one folder per firm</h3><p>Each client company is a separate database file in a folder that belongs to one organisation. There is no shared table of transactions across firms, so there is no filter that could ever be wrong. A request from one firm cannot name, open, upload to or download from another firm's folder; the server refuses it by path.</p><span class="fact">Checked on every route before every release</span></div>
   <div class="card"><h3>Sessions are separate too</h3><p>Every request runs inside its own session with its own database connection, resolved from the sign-in cookie on the server, never from anything the browser sends. Two firms working at the same moment never receive each other's data.</p><span class="fact">Per-session connections</span></div>
 </div>
 
