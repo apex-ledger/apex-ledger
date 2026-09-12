@@ -28,6 +28,10 @@
     '.ax-hand{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid #cfe3d6;background:#fff}' +
     '.ax-hand textarea{border-radius:14px;min-height:64px;resize:vertical}.ax-hand .ax-row{display:flex;gap:8px;align-items:center;justify-content:space-between}' +
     '.ax-hand p{margin:0;font-size:13px;color:#2f4a3b}' +
+    '.ax-chips{display:flex;flex-wrap:wrap;gap:6px;align-self:stretch;padding:2px 0 4px}' +
+    '.ax-chip{border:1px solid #b9d7c4;background:#fff;color:#1f5a3a;font:600 12.5px "Segoe UI",Arial,sans-serif;padding:7px 12px;border-radius:999px;cursor:pointer;text-align:left}' +
+    '.ax-chip:hover{border-color:#b48a24;background:#fff8e6}' +
+    '.ax-more{border:0;background:none;color:#8a6412;font:700 12px "Segoe UI",Arial,sans-serif;cursor:pointer;padding:6px 4px;text-decoration:underline}' +
     '@media(max-width:480px){.ax-fab{right:12px;bottom:12px;padding:12px 16px}.ax-panel{right:8px;bottom:70px;height:calc(100vh - 90px)}}';
 
   var style = document.createElement('style'); style.textContent = css; document.head.appendChild(style);
@@ -44,6 +48,23 @@
   function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
   function linkify(s) { return esc(s).replace(/(https?:\/\/[^\s)]+)/g, function (u) { return '<a href="' + u + '" target="_blank" rel="noopener">' + u.replace(/^https?:\/\//, '') + '</a>'; }); }
   function add(role, text) { var m = document.createElement('div'); m.className = 'ax-m ' + role; if (role === 'a') m.innerHTML = linkify(text); else m.textContent = text; log.appendChild(m); log.scrollTop = log.scrollHeight; return m; }
+
+  var QUESTIONS = [
+    'What does a seat cost?', 'Is there a limit on company files or employees?', 'Can it read PDF bank statements?',
+    'Does it do Canadian payroll?', 'Can I move from QuickBooks Online or Xero?', 'How safe is my data?',
+    'Where is my data stored?', 'Is my data backed up?', "Can one firm see another firm's clients?",
+    'Who at ApexLedger can see my books?', 'Do you sell or share my data?', 'Do I need to install anything?', 'How do I cancel?'
+  ];
+  var asked = {};
+  function showChips(all) {
+    var old = log.querySelector('.ax-chips'); if (old) old.parentNode.removeChild(old);
+    var wrap = document.createElement('div'); wrap.className = 'ax-chips';
+    var list = QUESTIONS.filter(function (q) { return !asked[q]; });
+    var shown = all ? list : list.slice(0, 5);
+    shown.forEach(function (q) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ax-chip'; b.textContent = q; b.onclick = function () { asked[q] = true; ask(q); }; wrap.appendChild(b); });
+    if (!all && list.length > shown.length) { var m = document.createElement('button'); m.type = 'button'; m.className = 'ax-more'; m.textContent = 'More questions (' + (list.length - shown.length) + ')'; m.onclick = function () { showChips(true); }; wrap.appendChild(m); }
+    log.appendChild(wrap); log.scrollTop = log.scrollHeight;
+  }
 
   function offerEmail(question) {
     if (hand) return;
@@ -77,6 +98,7 @@
     if (busy) return;
     var q = text.trim(); if (!q) return;
     input.value = ''; busy = true; send.disabled = true;
+    var chips = log.querySelector('.ax-chips'); if (chips) chips.parentNode.removeChild(chips);
     add('u', q); turns.push({ role: 'user', content: q }); save();
     var thinking = add('s', 'Thinking…');
     fetch(API + '/api/site-chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: turns.slice(-12), page: location.pathname }) })
@@ -87,6 +109,7 @@
         var d = r.data || {};
         add('a', d.answer || 'I am not sure about that one.');
         turns.push({ role: 'assistant', content: d.answer || '' }); save();
+        showChips(false);
         if (d.alsoSee && d.alsoSee.length) { var also = add('a', ''); also.innerHTML = 'See also: ' + d.alsoSee.map(function (x) { return '<a href="' + esc(x.url) + '" target="_blank" rel="noopener">' + esc(x.heading) + '</a>'; }).join(' · '); }
         if (d.handoff) { var m = add('s', ''); m.innerHTML = 'Want a person to answer? <button type="button" class="ax-link">Email ApexLedger</button>'; m.querySelector('button').onclick = function () { offerEmail(q); }; }
       })
@@ -105,8 +128,9 @@
     panel.querySelector('.ax-x').onclick = function () { panel.hidden = true; fab.focus(); };
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && panel && !panel.hidden) panel.hidden = true; });
     panel.querySelector('form').onsubmit = function (e) { e.preventDefault(); ask(input.value); };
-    if (turns.length === 0) { add('a', 'Hello. Ask me about seats and pricing, moving from QuickBooks or Sage, payroll, GST/HST, or how your data is protected.'); }
-    else { turns.forEach(function (t) { add(t.role === 'user' ? 'u' : 'a', t.content); }); }
+    if (turns.length === 0) { add('a', 'Hello. Pick a question, or type your own.'); }
+    else { turns.forEach(function (t) { add(t.role === 'user' ? 'u' : 'a', t.content); if (t.role === 'user') asked[t.content] = true; }); }
+    showChips(false);
     var m = add('s', ''); m.innerHTML = 'Prefer a person? <button type="button" class="ax-link">Email ApexLedger</button>'; m.querySelector('button').onclick = function () { offerEmail(''); };
     input.focus();
   }
