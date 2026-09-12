@@ -13,6 +13,12 @@ h1{font-size:40px;letter-spacing:-1.5px;margin:0 0 6px}h2{font-size:22px;margin:
 .brand{display:flex;align-items:center;gap:10px;font-weight:750;font-size:22px;letter-spacing:-1px;margin-bottom:40px}.brand img{width:34px;height:34px}.brand b{color:#8a6412}
 
 /* rounded buttons */.button,.cta,.actions button,.actions a,.fb .send,.agree-actions button{border-radius:999px}
+
+/* watermark in the empty side space (2026-09-12) */
+body:before,body:after{content:'';position:fixed;top:0;bottom:0;width:calc((100% - 960px)/2);z-index:0;pointer-events:none;background:url("data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill=%22%231f5a3a%22 fill-opacity=%220.07%22%3Eapexledger.%3C/text%3E%3C/svg%3E") 0 0/360px 360px}
+body:before{left:0}body:after{right:0}header,main,footer{position:relative;z-index:1}
+footer,.related a,.related h3{font-size:14px}
+@media(max-width:1100px){body:before,body:after{display:none}}
 </style>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "ApexLedger", "url": "https://apexledger.ca/", "logo": "https://apexledger.ca/icon-512.png", "email": "admin@apexledger.ca", "address": {"@type": "PostalAddress", "addressLocality": "Mississauga", "addressRegion": "ON", "addressCountry": "CA"}, "areaServed": "CA"}</script>
 </head>

@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import { buildWebApi, webSession, webSignIn } from './api';
 import '../renderer/index.css';
 
+/** The sign-in background: the wordmark repeated at 45 degrees in a very light tint. */
+const SIGN_IN_WATERMARK = 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill=%22%23ffffff%22 fill-opacity=%220.06%22%3Eapexledger.%3C/text%3E%3C/svg%3E';
+
 // The screens read window.api at import time in places, so it exists before App is loaded.
 (window as unknown as { api: unknown }).api = buildWebApi();
 
@@ -74,8 +77,10 @@ function Gate() {
   if (state === 'checking') return <div className="flex h-screen items-center justify-center text-sm text-gray-500">Connecting…</div>;
   if (state === 'signedOut') {
     return (
-      <div className="flex h-screen items-center justify-center bg-brand-900">
-        <form onSubmit={(e) => void submit(e)} className="w-80 rounded-lg bg-white p-6 shadow-xl">
+      <div className="relative flex h-screen items-center justify-center overflow-hidden bg-brand-900">
+        {/* faint "apexledger." written at 45 degrees across the background, like a watermark */}
+        <div aria-hidden className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url("${SIGN_IN_WATERMARK}")`, backgroundSize: '360px 360px' }} />
+        <form onSubmit={(e) => void submit(e)} className="relative w-80 rounded-lg bg-white p-6 shadow-xl">
           <div className="text-lg font-semibold text-brand-900">Apex Ledger</div>
           <div className="mb-4 text-xs text-gray-500">Canadian accounting software · web</div>
           {providers.length > 0 && (
