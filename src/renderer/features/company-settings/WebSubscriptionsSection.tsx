@@ -56,7 +56,7 @@ export function WebSubscriptionsSection() {
   );
 
   return (
-    <section className="mb-6 rounded-lg border border-gray-200 bg-white p-4" data-testid="subscriptions-section">
+    <section className="mb-6 min-w-0 max-w-full rounded-lg border border-gray-200 bg-white p-4" data-testid="subscriptions-section">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
         <div>
           <h2 className="text-lg font-semibold text-brand-900">Subscriptions</h2>
@@ -79,10 +79,10 @@ export function WebSubscriptionsSection() {
         ))}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="max-w-full" style={{ overflowX: 'auto' }}>
+        <table className="w-full table-fixed text-xs">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600">
-            <tr><th className="px-2 py-2">Firm</th><th className="px-2 py-2">Status</th><th className="px-2 py-2">Seats in use</th><th className="px-2 py-2 text-right">Per month</th><th className="px-2 py-2">Next charge</th><th className="px-2 py-2 text-right">Billed</th><th className="px-2 py-2 text-right">Received</th><th className="px-2 py-2 text-right">Owing</th><th className="px-2 py-2">Companies</th><th className="px-2 py-2">Last active</th></tr>
+            <tr><th className="w-[19%] px-1.5 py-2">Firm</th><th className="w-[11%] px-1.5 py-2">Status</th><th className="w-[17%] px-1.5 py-2">Seats in use</th><th className="w-[9%] px-1.5 py-2 text-right">Per month</th><th className="w-[10%] px-1.5 py-2">Next charge</th><th className="w-[8%] px-1.5 py-2 text-right">Billed</th><th className="w-[8%] px-1.5 py-2 text-right">Received</th><th className="w-[8%] px-1.5 py-2 text-right">Owing</th><th className="w-[5%] px-1.5 py-2 text-center">Cos.</th><th className="w-[8%] px-1.5 py-2">Last active</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 && <tr><td colSpan={10} className="px-2 py-4 text-center text-gray-500">No firms match.</td></tr>}
@@ -102,16 +102,16 @@ function FirmRows({ row, open, onToggle, onChanged }: { row: Row; open: boolean;
   return (
     <>
       <tr className={`cursor-pointer border-t border-gray-100 hover:bg-brand-50/40 ${open ? 'bg-brand-50/60' : ''}`} onClick={onToggle} data-testid={`sub-row-${org.id}`}>
-        <td className="px-2 py-2 font-medium text-gray-900">{org.name}<div className="text-xs font-normal text-gray-500">{org.billingEmail || 'no billing email'}{org.discountPct > 0 && b.discountEndsOn && b.discountEndsOn >= b.billingStart ? ` · founding ${org.discountPct}% off to ${b.discountEndsOn}` : ''}</div></td>
-        <td className="px-2 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[b.status]}`}>{STATUS_LABEL[b.status]}</span>{b.status === 'trial' && <div className="text-xs text-gray-500">billing from {b.firstChargeDate}</div>}</td>
-        <td className="px-2 py-2 text-xs text-gray-700">{seats}<div className="text-gray-500">{row.activeCount} of {org.seats} seats · {row.agreedCount} signed the agreement</div></td>
-        <td className="px-2 py-2 text-right tabular-nums">{money(b.monthlyNowCents)}{b.monthlyNowCents !== b.monthlyListCents && <div className="text-xs text-gray-500 line-through">{money(b.monthlyListCents)}</div>}{org.billingCycle === 'yearly' && <div className="text-xs text-gray-500">billed yearly</div>}</td>
-        <td className="px-2 py-2 text-xs">{b.nextCharge ? <>{b.nextCharge.date}<div className="text-gray-500">{money(b.nextCharge.amountCents)}</div></> : '—'}</td>
-        <td className="px-2 py-2 text-right tabular-nums">{money(b.billedCents)}</td>
-        <td className="px-2 py-2 text-right tabular-nums">{money(b.paidCents)}</td>
-        <td className={`px-2 py-2 text-right font-semibold tabular-nums ${b.owingCents > 0 ? 'text-amber-800' : b.owingCents < 0 ? 'text-emerald-800' : 'text-gray-700'}`}>{money(b.owingCents)}{b.owingCents < 0 && <div className="text-xs font-normal">credit</div>}</td>
-        <td className="px-2 py-2 text-center">{row.companies}</td>
-        <td className="px-2 py-2 text-xs text-gray-600">{day(row.lastActivity)}</td>
+        <td className="break-words px-1.5 py-2 font-medium text-gray-900">{org.name}<div className="text-xs font-normal text-gray-500">{org.billingEmail || 'no billing email'}{org.discountPct > 0 && b.discountEndsOn && b.discountEndsOn >= b.billingStart ? ` · founding ${org.discountPct}% off to ${b.discountEndsOn}` : ''}</div></td>
+        <td className="px-1.5 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[b.status]}`}>{STATUS_LABEL[b.status]}</span>{b.status === 'trial' && <div className="text-xs text-gray-500">billing from {b.firstChargeDate}</div>}</td>
+        <td className="break-words px-1.5 py-2 text-gray-700">{seats}<div className="text-gray-500">{row.activeCount} of {org.seats} seats · {row.agreedCount} signed the agreement</div></td>
+        <td className="px-1.5 py-2 text-right tabular-nums">{money(b.monthlyNowCents)}{b.monthlyNowCents !== b.monthlyListCents && <div className="text-xs text-gray-500 line-through">{money(b.monthlyListCents)}</div>}{org.billingCycle === 'yearly' && <div className="text-xs text-gray-500">billed yearly</div>}</td>
+        <td className="px-1.5 py-2 text-xs">{b.nextCharge ? <>{b.nextCharge.date}<div className="text-gray-500">{money(b.nextCharge.amountCents)}</div></> : '—'}</td>
+        <td className="px-1.5 py-2 text-right tabular-nums">{money(b.billedCents)}</td>
+        <td className="px-1.5 py-2 text-right tabular-nums">{money(b.paidCents)}</td>
+        <td className={`px-1.5 py-2 text-right font-semibold tabular-nums ${b.owingCents > 0 ? 'text-amber-800' : b.owingCents < 0 ? 'text-emerald-800' : 'text-gray-700'}`}>{money(b.owingCents)}{b.owingCents < 0 && <div className="text-xs font-normal">credit</div>}</td>
+        <td className="px-1.5 py-2 text-center">{row.companies}</td>
+        <td className="px-1.5 py-2 text-xs text-gray-600">{day(row.lastActivity)}</td>
       </tr>
       {open && (
         <tr className="border-t border-gray-100 bg-gray-50/60">
