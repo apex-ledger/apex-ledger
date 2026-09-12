@@ -82,6 +82,13 @@ export const ADMIN_NAV_ITEM: NavItem = {
   icon: <IconUserGroup />,
 };
 
+export const SUBSCRIPTIONS_NAV_ITEM: NavItem = {
+  label: 'Subscriptions',
+  view: { kind: 'webSubscriptions' },
+  color: 'purple',
+  icon: <IconUserGroup />,
+};
+
 export const MAIN_NAV: NavItem[] = [
   { label: 'Dashboard', view: { kind: 'dashboard' }, color: 'blue', icon: <IconHome /> },
   { label: 'Action Centre', view: { kind: 'actionCentre' }, color: 'rose', icon: <IconBell /> },
@@ -793,6 +800,7 @@ export function Sidebar() {
       {(() => { const w = webContext(); return w && (w.org.isPlatform || w.user.role === 'owner'); })() && (
         <div className="px-2 pt-1">
           <NavButton item={ADMIN_NAV_ITEM} forceActive={currentView.kind === 'webAdmin'} emphasized />
+          {webContext()?.org.isPlatform && <NavButton item={SUBSCRIPTIONS_NAV_ITEM} forceActive={currentView.kind === 'webSubscriptions'} emphasized />}
         </div>
       )}
 

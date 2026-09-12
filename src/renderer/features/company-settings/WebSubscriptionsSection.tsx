@@ -219,3 +219,16 @@ function FirmDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
     </div>
   );
 }
+
+/** The dashboard as a page of its own, using the full width of the window. */
+export function WebSubscriptionsPage() {
+  return (
+    <div className="w-full p-4" data-testid="web-subscriptions-page">
+      <div className="mb-3">
+        <h1 className="text-2xl font-semibold text-brand-900">Subscriptions</h1>
+        <p className="mt-1 text-sm text-gray-600">Every subscriber: what they are billed, what they have paid, what they owe, and who is on each seat.</p>
+      </div>
+      <WebSubscriptionsSection />
+    </div>
+  );
+}

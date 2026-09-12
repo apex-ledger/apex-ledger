@@ -20,6 +20,7 @@ export const TITLES: Record<string, string> = {
   bankImport: 'Banking',
   companySettings: 'Settings',
   webAdmin: 'Administration',
+  webSubscriptions: 'Subscriptions',
   hstCentre: 'GST/HST Centre',
   reportsHub: 'Reports',
   clientHub: 'Client Management (CRM)',

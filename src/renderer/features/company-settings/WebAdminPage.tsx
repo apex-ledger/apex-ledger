@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { WebOrganisationSection, webContext } from './WebOrganisationSection';
 import { WebFeedbackSection } from './WebFeedbackSection';
-import { WebSubscriptionsSection } from './WebSubscriptionsSection';
+import { useUiStore } from '../../app/store/uiStore';
 
 /** Administration, on the web only: one clean page for the platform administrator (every firm,
  * seats, company files, trial requests) and for a firm's owner (their own people and files).
@@ -61,9 +61,19 @@ export function WebAdminPage() {
         )}
       </div>
 
-      {ctx.org.isPlatform && <WebSubscriptionsSection />}
+      {ctx.org.isPlatform && <SubscriptionsLink />}
       <WebFeedbackSection />
       <WebOrganisationSection />
+    </div>
+  );
+}
+
+function SubscriptionsLink() {
+  const setView = useUiStore((s) => s.setView);
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm">
+      <div><span className="font-semibold text-brand-900">Subscriptions</span><span className="ml-2 text-gray-700">Billing, payments received, owing and each subscriber's details, on a page of their own.</span></div>
+      <button type="button" onClick={() => setView({ kind: 'webSubscriptions' })} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800">Open Subscriptions</button>
     </div>
   );
 }

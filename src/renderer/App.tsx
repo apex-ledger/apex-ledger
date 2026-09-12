@@ -16,6 +16,7 @@ import { ApprovalsPage } from './features/approvals/ApprovalsPage';
 import { MonthEndClosePage } from './features/month-end-close/MonthEndClosePage';
 import { CompanySettingsPage } from './features/company-settings/CompanySettingsPage';
 import { WebAdminPage } from './features/company-settings/WebAdminPage';
+import { WebSubscriptionsPage } from './features/company-settings/WebSubscriptionsSection';
 import { ChartOfAccountsPage } from './features/chart-of-accounts/ChartOfAccountsPage';
 import { JournalEntryListPage } from './features/journal-entries/JournalEntryListPage';
 import { JournalEntryFormPage } from './features/journal-entries/JournalEntryFormPage';
@@ -444,6 +445,7 @@ export default function App() {
           {view.kind === 'bankImport' && <BankImportPage />}
           {view.kind === 'companySettings' && <CompanySettingsPage />}
           {view.kind === 'webAdmin' && <WebAdminPage />}
+          {view.kind === 'webSubscriptions' && <WebSubscriptionsPage />}
           {view.kind === 'report' && <ReportView report={view.report} />}
           {view.kind === 'hstCentre' && <HstCentrePage />}
           {view.kind === 'taxGifi' && <TaxGifiCentrePage />}

@@ -183,6 +183,8 @@ export type View =
   | { kind: 'accessPermissions' }
   /** Web only: firms, seats, company files and trial requests, for the platform administrator or a firm's owner. */
   | { kind: 'webAdmin' }
+  /** Web only, platform administrator: subscriptions, payments and each subscriber's details, as a full page. */
+  | { kind: 'webSubscriptions' }
   /** Not a page: choosing it opens the Help & Tutor panel over whatever is showing. */
   | { kind: 'helpTutor' };
 
