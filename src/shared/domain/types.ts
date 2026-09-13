@@ -678,6 +678,9 @@ export interface Invoice {
   invoiceJournalEntryId: number | null;
   paymentJournalEntryId: number | null;
   paidCents: number;
+  /** Written off to bad debt; the balance due is what is left after payments and the write-off. */
+  writtenOffCents?: number;
+  writeOffJournalEntryId?: number | null;
   balanceDueCents: number;
   lines: InvoiceLine[];
   foreignCurrency: ForeignCurrencyCode | null;

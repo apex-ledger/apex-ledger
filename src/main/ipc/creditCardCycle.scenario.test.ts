@@ -326,4 +326,33 @@ describe('At the end', () => {
   it('refuses a reversal date that is not after the entry date', async () => {
     await expect(journalCreateAndPost({ entryDate: '2026-09-30', memo: 'Bad', reverseOn: '2026-09-30', lines: [{ accountId: officeSupplies, debitCents: 100, creditCents: 0 }, { accountId: chequing, debitCents: 0, creditCents: 100 }] })).rejects.toThrow(/after the entry date/);
   });
+
+  it('an invoice that will never be paid is written off to bad debt, with the HST on it recovered, and can be undone', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Gone Fishing Ltd', paymentTerms: 'net30' });
+    const inv = await invoices.invoicesCreate({ customerId: customer.id, invoiceNumber: 'INV-BAD-1', invoiceDate: '2026-03-01', dueDate: '2026-03-31', lines: [{ description: 'Work', quantity: 1, unitPriceCents: 100_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2026-03-15', bankAccountId: chequing, amountCents: 13_000 }); // paid a bit, then vanished
+    const ar = await byName(ACCOUNTS_RECEIVABLE_ARGS[0]);
+    const arBefore = await balance(ar);
+    const written = await invoices.invoicesWriteOff({ id: inv.id, writeOffDate: '2026-09-30' });
+    expect(written.balanceDueCents).toBe(0);
+    expect(written.writtenOffCents).toBe(100_000);
+    expect(written.status).toBe('paid');
+    expect(await balance(ar)).toBe(arBefore - 100_000);
+    const badDebt = await byName('Bad Debt Expense');
+    const hstPayable = await byName('GST/HST Payable');
+    const entry = await journalGet(written.writeOffJournalEntryId!);
+    const line = (id: number) => entry.lines.find((l) => l.accountId === id);
+    // 100,000 of 113,000 unpaid: 13,000 × 100/113 = 11,504 of tax comes back; the rest is the expense.
+    expect(line(hstPayable)?.debitCents).toBe(11_504);
+    expect(line(badDebt)?.debitCents).toBe(88_496);
+    expect(line(ar)?.creditCents).toBe(100_000);
+    expect(entry.lines.every((l) => l.customerId === customer.id)).toBe(true);
+    await expect(invoices.invoicesDelete(inv.id)).rejects.toThrow(/written off/);
+    const back = await invoices.invoicesUndoWriteOff(inv.id);
+    expect(back.balanceDueCents).toBe(100_000);
+    expect(back.status).toBe('unpaid');
+    expect((await journalGet(written.writeOffJournalEntryId!)).status).toBe('void');
+    await booksBalance();
+  });
 });

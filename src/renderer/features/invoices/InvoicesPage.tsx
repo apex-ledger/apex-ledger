@@ -34,6 +34,21 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
 
   const customerNameById = new Map(customers.map((c) => [c.id, c.name]));
 
+  async function handleWriteOff(invoice: Invoice) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (!window.confirm(`Write off the remaining $${(invoice.balanceDueCents / 100).toFixed(2)} on ${invoice.invoiceNumber} to Bad Debt Expense as of ${today}? The GST/HST on the unpaid part is recovered. This can be undone.`)) return;
+    const r = await window.api.invoices.writeOff({ id: invoice.id, writeOffDate: today });
+    if (!r.ok) { setError(r.error); return; }
+    await refresh();
+  }
+
+  async function handleUndoWriteOff(invoice: Invoice) {
+    if (!window.confirm(`Put ${invoice.invoiceNumber} back on the books? The bad-debt entry is voided and $${((invoice.writtenOffCents ?? 0) / 100).toFixed(2)} is owed again.`)) return;
+    const r = await window.api.invoices.undoWriteOff(invoice.id);
+    if (!r.ok) { setError(r.error); return; }
+    await refresh();
+  }
+
   async function handleDelete(invoice: Invoice) {
     const customerName = customerNameById.get(invoice.customerId) ?? 'this customer';
     if (!window.confirm(`Delete invoice ${invoice.invoiceNumber} for ${customerName}? This permanently removes the invoice and voids its linked accounting entry. This cannot be undone.`)) return;
@@ -132,7 +147,9 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
                   </td>
                   <td className="py-2 text-right font-medium"><Money cents={inv.balanceDueCents} /></td>
                   <td className="py-2">
-                    {inv.balanceDueCents === 0 ? (
+                    {(inv.writtenOffCents ?? 0) > 0 && inv.balanceDueCents === 0 ? (
+                      <span className="rounded bg-gray-300 px-1.5 py-0.5 text-xs text-gray-900" title="Written off to bad debt">written off</span>
+                    ) : inv.balanceDueCents === 0 ? (
                       <span className="rounded bg-green-300 px-1.5 py-0.5 text-xs text-green-900">paid</span>
                     ) : inv.paidCents > 0 ? (
                       <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs text-blue-800">partial</span>
@@ -146,8 +163,11 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
                         <button type="button" onClick={() => setReceivingInvoiceId(inv.id)} className="mr-2 text-xs font-medium text-brand-600 hover:underline">
                           Receive Payment
                         </button>
+                        <button type="button" onClick={() => void handleWriteOff(inv)} className="mr-2 text-xs font-medium text-gray-600 hover:underline" title="Close this invoice to Bad Debt Expense">Write off</button>
                         {inv.paidCents === 0 && <button type="button" onClick={() => handleDelete(inv)} className="text-xs font-medium text-red-500 hover:underline">Delete</button>}
                       </>
+                    ) : (inv.writtenOffCents ?? 0) > 0 ? (
+                      <button type="button" onClick={() => void handleUndoWriteOff(inv)} className="text-xs font-medium text-gray-600 hover:underline">Undo write-off</button>
                     ) : (
                       <span className="text-xs text-gray-400">Paid in full</span>
                     )}

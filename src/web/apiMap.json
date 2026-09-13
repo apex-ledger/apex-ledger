@@ -310,6 +310,8 @@
       "receivePayment": "invoices:receivePayment",
       "reverseLastPayment": "invoices:reverseLastPayment",
       "changeDate": "invoices:changeDate",
+      "writeOff": "invoices:writeOff",
+      "undoWriteOff": "invoices:undoWriteOff",
       "delete": "invoices:delete"
     },
     "deposits": {

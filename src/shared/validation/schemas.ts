@@ -591,6 +591,13 @@ export const changeInvoiceDateSchema = z.object({
   dueDate: ISO_DATE.nullable().optional().default(null),
 });
 
+/** Writing the unpaid balance of an invoice off to bad debt. */
+export const writeOffInvoiceSchema = z.object({
+  id: z.number().int().positive(),
+  writeOffDate: ISO_DATE,
+  memo: z.string().trim().max(500).nullable().optional().default(null),
+});
+
 export const makeDepositSchema = z
   .object({
     invoiceIds: z.array(z.number().int().positive()).optional().default([]),

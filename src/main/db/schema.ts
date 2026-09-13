@@ -598,6 +598,9 @@ export interface InvoiceTable {
   invoiceJournalEntryId: number | null;
   paymentJournalEntryId: number | null;
   paidCents: Generated<number>;
+  /** Bad-debt write-off: the amount and the journal that posted it. */
+  writtenOffCents: Generated<number>;
+  writeOffJournalEntryId: number | null;
   createdAt: Generated<string>;
   foreignCurrency: string | null;
   foreignAmountCents: number | null;

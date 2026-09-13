@@ -5,7 +5,7 @@ import { depositDateRefusalReason, paymentDateRefusalReason } from '@shared/doma
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
 import { assertSaleLineAccounts } from './saleLineAccounts';
-import { changeInvoiceDateSchema, makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema } from '@shared/validation/schemas';
+import { changeInvoiceDateSchema, makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema, writeOffInvoiceSchema } from '@shared/validation/schemas';
 import { buildInvoiceJournalLines, computeInvoiceLineAmountCents } from '@shared/domain/ledger/buildInvoiceJournalLines';
 import type { InvoiceLine, UndepositedItem } from '@shared/domain/types';
 import { getCurrentDb } from '../companyFile';
@@ -13,7 +13,7 @@ import { getAllDeposits, getAllInvoices, getAllSalesReceipts, getInvoiceById } f
 import { mapDepositRow, mapInvoiceLineRow, mapInvoiceRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ensureGstHstAccountId, ensureProvincialTaxAccountId } from '../db/buildTaxSplitLines';
-import { journalCreate, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
+import { journalCreate, journalGet, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
 import { buildSaleStockMovements } from '@shared/domain/inventory/buildSaleStockMovements';
 import { movementsCreate } from './inventory.handlers';
 import { buildInventoryJournalLines, inventoryPostingMemo } from '@shared/domain/inventory/buildInventoryJournalLines';
@@ -28,6 +28,7 @@ import { foreignOutstandingCents, settleForeignPayment } from '@shared/domain/cu
 import { tagDocumentLines } from '@shared/domain/ledger/tagDocumentLines';
 
 const CUSTOMER_DISCOUNT_ACCOUNT_ARGS = ['Customer Discounts', 'Expense', '5900', '9270', 'Other Expense'] as const;
+const BAD_DEBT_ACCOUNT_ARGS = ['Bad Debt Expense', 'Expense', '5180', '8590', 'Operating Expense'] as const;
 /** Re-exported for the sales-receipt handler, which resolves to this exact same account. */
 export { UNDEPOSITED_FUNDS_ACCOUNT_ARGS };
 
@@ -409,6 +410,60 @@ export async function invoicesChangeDate(input: unknown) {
   return { invoice: await invoicesGet(id), paymentsMoved: moving.length };
 }
 
+/** Writes what is still owed on an invoice off to bad debt, the way a bookkeeper closes an invoice
+ * that will never be paid: Bad Debt Expense is debited, Accounts Receivable is credited, and the
+ * GST/HST that was collected on the unpaid part is taken back out of GST/HST Payable, since the
+ * CRA allows the tax on a bad debt to be recovered (an adjustment on the return). The invoice keeps
+ * its number and lines; its balance falls to nil and the customer statement shows the write-off. */
+export async function invoicesWriteOff(input: unknown) {
+  const { id, writeOffDate, memo } = writeOffInvoiceSchema.parse(input);
+  const db = getCurrentDb();
+  const invoice = await invoicesGet(id);
+  const balance = invoice.balanceDueCents;
+  if (balance <= 0) throw new Error('This invoice has nothing outstanding to write off.');
+  if ((invoice.writtenOffCents ?? 0) > 0) throw new Error('This invoice is already written off. Undo that write-off first if it needs to change.');
+  const timing = paymentDateRefusalReason(invoice.invoiceDate, writeOffDate, `invoice ${invoice.invoiceNumber}`);
+  if (timing) throw new Error(timing.replace(/payment/gi, 'write-off'));
+
+  // The tax collected on the unpaid part, in proportion, from the invoice's own journal.
+  let taxCents = 0;
+  let gstHstPayableId: number | null = null;
+  if (invoice.invoiceJournalEntryId !== null) {
+    const journal = await journalGet(invoice.invoiceJournalEntryId);
+    gstHstPayableId = await ensureGstHstAccountId(db, 'payable');
+    const taxOnInvoice = journal.lines.filter((l) => l.accountId === gstHstPayableId).reduce((sum, l) => sum + l.creditCents - l.debitCents, 0);
+    taxCents = Math.round((taxOnInvoice * balance) / invoice.totalCents);
+  }
+  const badDebtCents = balance - taxCents;
+  const arId = await ensureAccountByName(db, ...AR_ACCOUNT_ARGS);
+  const badDebtId = await ensureAccountByName(db, ...BAD_DEBT_ACCOUNT_ARGS);
+  const label = memo?.trim() || `Bad debt written off — invoice ${invoice.invoiceNumber}`;
+  const lines = tagLinesWithContact([
+    { accountId: badDebtId, debitCents: badDebtCents, creditCents: 0, description: label },
+    ...(taxCents > 0 && gstHstPayableId !== null ? [{ accountId: gstHstPayableId, debitCents: taxCents, creditCents: 0, description: 'GST/HST recovered on bad debt' }] : []),
+    { accountId: arId, debitCents: 0, creditCents: balance, description: label },
+  ], { customerId: invoice.customerId });
+
+  const updated = await db.transaction().execute(async (trx) => {
+    const entry = await journalCreate({ entryDate: writeOffDate, memo: label, reference: `INVOICE-${invoice.id}`, lines }, trx);
+    const posted = await journalPost(entry.id, trx);
+    return trx.updateTable('invoices').set({ writtenOffCents: balance, writeOffJournalEntryId: posted.id, status: 'paid' }).where('id', '=', id).returningAll().executeTakeFirstOrThrow();
+  });
+  return mapInvoiceRow(updated, invoice.lines);
+}
+
+/** Puts a written-off invoice back on the books: the write-off journal is voided and the balance is owed again. */
+export async function invoicesUndoWriteOff(id: number) {
+  const db = getCurrentDb();
+  const invoice = await invoicesGet(id);
+  if (!(invoice.writtenOffCents ?? 0) || invoice.writeOffJournalEntryId == null) throw new Error('This invoice has no write-off to undo.');
+  const updated = await db.transaction().execute(async (trx) => {
+    await journalVoid(invoice.writeOffJournalEntryId!, false, trx, true);
+    return trx.updateTable('invoices').set({ writtenOffCents: 0, writeOffJournalEntryId: null, status: invoice.paidCents >= invoice.totalCents ? 'paid' : 'unpaid' }).where('id', '=', id).returningAll().executeTakeFirstOrThrow();
+  });
+  return mapInvoiceRow(updated, invoice.lines);
+}
+
 export async function invoicesReverseLastPayment(id: number) {
   const db = getCurrentDb();
   const invoice = await invoicesGet(id);
@@ -630,6 +685,7 @@ export async function depositsDelete(id: number) {
 export async function invoicesDelete(id: number) {
   const db = getCurrentDb();
   const invoice = await invoicesGet(id);
+  if ((invoice.writtenOffCents ?? 0) > 0) throw new Error('This invoice was written off to bad debt. Undo the write-off first.');
   if (invoice.paidCents > 0) throw new Error('An invoice with payments cannot be deleted. Void/reverse its payments first.');
   const stockMovement = await db.selectFrom('inventoryMovements').select('id').where('sourceDocumentType', '=', 'invoice').where('sourceDocumentId', '=', id).executeTakeFirst();
   if (stockMovement) {
