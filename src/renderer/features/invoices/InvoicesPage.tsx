@@ -6,6 +6,7 @@ import { useUiStore } from '../../app/store/uiStore';
 import { ReceivePaymentModal } from './ReceivePaymentModal';
 import { MakeDepositModal } from './MakeDepositModal';
 import { EnteredTd, EnteredText, EnteredTh } from '../../components/EnteredCell';
+import { InvoiceDateCell } from './InvoiceDateCell';
 
 /** `embedded` is set when this screen is shown inside the Sales hub, which already prints the
  * section title and description in its own panel header. Without it the page repeats them, and the
@@ -119,7 +120,7 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
                       {customerNameById.get(inv.customerId) ?? '—'}
                     </button>
                   </td>
-                  <td className="py-2 text-gray-600">{inv.invoiceDate}</td><EnteredTd at={inv.createdAt} className="py-2" />
+                  <td className="py-2 text-gray-600"><InvoiceDateCell invoice={inv} onSaved={() => void refresh()} /></td><EnteredTd at={inv.createdAt} className="py-2" />
                   <td className="py-2 text-gray-600">{inv.dueDate}</td>
                   <td className="py-2 text-right">
                     <Money cents={inv.totalCents} />

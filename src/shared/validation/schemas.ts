@@ -579,6 +579,14 @@ export const receiveInvoicePaymentSchema = z.object({
   exchangeRate: z.number().positive().nullable().optional().default(null),
 });
 
+/** Moving a posted invoice to another date. The due date keeps its distance from the invoice date
+ * unless a new one is given; payments that were received on the old invoice date move with it. */
+export const changeInvoiceDateSchema = z.object({
+  id: z.number().int().positive(),
+  invoiceDate: ISO_DATE,
+  dueDate: ISO_DATE.nullable().optional().default(null),
+});
+
 export const makeDepositSchema = z
   .object({
     invoiceIds: z.array(z.number().int().positive()).optional().default([]),

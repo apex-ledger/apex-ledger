@@ -822,6 +822,7 @@ const api = {
     recordStock: invoke<{ recorded: number; linesWithoutProduct: number; problems: string[] }>('invoices:recordStock'),
     receivePayment: invoke<Invoice>('invoices:receivePayment'),
     reverseLastPayment: invoke<Invoice>('invoices:reverseLastPayment'),
+    changeDate: invoke<{ invoice: Invoice; paymentsMoved: number }>('invoices:changeDate'),
     delete: invoke<{ deleted: true }>('invoices:delete'),
   },
   deposits: {

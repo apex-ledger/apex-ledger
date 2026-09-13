@@ -5,7 +5,7 @@ import { depositDateRefusalReason, paymentDateRefusalReason } from '@shared/doma
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
 import { assertSaleLineAccounts } from './saleLineAccounts';
-import { makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema } from '@shared/validation/schemas';
+import { changeInvoiceDateSchema, makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema } from '@shared/validation/schemas';
 import { buildInvoiceJournalLines, computeInvoiceLineAmountCents } from '@shared/domain/ledger/buildInvoiceJournalLines';
 import type { InvoiceLine, UndepositedItem } from '@shared/domain/types';
 import { getCurrentDb } from '../companyFile';
@@ -13,7 +13,7 @@ import { getAllDeposits, getAllInvoices, getAllSalesReceipts, getInvoiceById } f
 import { mapDepositRow, mapInvoiceLineRow, mapInvoiceRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ensureGstHstAccountId, ensureProvincialTaxAccountId } from '../db/buildTaxSplitLines';
-import { journalCreate, journalPost, journalVoid } from './journal.handlers';
+import { journalCreate, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
 import { buildSaleStockMovements } from '@shared/domain/inventory/buildSaleStockMovements';
 import { movementsCreate } from './inventory.handlers';
 import { buildInventoryJournalLines, inventoryPostingMemo } from '@shared/domain/inventory/buildInventoryJournalLines';
@@ -375,6 +375,40 @@ export async function invoicesReceivePayment(input: unknown) {
 }
 
 /** Reverses the newest customer payment and reopens the invoice without touching the sale. */
+/** Moves a posted invoice to another date, the way a bookkeeper corrects "I dated it December 31
+ * and it belongs in January". The invoice's own journal moves with it (journalUpdateDate: refused
+ * inside a locked period or once a line is reconciled, and recorded on the adjustments report).
+ * A payment received on the old invoice date moves to the new date too, since it was booked on the
+ * same day and cannot stay earlier than the invoice; a payment on any other date stays where it is
+ * and must not end up before the new invoice date. The due date keeps its distance unless given. */
+export async function invoicesChangeDate(input: unknown) {
+  const { id, invoiceDate, dueDate } = changeInvoiceDateSchema.parse(input);
+  const db = getCurrentDb();
+  const invoice = await invoicesGet(id);
+  const oldDate = invoice.invoiceDate;
+  const shiftDays = Math.round((Date.parse(`${invoiceDate}T00:00:00Z`) - Date.parse(`${oldDate}T00:00:00Z`)) / 86_400_000);
+  const newDue = dueDate ?? (() => { const d = new Date(`${invoice.dueDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + shiftDays); return d.toISOString().slice(0, 10); })();
+  if (newDue < invoiceDate) throw new Error('The due date cannot be before the invoice date.');
+
+  const payments = await db.selectFrom('invoicePayments').selectAll().where('invoiceId', '=', id).execute();
+  const moving = payments.filter((p) => p.paymentDate === oldDate);
+  const staying = payments.filter((p) => p.paymentDate !== oldDate);
+  const early = staying.find((p) => p.paymentDate < invoiceDate);
+  if (early) throw new Error(`A payment of $${(early.amountCents / 100).toFixed(2)} was received on ${early.paymentDate}, which would be before the new invoice date. Move or reverse that payment first.`);
+  const banked = moving.find((p) => p.depositId !== null);
+  if (banked) throw new Error(`The payment received on ${oldDate} is already in a bank deposit. Delete that deposit first, change the date, then deposit it again.`);
+
+  // The journals first: each one refuses a locked period or a reconciled line before anything is written.
+  if (invoice.invoiceJournalEntryId !== null && oldDate !== invoiceDate) await journalUpdateDate({ id: invoice.invoiceJournalEntryId, entryDate: invoiceDate });
+  for (const p of moving) await journalUpdateDate({ id: p.journalEntryId, entryDate: invoiceDate });
+
+  await db.transaction().execute(async (trx) => {
+    await trx.updateTable('invoices').set({ invoiceDate, dueDate: newDue }).where('id', '=', id).execute();
+    for (const p of moving) await trx.updateTable('invoicePayments').set({ paymentDate: invoiceDate }).where('id', '=', p.id).execute();
+  });
+  return { invoice: await invoicesGet(id), paymentsMoved: moving.length };
+}
+
 export async function invoicesReverseLastPayment(id: number) {
   const db = getCurrentDb();
   const invoice = await invoicesGet(id);

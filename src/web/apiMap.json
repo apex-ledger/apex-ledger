@@ -309,6 +309,7 @@
       "recordStock": "invoices:recordStock",
       "receivePayment": "invoices:receivePayment",
       "reverseLastPayment": "invoices:reverseLastPayment",
+      "changeDate": "invoices:changeDate",
       "delete": "invoices:delete"
     },
     "deposits": {

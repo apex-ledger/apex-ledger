@@ -185,11 +185,19 @@ export function BalanceSheetPage() {
             <h3 className="border-b border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700">Equity</h3>
             <SectionTable section={data.equity} showComparative={showComparative} showAdjusting={showAdjusting} onDrillDown={drillDown} />
           </div>
-          <div className="rounded border border-gray-200 bg-white p-3 text-right text-base font-semibold">
-            Total Liabilities &amp; Equity: <Money cents={data.totalLiabilitiesAndEquityCents} />
+          <div className="rounded border border-gray-200 bg-white" data-testid="balance-sheet-totals">
+            <h3 className="border-b border-gray-200 px-3 py-2 text-sm font-semibold text-gray-700">Liabilities and Shareholder&apos;s Equity</h3>
+            <table className="w-full text-sm">
+              <tbody>
+                <tr className="border-b border-gray-100"><td className="px-3 py-1.5">Total Liabilities</td><td className="px-3 py-1.5 text-right"><Money cents={data.liabilities.totalCents} /></td>{showComparative && <td className="px-3 py-1.5 text-right text-gray-500"><Money cents={data.liabilities.comparativeTotalCents ?? 0} /></td>}</tr>
+                <tr className="border-b border-gray-100"><td className="px-3 py-1.5">Total Shareholder&apos;s Equity</td><td className="px-3 py-1.5 text-right"><Money cents={data.equity.totalCents} /></td>{showComparative && <td className="px-3 py-1.5 text-right text-gray-500"><Money cents={data.equity.comparativeTotalCents ?? 0} /></td>}</tr>
+                <tr className="bg-gray-50 font-semibold"><td className="px-3 py-2">Total Liabilities and Shareholder&apos;s Equity</td><td className="px-3 py-2 text-right"><Money cents={data.totalLiabilitiesAndEquityCents} /></td>{showComparative && <td className="px-3 py-2 text-right"><Money cents={data.comparativeTotalLiabilitiesAndEquityCents ?? 0} /></td>}</tr>
+                <tr className="font-semibold text-gray-700"><td className="px-3 py-2">Total Assets</td><td className="px-3 py-2 text-right"><Money cents={data.assets.totalCents} /></td>{showComparative && <td className="px-3 py-2 text-right text-gray-500"><Money cents={data.assets.comparativeTotalCents ?? 0} /></td>}</tr>
+              </tbody>
+            </table>
           </div>
           <p className={`text-sm ${data.isBalanced ? 'text-green-600' : 'text-red-600'}`}>
-            {data.isBalanced ? 'Assets = Liabilities + Equity.' : 'Balance sheet does not balance — investigate before filing.'}
+            {data.isBalanced ? 'Total assets equal total liabilities and shareholder\'s equity.' : `Out of balance by ${formatCents(data.assets.totalCents - data.totalLiabilitiesAndEquityCents)}: investigate before filing.`}
           </p>
         </div>
       )}

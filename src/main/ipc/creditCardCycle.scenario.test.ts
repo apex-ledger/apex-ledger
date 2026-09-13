@@ -271,4 +271,32 @@ describe('At the end', () => {
     expect((await accountsGet(officeSupplies)).gifiCode).toBe('8810'); // everything else untouched
     expect(await remapGifiTotalLines(db)).toBe(0); // and running again does nothing
   });
+
+  it('an invoice dated December 31 and paid the same day can be moved to January 31 with its payment', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Cedar Grove Residence', paymentTerms: 'net30' });
+    const inv = await invoices.invoicesCreate({ customerId: customer.id, invoiceNumber: 'INV-2024-12', invoiceDate: '2024-12-31', dueDate: '2025-01-30', lines: [{ description: 'Year-end work', quantity: 1, unitPriceCents: 50_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2024-12-31', bankAccountId: chequing, amountCents: 56_500 });
+    const moved = await invoices.invoicesChangeDate({ id: inv.id, invoiceDate: '2025-01-31' });
+    expect(moved.paymentsMoved).toBe(1);
+    expect(moved.invoice.invoiceDate).toBe('2025-01-31');
+    expect(moved.invoice.dueDate).toBe('2025-03-02'); // keeps its 30-day distance
+    const pays = await invoices.invoicesPayments(inv.id);
+    expect(pays.map((p) => p.paymentDate)).toEqual(['2025-01-31']);
+    // Both journals moved: nothing of this invoice is left in 2024.
+    const entries = await getAllJournalEntriesWithLines(db);
+    const mine = entries.filter((e) => e.reference === 'INV-2024-12' || e.reference === `INVOICE-${inv.id}`);
+    expect(mine.length).toBeGreaterThanOrEqual(2);
+    expect(mine.every((e) => e.entryDate === '2025-01-31')).toBe(true);
+    await booksBalance();
+  });
+
+  it('refuses a date change that would leave a payment before the invoice', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Lakeside Bakery', paymentTerms: 'net30' });
+    const inv = await invoices.invoicesCreate({ customerId: customer.id, invoiceNumber: 'INV-2025-01', invoiceDate: '2025-01-05', dueDate: '2025-02-04', lines: [{ description: 'Books', quantity: 1, unitPriceCents: 10_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2025-01-20', bankAccountId: chequing, amountCents: 11_300 });
+    await expect(invoices.invoicesChangeDate({ id: inv.id, invoiceDate: '2025-02-01' })).rejects.toThrow(/received on 2025-01-20/);
+    expect((await invoices.invoicesGet(inv.id)).invoiceDate).toBe('2025-01-05'); // untouched
+  });
 });
