@@ -598,6 +598,15 @@ export const writeOffInvoiceSchema = z.object({
   memo: z.string().trim().max(500).nullable().optional().default(null),
 });
 
+/** Moving a posted bill: its journal moves, a payment made on the old bill date moves too. */
+export const changeBillDateSchema = z.object({
+  id: z.number().int().positive(),
+  billDate: ISO_DATE,
+  dueDate: ISO_DATE.nullable().optional().default(null),
+});
+/** Moving a posted sales receipt: its journal and stock movements move with it; not once deposited. */
+export const changeSalesReceiptDateSchema = z.object({ id: z.number().int().positive(), receiptDate: ISO_DATE });
+
 export const makeDepositSchema = z
   .object({
     invoiceIds: z.array(z.number().int().positive()).optional().default([]),

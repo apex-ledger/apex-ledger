@@ -1,3 +1,4 @@
+import { DocumentDateCell } from '../../components/DocumentDateCell';
 import { useEffect, useMemo, useState } from 'react';
 import type { Bill, BillPayment, BillStatus, Contact } from '@shared/domain/types';
 import { BillFormModal } from './BillFormModal';
@@ -284,7 +285,7 @@ export function PurchasesPage({ embedded, requestedTab, requestedBillId, request
                     {b.billNumber ?? 'No vendor invoice number'}
                     {(b.lines?.length ?? 0) > 1 && <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600">Split · {b.lines!.length} lines</span>}
                   </td>
-                  <td className="py-2 text-gray-600">{b.billDate}</td><EnteredTd at={b.createdAt} className="py-2" />
+                  <td className="py-2 text-gray-600"><DocumentDateCell value={b.billDate} title="Click to change the bill date; the journal and a same-day payment move with it" onChange={async (next) => { const r = await window.api.bills.changeDate({ id: b.id, billDate: next }); if (r.ok) void refresh(); return r; }} note={(d) => { const n = (d as { paymentsMoved: number }).paymentsMoved; return n ? `Moved with ${n === 1 ? 'its payment' : `${n} payments`}.` : null; }} /></td><EnteredTd at={b.createdAt} className="py-2" />
                   <td className="py-2 text-gray-600">{b.dueDate}</td>
                   <td className="py-2 text-right">
                     <Money cents={b.amountCents} />

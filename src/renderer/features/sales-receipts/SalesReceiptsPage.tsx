@@ -1,3 +1,4 @@
+import { DocumentDateCell } from '../../components/DocumentDateCell';
 import { useEffect, useState } from 'react';
 import type { Contact, SalesReceipt } from '@shared/domain/types';
 import { Money } from '../../components/Money';
@@ -94,7 +95,7 @@ export function SalesReceiptsPage() {
                     </button>
                   </td>
                   <td className="py-2 text-gray-600">{customerNameById.get(r.customerId) ?? '—'}</td>
-                  <td className="py-2 text-gray-600">{r.receiptDate}</td><EnteredTd at={r.createdAt} className="py-2" />
+                  <td className="py-2 text-gray-600"><DocumentDateCell value={r.receiptDate} title="Click to change the receipt date; its journal moves with it" onChange={async (next) => { const res = await window.api.salesReceipts.changeDate({ id: r.id, receiptDate: next }); if (res.ok) void refresh(); return res; }} /></td><EnteredTd at={r.createdAt} className="py-2" />
                   <td className="py-2 text-right">
                     <Money cents={r.totalCents} />
                     {r.foreignCurrency && (

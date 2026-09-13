@@ -1,3 +1,4 @@
+import { DocumentDateCell } from '../../components/DocumentDateCell';
 import { RecordNavigator } from '../../components/RecordNavigator';
 import { BackButton } from '../../components/BackButton';
 import { saleLineAccountPickerOptions } from '../../utils/accountLabel';
@@ -450,7 +451,7 @@ export function SalesReceiptEditorPage({ id, customerId: presetCustomerId }: { i
             </div>
             <div className="text-sm">
               <span className="block text-gray-500">Receipt Date</span>
-              <span className="font-medium text-gray-800">{posted.receiptDate}</span>
+              <span className="font-medium text-gray-800"><DocumentDateCell value={posted.receiptDate} title="Click to change the receipt date; its journal moves with it" onChange={async (next) => { const r = await window.api.salesReceipts.changeDate({ id: posted.id, receiptDate: next }); if (r.ok) setPosted(r.data); return r; }} /></span>
             </div>
             <div className="text-sm">
               <span className="block text-gray-500">Deposit To</span>

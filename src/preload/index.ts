@@ -755,6 +755,7 @@ const api = {
     create: invoke<Bill>('bills:create'),
     pay: invoke<Bill>('bills:pay'),
     reverseLastPayment: invoke<Bill>('bills:reverseLastPayment'),
+    changeDate: invoke<{ bill: Bill; paymentsMoved: number }>('bills:changeDate'),
     delete: invoke<{ deleted: true }>('bills:delete'),
     setApproval: invoke<Bill>('bills:setApproval'),
     approvalReport: invoke<BillApprovalResponse>('bills:approvalReport'),
@@ -841,6 +842,7 @@ const api = {
     undepositedFundsAccountId: invoke<number>('salesReceipts:undepositedFundsAccountId'),
     create: invoke<SalesReceipt>('salesReceipts:create'),
     delete: invoke<{ deleted: true }>('salesReceipts:delete'),
+    changeDate: invoke<SalesReceipt>('salesReceipts:changeDate'),
   },
   letters: {
     list: invoke<LetterTemplateSummary[]>('letters:list'),

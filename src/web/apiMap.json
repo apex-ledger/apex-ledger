@@ -248,6 +248,7 @@
       "create": "bills:create",
       "pay": "bills:pay",
       "reverseLastPayment": "bills:reverseLastPayment",
+      "changeDate": "bills:changeDate",
       "delete": "bills:delete",
       "setApproval": "bills:setApproval",
       "approvalReport": "bills:approvalReport"
@@ -327,7 +328,8 @@
       "nextNumber": "salesReceipts:nextNumber",
       "undepositedFundsAccountId": "salesReceipts:undepositedFundsAccountId",
       "create": "salesReceipts:create",
-      "delete": "salesReceipts:delete"
+      "delete": "salesReceipts:delete",
+      "changeDate": "salesReceipts:changeDate"
     },
     "letters": {
       "list": "letters:list",

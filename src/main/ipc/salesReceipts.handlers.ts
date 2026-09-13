@@ -3,7 +3,7 @@ import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/d
 import { assertSaleLineAccounts } from './saleLineAccounts';
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
-import { newSalesReceiptSchema } from '@shared/validation/schemas';
+import { newSalesReceiptSchema, changeSalesReceiptDateSchema } from '@shared/validation/schemas';
 import { buildSalesReceiptJournalLines, computeInvoiceLineAmountCents } from '@shared/domain/ledger/buildInvoiceJournalLines';
 import type { SalesReceiptLine } from '@shared/domain/types';
 import { getCurrentDb } from '../companyFile';
@@ -11,7 +11,7 @@ import { getAllSalesReceipts, getSalesReceiptById } from '../db/queries';
 import { mapSalesReceiptLineRow, mapSalesReceiptRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ensureGstHstAccountId, ensureProvincialTaxAccountId } from '../db/buildTaxSplitLines';
-import { journalCreate, journalPost, journalVoid } from './journal.handlers';
+import { journalCreate, journalPost, journalVoid, journalUpdateDate } from './journal.handlers';
 import { UNDEPOSITED_FUNDS_ACCOUNT_ARGS } from './invoices.handlers';
 import { buildInventoryJournalLines, inventoryPostingMemo } from '@shared/domain/inventory/buildInventoryJournalLines';
 import { valueProduct, type InventoryMovement } from '@shared/domain/inventory/inventoryValuation';
@@ -170,6 +170,23 @@ export async function salesReceiptsCreate(input: unknown) {
 
 /** Voids the receipt's GL entry and removes its tracking row; lines cascade-delete via FK. Blocked
  * once it's been swept into a bank deposit — void the Deposit first, same rule as Invoices. */
+/** Moves a posted sales receipt to another date: its journal and any stock movement it made move
+ * with it. Once the money is in a deposit the date belongs to that deposit, so it is refused. */
+export async function salesReceiptsChangeDate(input: unknown) {
+  const { id, receiptDate } = changeSalesReceiptDateSchema.parse(input);
+  const db = getCurrentDb();
+  const receipt = await salesReceiptsGet(id);
+  if (receipt.depositId !== null) throw new Error('This sales receipt is already in a bank deposit. Delete that deposit first, change the date, then deposit it again.');
+  if (receipt.journalEntryId !== null) await journalUpdateDate({ id: receipt.journalEntryId, entryDate: receiptDate });
+  const stockEntries = await db.selectFrom('inventoryMovements').select('journalEntryId').where('sourceDocumentType', '=', 'salesReceipt').where('sourceDocumentId', '=', id).execute();
+  for (const m of stockEntries) if (m.journalEntryId !== null) await journalUpdateDate({ id: m.journalEntryId, entryDate: receiptDate });
+  await db.transaction().execute(async (trx) => {
+    await trx.updateTable('salesReceipts').set({ receiptDate }).where('id', '=', id).execute();
+    await trx.updateTable('inventoryMovements').set({ movementDate: receiptDate }).where('sourceDocumentType', '=', 'salesReceipt').where('sourceDocumentId', '=', id).execute();
+  });
+  return salesReceiptsGet(id);
+}
+
 export async function salesReceiptsDelete(id: number) {
   const db = getCurrentDb();
   const receipt = await salesReceiptsGet(id);

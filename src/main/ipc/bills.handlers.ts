@@ -1,5 +1,5 @@
 import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
-import { newBillSchema, payBillSchema, periodReportQuerySchema } from '@shared/validation/schemas';
+import { changeBillDateSchema, newBillSchema, payBillSchema, periodReportQuerySchema } from '@shared/validation/schemas';
 import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/domain/banking/bankAccountRules';
 import { paymentDateRefusalReason } from '@shared/domain/documents/paymentTiming';
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
@@ -9,7 +9,7 @@ import { mapBillLineRow, mapBillRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ACCOUNTS_PAYABLE_ARGS, EXCHANGE_GAIN_LOSS_ACCOUNT_ARGS } from '../db/controlAccounts';
 import { buildTaxSplitJournalLines } from '../db/buildTaxSplitLines';
-import { journalCreate, journalPost, journalVoid } from './journal.handlers';
+import { journalCreate, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
 import { APPROVAL_LABELS, canTransition, filterApprovalRowsByPeriod, isPayable, summariseApprovals, type ApprovalStatus, type BillApprovalRow } from '@shared/domain/purchases/billApproval';
 import type { AppDb } from '../db/schema';
 import { assertPurchaseLineAccounts } from './purchaseLineAccounts';
@@ -275,6 +275,30 @@ export async function billsPay(input: unknown) {
 }
 
 /** Reverses the newest vendor payment as one unit: void GL, remove payment row, reopen balance. */
+/** Moves a posted bill to another date: its journal goes with it, a payment made on the old bill
+ * date goes too, the due date keeps its distance unless given, and nothing may end up paid before
+ * it was billed. Refused inside a locked period or once a line is reconciled. */
+export async function billsChangeDate(input: unknown) {
+  const { id, billDate, dueDate } = changeBillDateSchema.parse(input);
+  const db = getCurrentDb();
+  const bill = await billsGet(id);
+  const oldDate = bill.billDate;
+  const shiftDays = Math.round((Date.parse(`${billDate}T00:00:00Z`) - Date.parse(`${oldDate}T00:00:00Z`)) / 86_400_000);
+  const newDue = dueDate ?? (() => { const d = new Date(`${bill.dueDate}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + shiftDays); return d.toISOString().slice(0, 10); })();
+  if (newDue < billDate) throw new Error('The due date cannot be before the bill date.');
+  const payments = await db.selectFrom('billPayments').selectAll().where('billId', '=', id).execute();
+  const moving = payments.filter((p) => p.paymentDate === oldDate);
+  const early = payments.find((p) => p.paymentDate !== oldDate && p.paymentDate < billDate);
+  if (early) throw new Error(`A payment of $${(early.amountCents / 100).toFixed(2)} was made on ${early.paymentDate}, which would be before the new bill date. Move or reverse that payment first.`);
+  if (bill.billJournalEntryId !== null && oldDate !== billDate) await journalUpdateDate({ id: bill.billJournalEntryId, entryDate: billDate });
+  for (const p of moving) await journalUpdateDate({ id: p.journalEntryId, entryDate: billDate });
+  await db.transaction().execute(async (trx) => {
+    await trx.updateTable('bills').set({ billDate, dueDate: newDue }).where('id', '=', id).execute();
+    for (const p of moving) await trx.updateTable('billPayments').set({ paymentDate: billDate }).where('id', '=', p.id).execute();
+  });
+  return { bill: await billsGet(id), paymentsMoved: moving.length };
+}
+
 export async function billsReverseLastPayment(id: number) {
   const db = getCurrentDb();
   const bill = await billsGet(id);

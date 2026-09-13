@@ -348,6 +348,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('bills:payments', (_e, billId) => toResult(() => billsHandlers.billsPayments(billId)));
   ipcMain.handle('bills:create', (_e, input) => mutate('bills', () => billsHandlers.billsCreate(input)));
   ipcMain.handle('bills:pay', (_e, input) => mutate('bills', () => billsHandlers.billsPay(input)));
+  ipcMain.handle('bills:changeDate', (_e, input) => mutate('bills', () => billsHandlers.billsChangeDate(input)));
   ipcMain.handle('bills:reverseLastPayment', (_e, id) => mutate('bills', () => billsHandlers.billsReverseLastPayment(id)));
   ipcMain.handle('bills:delete', (_e, id) => mutate('bills', () => billsHandlers.billsDelete(id)));
   ipcMain.handle('bills:setApproval', (_e, input) => mutate('bills', () => billsHandlers.billsSetApproval(input)));
@@ -426,6 +427,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('salesReceipts:nextNumber', () => toResult(() => salesReceiptsHandlers.salesReceiptsNextNumber()));
   ipcMain.handle('salesReceipts:undepositedFundsAccountId', () => mutate('accounts', () => salesReceiptsHandlers.salesReceiptsUndepositedFundsAccountId()));
   ipcMain.handle('salesReceipts:create', (_e, input) => mutate('salesReceipts', () => salesReceiptsHandlers.salesReceiptsCreate(input)));
+  ipcMain.handle('salesReceipts:changeDate', (_e, input) => mutate('salesReceipts', () => salesReceiptsHandlers.salesReceiptsChangeDate(input)));
   ipcMain.handle('salesReceipts:delete', (_e, id) => mutate('salesReceipts', () => salesReceiptsHandlers.salesReceiptsDelete(id)));
 
   ipcMain.handle('hstFilings:list', () => toResult(() => hstFilingsHandlers.hstFilingsList()));

@@ -1,3 +1,4 @@
+import { DocumentDateCell } from '../../components/DocumentDateCell';
 import { PaymentTermsSelect } from '../../components/PaymentTermsSelect';
 import { BackButton } from '../../components/BackButton';
 import { RecordNavigator } from '../../components/RecordNavigator';
@@ -643,11 +644,11 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
             </div>
             <div className="text-sm">
               <span className="block text-gray-500">Invoice Date</span>
-              <span className="font-medium text-gray-800">{posted.invoiceDate}</span>
+              <span className="font-medium text-gray-800"><DocumentDateCell value={posted.invoiceDate} title="Click to change the invoice date; the journal and a same-day payment move with it" onChange={async (next) => { const r = await window.api.invoices.changeDate({ id: posted.id, invoiceDate: next }); if (r.ok) setPosted(r.data.invoice); return r; }} note={(d) => { const n = (d as { paymentsMoved: number }).paymentsMoved; return n ? `Moved with ${n === 1 ? 'its payment' : `${n} payments`}.` : null; }} /></span>
             </div>
             <div className="text-sm">
               <span className="block text-gray-500">Due Date</span>
-              <span className="font-medium text-gray-800">{posted.dueDate}</span>
+              <span className="font-medium text-gray-800"><DocumentDateCell value={posted.dueDate} title="Click to change the due date" onChange={async (next) => { const r = await window.api.invoices.changeDate({ id: posted.id, invoiceDate: posted.invoiceDate, dueDate: next }); if (r.ok) setPosted(r.data.invoice); return r; }} /></span>
             </div>
             <div className="text-sm">
               <span className="block text-gray-500">Customer PO / Reference</span>

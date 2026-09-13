@@ -78,6 +78,7 @@ import * as contacts from './contacts.handlers';
 import * as invoices from './invoices.handlers';
 import * as bills from './bills.handlers';
 import * as recon from './bankReconciliation.handlers';
+import * as salesReceipts from './salesReceipts.handlers';
 import { quickEntryCreate } from './quickEntry.handlers';
 import { journalCreateAndPost, journalGet, journalVoid } from './journal.handlers';
 import { getAllAccounts, getAllJournalEntriesWithLines } from '../db/queries';
@@ -353,6 +354,31 @@ describe('At the end', () => {
     expect(back.balanceDueCents).toBe(100_000);
     expect(back.status).toBe('unpaid');
     expect((await journalGet(written.writeOffJournalEntryId!)).status).toBe('void');
+    await booksBalance();
+  });
+
+  it('a posted bill can be moved to another date with its same-day payment, but not past a later payment', async () => {
+    const vendor = await contacts.vendorsSave({ name: 'Ontario Hydro', defaultExpenseAccountId: officeSupplies, paymentTerms: 'net30' });
+    const bill = await bills.billsCreate({ vendorId: vendor.id, billNumber: 'HYD-12', billDate: '2026-04-30', dueDate: '2026-05-30', lines: [{ categoryAccountId: officeSupplies, description: 'April power', baseCents: 20_000, taxCode: 'HST', taxCents: 2_600 }] });
+    await bills.billsPay({ id: bill.id, bankAccountId: chequing, paymentDate: '2026-04-30', amountCents: 22_600 });
+    const moved = await bills.billsChangeDate({ id: bill.id, billDate: '2026-05-02' });
+    expect(moved.paymentsMoved).toBe(1);
+    expect(moved.bill.billDate).toBe('2026-05-02');
+    expect(moved.bill.dueDate).toBe('2026-06-01');
+    expect((await bills.billsPayments(bill.id)).map((p) => p.paymentDate)).toEqual(['2026-05-02']);
+    const later = await bills.billsCreate({ vendorId: vendor.id, billNumber: 'HYD-13', billDate: '2026-05-31', dueDate: '2026-06-30', lines: [{ categoryAccountId: officeSupplies, description: 'May power', baseCents: 10_000, taxCode: 'HST', taxCents: 1_300 }] });
+    await bills.billsPay({ id: later.id, bankAccountId: chequing, paymentDate: '2026-06-10', amountCents: 11_300 });
+    await expect(bills.billsChangeDate({ id: later.id, billDate: '2026-06-15' })).rejects.toThrow(/made on 2026-06-10/);
+    await booksBalance();
+  });
+
+  it('a sales receipt moves with its journal, but not once it has been deposited', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Walk-in Customer', paymentTerms: 'dueOnReceipt' });
+    const receipt = await salesReceipts.salesReceiptsCreate({ customerId: customer.id, receiptNumber: 'SR-0001', receiptDate: '2026-07-01', depositToAccountId: chequing, lines: [{ description: 'Counter sale', quantity: 1, unitPriceCents: 4_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    const moved = await salesReceipts.salesReceiptsChangeDate({ id: receipt.id, receiptDate: '2026-07-03' });
+    expect(moved.receiptDate).toBe('2026-07-03');
+    expect((await journalGet(receipt.journalEntryId!)).entryDate).toBe('2026-07-03');
     await booksBalance();
   });
 });
