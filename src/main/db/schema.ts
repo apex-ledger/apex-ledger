@@ -108,6 +108,9 @@ export interface JournalEntryTable {
   approvedBy: string | null;
   approvedAt: string | null;
   approvalNote: string | null;
+  /** Reversing entry: the date the mirror entry posts on, and on the mirror, the entry it reverses. */
+  reverseOn: string | null;
+  reversesEntryId: number | null;
 }
 
 export interface ProductTable {

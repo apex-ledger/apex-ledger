@@ -101,6 +101,10 @@ export const newJournalEntrySchema = z.object({
   periodFrom: ISO_DATE.nullable().optional().default(null),
   periodTo: ISO_DATE.nullable().optional().default(null),
   isAdjustingEntry: z.boolean().optional().default(false),
+  /** The date the mirror entry posts on; must be after the entry date. */
+  reverseOn: ISO_DATE.nullable().optional().default(null),
+  /** Set by the server on the mirror entry only. */
+  reversesEntryId: z.number().int().positive().nullable().optional().default(null),
   /** Where the entry came from. Defaults to 'manual', which is every entry typed in this app. */
   source: z.enum(['manual', 'quickEntry', 'clientImport', 'bankImport']).optional().default('manual'),
   sourceReference: z.string().trim().max(300).nullable().optional().default(null),

@@ -79,10 +79,11 @@ import * as invoices from './invoices.handlers';
 import * as bills from './bills.handlers';
 import * as recon from './bankReconciliation.handlers';
 import { quickEntryCreate } from './quickEntry.handlers';
-import { journalCreateAndPost } from './journal.handlers';
+import { journalCreateAndPost, journalGet, journalVoid } from './journal.handlers';
 import { getAllAccounts, getAllJournalEntriesWithLines } from '../db/queries';
 import { trialBalance } from '@shared/domain/ledger/trialBalance';
 import { balanceSheet } from '@shared/domain/ledger/balanceSheet';
+import { incomeStatement } from '@shared/domain/ledger/incomeStatement';
 import { computeHstSummary } from '@shared/domain/ledger/hstSummary';
 import { accountsGet } from './accounts.handlers';
 import { remapGifiTotalLines } from '../db/seeds/gifiTotalLineRemap';
@@ -298,5 +299,31 @@ describe('At the end', () => {
     await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2025-01-20', bankAccountId: chequing, amountCents: 11_300 });
     await expect(invoices.invoicesChangeDate({ id: inv.id, invoiceDate: '2025-02-01' })).rejects.toThrow(/received on 2025-01-20/);
     expect((await invoices.invoicesGet(inv.id)).invoiceDate).toBe('2025-01-05'); // untouched
+  });
+
+  it('a month-end accrual with a reverse-on date posts its mirror on that date, and voiding one voids both', async () => {
+    const accrued = (await db.selectFrom('accounts').select('id').where('accountType', '=', 'Liability').where('name', 'like', '%Payable%').where('isActive', '=', 1).executeTakeFirstOrThrow()).id;
+    const posted = await journalCreateAndPost({ entryDate: '2026-09-30', memo: 'Accrued hydro for September', reverseOn: '2026-10-01', isAdjustingEntry: true, lines: [{ accountId: officeSupplies, debitCents: 12_000, creditCents: 0 }, { accountId: accrued, debitCents: 0, creditCents: 12_000 }] });
+    expect(posted.reverseOn).toBe('2026-10-01');
+    const entries = await getAllJournalEntriesWithLines(db);
+    const mirror = entries.find((e) => e.reversesEntryId === posted.id);
+    expect(mirror).toBeDefined();
+    expect(mirror!.status).toBe('posted');
+    expect(mirror!.entryDate).toBe('2026-10-01');
+    expect(mirror!.memo).toBe('Reversal of: Accrued hydro for September');
+    expect(mirror!.lines.map((l) => [l.accountId, l.debitCents, l.creditCents])).toEqual([[officeSupplies, 0, 12_000], [accrued, 12_000, 0]]);
+    // September carries the expense; by October 1 it is gone again.
+    const accounts = await getAllAccounts(db);
+    const sept = incomeStatement(accounts, entries, '2026-09-01', '2026-09-30').expenses.lines.find((l) => l.account.id === officeSupplies)?.amountCents ?? 0;
+    const oct = incomeStatement(accounts, entries, '2026-10-01', '2026-10-31').expenses.lines.find((l) => l.account.id === officeSupplies)?.amountCents ?? 0;
+    expect(oct).toBe(-12_000); // October carries only the reversal
+    expect(sept).toBeGreaterThanOrEqual(12_000); // September carries the accrual on top of its other spending
+    await journalVoid(posted.id);
+    expect((await journalGet(mirror!.id)).status).toBe('void');
+    await booksBalance();
+  });
+
+  it('refuses a reversal date that is not after the entry date', async () => {
+    await expect(journalCreateAndPost({ entryDate: '2026-09-30', memo: 'Bad', reverseOn: '2026-09-30', lines: [{ accountId: officeSupplies, debitCents: 100, creditCents: 0 }, { accountId: chequing, debitCents: 0, creditCents: 100 }] })).rejects.toThrow(/after the entry date/);
   });
 });

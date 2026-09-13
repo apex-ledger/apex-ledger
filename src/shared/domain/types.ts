@@ -150,6 +150,11 @@ export interface JournalEntry {
   /** Flags this as a period-end/audit adjustment rather than a routine transaction — informational
    * only (matches QuickBooks' "Is Adjusting Journal Entry?"), doesn't affect posting or reports. */
   isAdjustingEntry: boolean;
+  /** A reversing entry: posting this entry also posts its mirror on this date (an accrual that
+   * comes out again on the first of the next month). Null for an ordinary entry. */
+  reverseOn?: string | null;
+  /** On the mirror entry: the entry it reverses. */
+  reversesEntryId?: number | null;
   /** Where the entry came from. 'clientImport' marks the rows a client supplied in a spreadsheet,
    * which is what makes the accountant's later corrections worth reporting on. */
   source: JournalEntrySource;

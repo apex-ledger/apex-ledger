@@ -163,6 +163,7 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
   const [memo, setMemo] = useState('');
   const [reference, setReference] = useState('');
   const [isAdjustingEntry, setIsAdjustingEntry] = useState(false);
+  const [reverseOn, setReverseOn] = useState('');
   /** The account usually posted opposite the one line that currently carries an amount, learned
    * from this file's own history. Offered rather than applied: a suggestion accepted without
    * thinking is worse than none, so it takes a click. */
@@ -264,6 +265,7 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
       setStatus(entry.status);
       setEnteredAt(entry.createdAt);
       setIsAdjustingEntry(entry.isAdjustingEntry);
+      setReverseOn(entry.reverseOn ?? '');
       setLines(
         entry.lines.length > 0
           ? entry.lines.map((l) => ({
@@ -646,6 +648,7 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
       memo: memo ? capitalizeWords(memo) : null,
       reference: reference || null,
       isAdjustingEntry,
+      reverseOn: reverseOn || null,
       lines: lines
         .filter((l) => l.accountId !== null && (l.debitCents > 0 || l.creditCents > 0))
         .map((l) => ({
@@ -922,6 +925,18 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
             }}
           />
           <span className="text-gray-600">Is Adjusting Journal Entry?</span>
+        </label>
+        <label className="flex items-center gap-1.5 text-sm" title="A reversing entry: when this entry posts, its mirror posts on this date. Use it for a month-end accrual that comes out again on the first of the next month.">
+          <span className="text-gray-600">Reverse on</span>
+          <input
+            type="date"
+            disabled={!editable}
+            value={reverseOn}
+            onChange={(e) => { setReverseOn(e.target.value); if (editable) markDirty(); }}
+            className="rounded border border-gray-300 px-2 py-1 text-sm disabled:bg-gray-50"
+            data-testid="reverse-on"
+          />
+          {reverseOn && editable && <button type="button" onClick={() => { setReverseOn(''); markDirty(); }} className="text-xs text-gray-500 underline">clear</button>}
         </label>
       </div>
 

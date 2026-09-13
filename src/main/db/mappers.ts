@@ -120,6 +120,8 @@ export function mapJournalEntryRow(row: Selectable<JournalEntryTable>, lines: Jo
     periodFrom: row.periodFrom,
     periodTo: row.periodTo,
     isAdjustingEntry: Boolean(row.isAdjustingEntry),
+    reverseOn: (row as { reverseOn?: string | null }).reverseOn ?? null,
+    reversesEntryId: (row as { reversesEntryId?: number | null }).reversesEntryId ?? null,
     source: (row.source ?? 'manual') as JournalEntry['source'],
     sourceReference: row.sourceReference ?? null,
     approvalStatus: ((row as { approvalStatus?: string }).approvalStatus ?? 'notRequired') as JournalEntry['approvalStatus'],

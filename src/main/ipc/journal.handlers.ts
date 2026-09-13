@@ -50,6 +50,7 @@ export async function journalCreate(input: unknown, executor?: AppDb) {
 
   const structural = validateJournalEntryLines(payload.lines, accounts);
   if (!structural.ok) throw new Error(structural.error);
+  if (payload.reverseOn && payload.reverseOn <= payload.entryDate) throw new Error('The reversal date must be after the entry date; an accrual usually reverses on the first of the next month.');
   // Read the threshold before any transaction opens: a second query on the outer connection from
   // inside a transaction would wait on itself.
   const journalThreshold = (await db.selectFrom('companyInfo').select('approvalJournalThresholdCents').where('id', '=', 1).executeTakeFirst())?.approvalJournalThresholdCents ?? null;
@@ -71,6 +72,8 @@ export async function journalCreate(input: unknown, executor?: AppDb) {
         isAdjustingEntry: payload.isAdjustingEntry ? 1 : 0,
         source: payload.source,
         sourceReference: payload.sourceReference ?? null,
+        reverseOn: payload.reverseOn ?? null,
+        reversesEntryId: payload.reversesEntryId ?? null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
@@ -125,11 +128,28 @@ export async function journalPost(id: number, executor?: AppDb) {
   );
   if (!validation.ok) throw new Error(validation.error);
 
-  await db
-    .updateTable('journalEntries')
-    .set({ status: 'posted', postedAt: new Date().toISOString() })
-    .where('id', '=', id)
-    .execute();
+  const post = async (trx: AppDb) => {
+    await trx.updateTable('journalEntries').set({ status: 'posted', postedAt: new Date().toISOString() }).where('id', '=', id).execute();
+    // A reversing entry posts its mirror at the same time, dated the reversal date, so the accrual
+    // and its reversal are never out of step. Both go in or neither does.
+    if (entry.reverseOn) {
+      const existing = await trx.selectFrom('journalEntries').select('id').where('reversesEntryId', '=', id).where('status', '!=', 'void').executeTakeFirst();
+      if (!existing) {
+        const mirror = await journalCreate({
+          entryDate: entry.reverseOn,
+          memo: `Reversal of: ${entry.memo ?? `entry ${id}`}`,
+          reference: entry.reference,
+          lines: entry.lines.map((l) => ({ accountId: l.accountId, debitCents: l.creditCents, creditCents: l.debitCents, description: l.description, taxCode: l.taxCode, manualHstCents: l.manualHstCents, baseCents: l.baseCents, vendorId: l.vendorId, customerId: l.customerId })),
+          isAdjustingEntry: entry.isAdjustingEntry,
+          source: entry.source,
+          reversesEntryId: id,
+        }, trx);
+        await journalPost(mirror.id, trx);
+      }
+    }
+  };
+  if (executor) await post(executor);
+  else await db.transaction().execute(post);
 
   return journalGet(id, db);
 }
@@ -206,6 +226,7 @@ export async function journalUpdate(input: unknown) {
     if (patch.periodFrom !== undefined) headerPatch.periodFrom = patch.periodFrom;
     if (patch.periodTo !== undefined) headerPatch.periodTo = patch.periodTo;
     if (patch.isAdjustingEntry !== undefined) headerPatch.isAdjustingEntry = patch.isAdjustingEntry ? 1 : 0;
+    if (patch.reverseOn !== undefined) headerPatch.reverseOn = patch.reverseOn;
     if (Object.keys(headerPatch).length > 0) {
       await trx.updateTable('journalEntries').set(headerPatch).where('id', '=', id).execute();
     }
@@ -384,6 +405,9 @@ export async function journalVoid(id: number, allowLockedOverride = false, execu
   }
 
   await db.updateTable('journalEntries').set({ status: 'void' }).where('id', '=', id).execute();
+  // The mirror of a reversing entry has no life of its own: voiding the accrual voids its reversal.
+  const mirror = await db.selectFrom('journalEntries').select('id').where('reversesEntryId', '=', id).where('status', '=', 'posted').executeTakeFirst();
+  if (mirror) await journalVoid(mirror.id, allowLockedOverride, executor, true);
   // Voiding is how a POSTED entry gets corrected — the entry is reversed and re-entered — so for
   // client-supplied data it is an adjustment in its own right, and the most significant kind. The
   // entry's total goes in the log so the report can show what was backed out without having to
