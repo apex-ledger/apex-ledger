@@ -38,7 +38,7 @@ function SectionTable({
         {section.lines.map((line) => {
           // The synthetic "Net Income to Date" line (see balanceSheet.ts) isn't a real account —
           // it's Revenue minus Expense, so there's no single account ledger to drill into here.
-          const isRealAccount = line.account.id !== -1;
+          const isRealAccount = line.account.id > 0;
           return (
             <tr
               key={line.account.id}

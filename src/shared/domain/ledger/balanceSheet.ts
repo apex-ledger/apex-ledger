@@ -1,6 +1,7 @@
 import type { Account, JournalEntry } from '../types';
 import { computeAccountBalances, filterEntriesByDateRange } from './computeAccountBalances';
 import { buildSection, type Section } from './sectionHelpers';
+import { currentFiscalYearDates } from '../company/fiscalYearDates';
 
 export interface BalanceSheetResult {
   asOfDate: string;
@@ -41,6 +42,14 @@ const NET_INCOME_LINE_ACCOUNT: Account = {
   isTransferEligible: false,
 };
 
+/** With the fiscal year known, the profit is shown the way QuickBooks and Xero show it without a
+ * closing entry ever being posted: prior years' profit carried forward as retained earnings, and
+ * the current fiscal year's profit on its own line. Both are derived, not accounts. */
+const RETAINED_EARNINGS_LINE_ACCOUNT: Account = { ...NET_INCOME_LINE_ACCOUNT, id: -1, name: 'Retained Earnings (prior years)', description: 'Profit of every completed fiscal year, carried forward.' };
+const CURRENT_YEAR_EARNINGS_LINE_ACCOUNT: Account = { ...NET_INCOME_LINE_ACCOUNT, id: -2, name: 'Current Year Earnings', description: 'Profit from the start of the current fiscal year to the statement date.' };
+
+export interface FiscalYearEnd { month: number; day: number }
+
 /**
  * Assets = Liabilities + Equity holds by construction here: every posted journal entry balances,
  * so summing every account (including revenue/expense) always nets to zero. Folding cumulative
@@ -51,6 +60,7 @@ export function balanceSheet(
   entries: JournalEntry[],
   asOfDate: string,
   comparativeDate?: string,
+  fiscalYearEnd?: FiscalYearEnd,
 ): BalanceSheetResult {
   const assetAccounts = accounts.filter((a) => a.accountType === 'Asset');
   const liabilityAccounts = accounts.filter((a) => a.accountType === 'Liability');
@@ -80,12 +90,29 @@ export function balanceSheet(
   const liabilities = buildSection('Liabilities', liabilityAccounts, balances, comparativeBalances, adjustingBalances);
   const equity = buildSection('Equity', equityAccounts, balances, comparativeBalances, adjustingBalances);
 
-  equity.lines.push({
-    account: NET_INCOME_LINE_ACCOUNT,
-    amountCents: netIncomeCents,
-    comparativeAmountCents: comparativeNetIncomeCents,
-    adjustingAmountCents: adjustingNetIncomeCents,
-  });
+  if (fiscalYearEnd) {
+    // Split each figure at the start of the fiscal year that contains its own date.
+    const split = (date: string, all: JournalEntry[]) => {
+      const fy = currentFiscalYearDates(fiscalYearEnd.month, fiscalYearEnd.day, date);
+      const upTo = filterEntriesByDateRange(all, undefined, date);
+      const prior = netIncomeToDate(accounts, upTo.filter((e) => e.entryDate < fy.startDate));
+      return { prior, current: netIncomeToDate(accounts, upTo) - prior };
+    };
+    const now = split(asOfDate, entries);
+    const adj = split(asOfDate, entries.filter((e) => e.isAdjustingEntry));
+    const cmp = comparativeDate ? split(comparativeDate, entries) : undefined;
+    if (now.prior !== 0 || (cmp && cmp.prior !== 0)) {
+      equity.lines.push({ account: RETAINED_EARNINGS_LINE_ACCOUNT, amountCents: now.prior, comparativeAmountCents: cmp?.prior, adjustingAmountCents: adj.prior });
+    }
+    equity.lines.push({ account: CURRENT_YEAR_EARNINGS_LINE_ACCOUNT, amountCents: now.current, comparativeAmountCents: cmp?.current, adjustingAmountCents: adj.current });
+  } else {
+    equity.lines.push({
+      account: NET_INCOME_LINE_ACCOUNT,
+      amountCents: netIncomeCents,
+      comparativeAmountCents: comparativeNetIncomeCents,
+      adjustingAmountCents: adjustingNetIncomeCents,
+    });
+  }
   equity.totalCents += netIncomeCents;
   if (equity.comparativeTotalCents !== undefined) {
     equity.comparativeTotalCents += comparativeNetIncomeCents ?? 0;

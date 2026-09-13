@@ -333,6 +333,21 @@ describe('balanceSheet', () => {
     expect(bs.equity.totalCents).toBe(1_000_000 + 650_000); // Common shares + net income to date
   });
 
+  it('with the fiscal year known, shows prior years as retained earnings and the current year on its own line', () => {
+    const lastYear = entry(90, '2025-12-15', 'posted', [{ accountId: CASH.id, debitCents: 100_000 }, { accountId: SALES_REVENUE.id, creditCents: 100_000 }]);
+    const bs = balanceSheet(ALL_ACCOUNTS, [lastYear, ...POSTED_ENTRIES], '2026-01-31', undefined, { month: 12, day: 31 });
+    const line = (name: string) => bs.equity.lines.find((l) => l.account.name === name)?.amountCents;
+    expect(line('Retained Earnings (prior years)')).toBe(100_000);
+    expect(line('Current Year Earnings')).toBe(650_000);
+    expect(line('Net Income to Date')).toBeUndefined();
+    expect(bs.isBalanced).toBe(true);
+    expect(bs.equity.totalCents).toBe(1_000_000 + 100_000 + 650_000);
+    // A June year end puts the January activity in the year that started last July.
+    const june = balanceSheet(ALL_ACCOUNTS, [lastYear, ...POSTED_ENTRIES], '2026-01-31', undefined, { month: 6, day: 30 });
+    expect(june.equity.lines.find((l) => l.account.name === 'Retained Earnings (prior years)')).toBeUndefined();
+    expect(june.equity.lines.find((l) => l.account.name === 'Current Year Earnings')?.amountCents).toBe(750_000);
+  });
+
   it('still balances across multiple fixture scenarios with differing account activity', () => {
     const sparseEntries = POSTED_ENTRIES.slice(0, 2); // just the two cash-affecting entries
     const bs = balanceSheet(ALL_ACCOUNTS, sparseEntries, '2026-01-31');

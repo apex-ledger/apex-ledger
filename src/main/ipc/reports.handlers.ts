@@ -45,6 +45,7 @@ import { computeSalesTaxByProvince } from '@shared/domain/ledger/salesTaxByProvi
 import { computeProvincialSalesTax } from '@shared/domain/ledger/provincialSalesTax';
 import { computeEmployeeEarnings } from '@shared/domain/payroll/employeeEarnings';
 import { loadRunItems } from './payroll.handlers';
+import { companyGet } from './company.handlers';
 import { runAuditExceptions } from '@shared/domain/audit/auditExceptions';
 import { z } from 'zod';
 
@@ -154,8 +155,8 @@ export async function reportsIncomeStatement(input: unknown) {
 export async function reportsBalanceSheet(input: unknown) {
   const { asOfDate, comparativeDate } = balanceSheetQuerySchema.parse(input);
   const db = getCurrentDb();
-  const [accounts, entries] = await Promise.all([getAllAccounts(db), getAllJournalEntriesWithLines(db)]);
-  return balanceSheet(accounts, entries, asOfDate, comparativeDate ?? undefined);
+  const [accounts, entries, company] = await Promise.all([getAllAccounts(db), getAllJournalEntriesWithLines(db), companyGet()]);
+  return balanceSheet(accounts, entries, asOfDate, comparativeDate ?? undefined, { month: company.fiscalYearEndMonth, day: company.fiscalYearEndDay });
 }
 
 export async function reportsCashFlow(input: unknown) {
