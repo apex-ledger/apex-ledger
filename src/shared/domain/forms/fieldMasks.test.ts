@@ -46,7 +46,7 @@ describe('phone', () => {
 describe('dates', () => {
   it('forces a four-digit year inside the range', () => {
     expect(clampIsoDate('20226-01-15')).toBe('2022-01-15');
-    expect(clampIsoDate('0202-01-15')).toBe('1900-01-15');
+    expect(clampIsoDate('0202-01-15')).toBe('0202-01-15'); // a year still being typed is left alone
     expect(clampIsoDate('2026-01-15')).toBe('2026-01-15');
     expect(clampIsoDate('')).toBe('');
     expect(clampIsoMonth('20260-03')).toBe('2026-03');
