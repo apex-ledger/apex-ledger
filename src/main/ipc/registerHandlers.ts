@@ -412,6 +412,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('invoices:chargeLateInterest', (_e, input) => mutate('invoices', () => invoicesHandlers.invoicesChargeLateInterest(input)));
   ipcMain.handle('invoices:create', (_e, input) => mutate('invoices', () => invoicesHandlers.invoicesCreate(input)));
   ipcMain.handle('invoices:receivePayment', (_e, input) => mutate('invoices', () => invoicesHandlers.invoicesReceivePayment(input)));
+  ipcMain.handle('invoices:deleteWithPayments', (_e, id) => mutate('invoices', () => invoicesHandlers.invoicesDeleteWithPayments(id)));
   ipcMain.handle('invoices:writeOff', (_e, input) => mutate('invoices', () => invoicesHandlers.invoicesWriteOff(input)));
   ipcMain.handle('invoices:undoWriteOff', (_e, id) => mutate('invoices', () => invoicesHandlers.invoicesUndoWriteOff(id)));
   ipcMain.handle('invoices:changeDate', (_e, input) => mutate('invoices', () => invoicesHandlers.invoicesChangeDate(input)));

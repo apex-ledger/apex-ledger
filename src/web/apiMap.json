@@ -312,6 +312,7 @@
       "reverseLastPayment": "invoices:reverseLastPayment",
       "changeDate": "invoices:changeDate",
       "writeOff": "invoices:writeOff",
+      "deleteWithPayments": "invoices:deleteWithPayments",
       "undoWriteOff": "invoices:undoWriteOff",
       "delete": "invoices:delete"
     },

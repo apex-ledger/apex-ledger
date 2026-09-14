@@ -134,6 +134,8 @@ export type View =
        * clickable through to the underlying Journal Entry for correction. Only meaningful when
        * report === 'generalLedger'; ignored otherwise. */
       drillDown?: { accountId: number; dateFrom?: string; dateTo?: string };
+      /** Opens a comparison report already set against the same period a year earlier. */
+      preset?: 'priorYear';
       /** Set when a GST/HST figure was clicked on the Sales Tax Return screen — opens Sales Tax
        * Detail on that period and side. Only meaningful when report === 'salesTaxDetail'. */
       salesTax?: { periodStart: string; periodEnd: string; side?: 'collected' | 'paid' };

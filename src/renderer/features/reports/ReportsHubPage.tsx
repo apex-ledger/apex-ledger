@@ -13,8 +13,10 @@ import { loadFavouritePages, toggleFavouritePage, type FavouritePage } from '../
  * there is nothing under it. */
 
 interface Entry {
+  /** Opens the report already set against the same period a year earlier. */
+  preset?: 'priorYear';
   /** Other cuts of the same report, offered as small links under the card instead of separate cards. */
-  variants?: Array<{ label: string; report: ReportKind }>;
+  variants?: Array<{ label: string; report: ReportKind; preset?: 'priorYear' }>;
   title: string;
   description: string;
   tone: HubTone;
@@ -80,11 +82,11 @@ export const REPORT_GROUPS: Group[] = [
       { title: 'Working Trial Balance', description: 'Opening, movement, your adjustments and closing — the sheet a year is closed from.', tone: 'sky', report: 'workingTrialBalance' },
       { title: 'Loan Schedule', description: 'Each payment split into interest and principal, so only the interest is expensed.', tone: 'teal', report: 'loanSchedule' },
       { title: 'Reconciliation Report', description: 'The page that proves the bank and the books agree, with what is still outstanding.', tone: 'sky', report: 'reconciliationReport' },
-      { title: 'Balance Sheet', description: 'Assets, liabilities, and equity as of a date. Compare two dates from the report itself.', tone: 'violet', report: 'balanceSheet', variants: [{ label: 'Summary', report: 'balanceSheetSummary' }, { label: 'Detail', report: 'balanceSheetDetail' }, { label: 'Two dates side by side', report: 'balanceSheetComparison' }] },
+      { title: 'Balance Sheet', description: 'Assets, liabilities, and equity as of a date. Compare two dates from the report itself.', tone: 'violet', report: 'balanceSheet', variants: [{ label: 'Prior-year comparison', report: 'balanceSheetComparison', preset: 'priorYear' }, { label: 'Summary', report: 'balanceSheetSummary' }, { label: 'Detail', report: 'balanceSheetDetail' }, { label: 'Two dates side by side', report: 'balanceSheetComparison' }] },
       { title: 'Statement of Cash Flows', description: 'Where the money came from and went, reconciled to the bank. Indirect method.', tone: 'teal', report: 'cashFlow' },
       { title: 'Statement of Changes in Equity', description: 'Opening equity, what moved during the period, and closing equity.', tone: 'amber', report: 'changesInEquity' },
       { title: 'Adjusting Entries', description: 'Every correction made to client-supplied data — what changed, from what, to what.', tone: 'rose', report: 'adjustingEntries' },
-      { title: 'Profit and Loss', description: 'Revenue, expenses, and net income for a period. Compare periods, accrual or cash basis, from the report itself.', tone: 'amber', report: 'incomeStatement', variants: [{ label: 'Every transaction behind each account', report: 'profitAndLossDetail' }] },
+      { title: 'Profit and Loss', description: 'Revenue, expenses, and net income for a period. Compare periods, accrual or cash basis, from the report itself.', tone: 'amber', report: 'incomeStatement', variants: [{ label: 'Prior-year comparison', report: 'incomeStatement', preset: 'priorYear' }, { label: 'Every transaction behind each account', report: 'profitAndLossDetail' }] },
       { title: 'Journal', description: 'Every transaction in the period with both sides shown, or one line each.', tone: 'sky', report: 'journalReport' },
       { title: 'Cheque Register', description: 'Every cheque in number order, and the gaps where one is missing.', tone: 'amber', report: 'chequeRegister' },
       { title: 'General Ledger', description: 'Full transaction history and running balance for one account.', tone: 'emerald', report: 'generalLedger' },
@@ -199,13 +201,13 @@ export function ReportsHubPage({ group: requestedGroup }: { group?: string } = {
           title={entry.title}
           description={entry.description}
           badge={<span className="w-5" aria-hidden="true" />}
-          onClick={() => setView({ kind: 'report', report: entry.report })}
+          onClick={() => setView({ kind: 'report', report: entry.report, preset: entry.preset })}
         />
         {starButton(`report:${entry.report}`, entry.title)}
         {entry.variants && (
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 px-1 text-xs">
             {entry.variants.map((v) => (
-              <button key={v.report} type="button" onClick={() => setView({ kind: 'report', report: v.report })} className="text-brand-700 hover:underline">{v.label} →</button>
+              <button key={v.report} type="button" onClick={() => setView({ kind: 'report', report: v.report, preset: v.preset })} className="text-brand-700 hover:underline">{v.label} →</button>
             ))}
           </div>
         )}

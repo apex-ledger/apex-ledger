@@ -106,10 +106,11 @@ export function IncomeStatementPage() {
   const setView = useUiStore((s) => s.setView);
   const [periodStart, setPeriodStart] = useState(yearStartIso());
   const [periodEnd, setPeriodEnd] = useState(todayIso());
-  const [compare, setCompare] = useState(false);
+  const preset = useUiStore((s) => (s.view.kind === 'report' ? s.view.preset : undefined));
+  const [compare, setCompare] = useState(preset === 'priorYear');
   const [basis, setBasis] = useState<'accrual' | 'cash'>('accrual');
-  const [comparativeStart, setComparativeStart] = useState('');
-  const [comparativeEnd, setComparativeEnd] = useState('');
+  const [comparativeStart, setComparativeStart] = useState(preset === 'priorYear' ? lastYear(yearStartIso()) : '');
+  const [comparativeEnd, setComparativeEnd] = useState(preset === 'priorYear' ? lastYear(todayIso()) : '');
   const [showAdjusting, setShowAdjusting] = useState(false);
 
   function drillDown(accountId: number) {
@@ -253,4 +254,11 @@ export function IncomeStatementPage() {
       )}
     </div>
   );
+}
+
+/** The same calendar date one year earlier, for the prior-year comparison preset. */
+function lastYear(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCFullYear(d.getUTCFullYear() - 1);
+  return d.toISOString().slice(0, 10);
 }

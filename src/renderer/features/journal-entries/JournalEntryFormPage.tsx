@@ -810,6 +810,7 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
 
       <div className="mb-3 flex items-center gap-2">
         <BackButton fallback={{ kind: 'journalList' }} fallbackLabel="Journal Entries" />
+        {typeof currentId === 'number' && <span className="ml-2 text-xs text-gray-500" title="Entry number">Entry No. <b className="text-gray-700">{currentId}</b></span>}
         {receiptFilePath && (
           <button
             type="button"
@@ -1519,6 +1520,7 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
           </button>
         )}
       </div>
+      <RecentJournalEntries currentId={currentId} onOpen={(id) => setView({ kind: 'journalForm', id })} />
       {typeof currentId === 'number' && status !== 'draft' && <div className="mt-3"><AttachmentsPanel entityType="journalEntry" entityId={currentId} /><div className="mt-2"><DocumentHistoryPanel entityType="journalEntry" entityId={currentId} /></div></div>}
 
       <AccountFormModal
@@ -1539,6 +1541,45 @@ export function JournalEntryFormPage({ id }: { id: number | 'new' }) {
           if (accountModalLineKey) updateLine(accountModalLineKey, { accountId: savedAccount.id });
         }}
       />
+    </div>
+  );
+}
+
+/** The list under the form, as QuickBooks shows it: the last month's journal entries, newest
+ * first, each a click away. Keeps the person on one screen while working through a batch. */
+function RecentJournalEntries({ currentId, onOpen }: { currentId: number | 'new'; onOpen: (id: number) => void }) {
+  const [rows, setRows] = useState<{ id: number; entryDate: string; memo: string | null; reference: string | null; status: string; isAdjustingEntry: boolean; totalCents: number }[]>([]);
+  const [range, setRange] = useState<'month' | 'quarter' | 'all'>('month');
+  useEffect(() => {
+    let alive = true;
+    void window.api.journal.list().then((r) => {
+      if (!alive || !r.ok) return;
+      const today = new Date();
+      const from = range === 'all' ? '0000-00-00' : new Date(Date.UTC(today.getFullYear(), today.getMonth() - (range === 'month' ? 1 : 3), today.getDate())).toISOString().slice(0, 10);
+      setRows(r.data.filter((e) => e.entryDate >= from).sort((a, b) => b.entryDate.localeCompare(a.entryDate) || b.id - a.id).slice(0, 40).map((e) => ({ id: e.id, entryDate: e.entryDate, memo: e.memo, reference: e.reference, status: e.status, isAdjustingEntry: e.isAdjustingEntry, totalCents: e.lines.reduce((t, l) => t + l.debitCents, 0) })));
+    });
+    return () => { alive = false; };
+  }, [range, currentId]);
+  return (
+    <div className="mt-4 rounded border border-gray-200 bg-white">
+      <div className="flex items-center gap-3 border-b border-gray-200 px-3 py-2 text-xs">
+        <span className="font-semibold text-gray-700">List of journal entries</span>
+        <select value={range} onChange={(e) => setRange(e.target.value as 'month' | 'quarter' | 'all')} className="rounded border border-gray-300 px-2 py-0.5 text-xs">
+          <option value="month">Last month</option><option value="quarter">Last three months</option><option value="all">All</option>
+        </select>
+        <span className="text-gray-500">{rows.length} shown · click one to open it</span>
+      </div>
+      <table className="w-full text-xs">
+        <thead className="text-left text-gray-500"><tr><th className="px-3 py-1">Date</th><th className="px-3 py-1">Entry No.</th><th className="px-3 py-1">Adj</th><th className="px-3 py-1">Memo</th><th className="px-3 py-1">Reference</th><th className="px-3 py-1 text-right">Amount</th><th className="px-3 py-1">Status</th></tr></thead>
+        <tbody>
+          {rows.length === 0 && <tr><td colSpan={7} className="px-3 py-2 text-gray-400">No entries in this range.</td></tr>}
+          {rows.map((e) => (
+            <tr key={e.id} onClick={() => onOpen(e.id)} className={`cursor-pointer border-t border-gray-100 hover:bg-brand-50 ${e.id === currentId ? 'bg-brand-50/60 font-medium' : ''}`}>
+              <td className="whitespace-nowrap px-3 py-1">{e.entryDate}</td><td className="px-3 py-1">{e.id}</td><td className="px-3 py-1">{e.isAdjustingEntry ? '✓' : ''}</td><td className="px-3 py-1">{e.memo ?? '—'}</td><td className="px-3 py-1">{e.reference ?? '—'}</td><td className="px-3 py-1 text-right tabular-nums">{(e.totalCents / 100).toLocaleString('en-CA', { minimumFractionDigits: 2 })}</td><td className="px-3 py-1">{e.status}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

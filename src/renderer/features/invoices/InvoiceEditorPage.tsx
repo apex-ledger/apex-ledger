@@ -503,6 +503,16 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     setView({ kind: 'invoiceEditor', id: result.data.id });
   }
 
+  async function handleDeleteWithPayments() {
+    if (!posted) return;
+    if (!window.confirm(`Delete invoice ${posted.invoiceNumber} and reverse its payment${posted.paidCents > 0 ? 's' : ''}? The invoice, its journal and the payment journals are removed. A payment already in a bank deposit will stop this.`)) return;
+    setBusy(true);
+    const r = await window.api.invoices.deleteWithPayments(posted.id);
+    setBusy(false);
+    if (!r.ok) { setError(r.error); return; }
+    setView({ kind: 'sales', tab: 'invoices' });
+  }
+
   async function handleDelete() {
     if (posted === null) return;
     const customerName = customerNameById.get(posted.customerId) ?? 'this customer';
@@ -730,6 +740,11 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
                   Delete Invoice
                 </button>
               </>
+            )}
+            {posted.status !== 'unpaid' && (
+              <button type="button" disabled={busy} onClick={() => void handleDeleteWithPayments()} className="rounded-full bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 disabled:opacity-50" title="Reverse the payments and delete the invoice">
+                Delete Invoice and Payments
+              </button>
             )}
             {posted.status !== 'unpaid' && (
               <button type="button" disabled={busy} onClick={handleCopyInvoice} className="ml-auto rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">

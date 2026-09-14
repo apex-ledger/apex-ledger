@@ -339,6 +339,7 @@ export async function journalUpdateDate(input: unknown) {
     throw new Error('Cannot change the date: this entry has a line already cleared in a bank reconciliation.');
   }
 
+  if (entry.entryDate !== entryDate) await moveLinkedDocumentDate(db, id, entry.entryDate, entryDate);
   await db.updateTable('journalEntries').set({ entryDate }).where('id', '=', id).execute();
   // Works on posted entries, so this is one of the few ways a client-supplied entry legitimately
   // changes after posting — it belongs on the adjustments report like any other correction.
@@ -348,6 +349,34 @@ export async function journalUpdateDate(input: unknown) {
     ]);
   }
   return journalGet(id);
+}
+
+/** A journal that belongs to a document carries that document's date. When the date is corrected
+ * from the ledger side, the document follows, so the invoice, its payment record, the bill, the
+ * receipt or the deposit never disagrees with its own journal. Payroll, filed returns and goods
+ * receipts are refused: their dates drive remittances, returns and stock and must be changed there. */
+async function moveLinkedDocumentDate(db: AppDb, id: number, oldDate: string, newDate: string): Promise<void> {
+  const shift = Math.round((Date.parse(`${newDate}T00:00:00Z`) - Date.parse(`${oldDate}T00:00:00Z`)) / 86_400_000);
+  const shifted = (iso: string) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + shift); return d.toISOString().slice(0, 10); };
+  const refuse = async (table: 'payrollRuns' | 'hstFilings' | 'purchaseOrderReceipts', label: string) => {
+    const hit = await db.selectFrom(table).select('id').where('journalEntryId', '=', id).executeTakeFirst();
+    if (hit) throw new Error(`This journal belongs to a ${label}; change the date on the ${label} itself so everything that depends on it moves too.`);
+  };
+  await refuse('payrollRuns', 'payroll run');
+  await refuse('hstFilings', 'GST/HST filing');
+  await refuse('purchaseOrderReceipts', 'purchase-order goods receipt');
+  const invoice = await db.selectFrom('invoices').select(['id', 'dueDate']).where('invoiceJournalEntryId', '=', id).executeTakeFirst();
+  if (invoice) await db.updateTable('invoices').set({ invoiceDate: newDate, dueDate: shifted(invoice.dueDate) }).where('id', '=', invoice.id).execute();
+  await db.updateTable('invoicePayments').set({ paymentDate: newDate }).where('journalEntryId', '=', id).execute();
+  const bill = await db.selectFrom('bills').select(['id', 'dueDate']).where('billJournalEntryId', '=', id).executeTakeFirst();
+  if (bill) await db.updateTable('bills').set({ billDate: newDate, dueDate: shifted(bill.dueDate) }).where('id', '=', bill.id).execute();
+  await db.updateTable('billPayments').set({ paymentDate: newDate }).where('journalEntryId', '=', id).execute();
+  await db.updateTable('salesReceipts').set({ receiptDate: newDate }).where('journalEntryId', '=', id).execute();
+  await db.updateTable('deposits').set({ depositDate: newDate }).where('journalEntryId', '=', id).execute();
+  await db.updateTable('creditNotes').set({ creditNoteDate: newDate }).where('creditJournalEntryId', '=', id).execute();
+  await db.updateTable('inventoryMovements').set({ movementDate: newDate }).where('journalEntryId', '=', id).execute();
+  await db.updateTable('t5Payments').set({ paymentDate: newDate }).where('journalEntryId', '=', id).execute();
+  await db.updateTable('mileageTrips').set({ tripDate: newDate }).where('journalEntryId', '=', id).execute();
 }
 
 async function linkedBusinessDocument(id: number, db: AppDb): Promise<string | null> {

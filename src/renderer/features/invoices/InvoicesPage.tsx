@@ -49,6 +49,14 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
     await refresh();
   }
 
+  async function handleDeleteWithPayments(invoice: Invoice) {
+    const n = invoice.paidCents > 0 ? 'its payment' : '';
+    if (!window.confirm(`Delete ${invoice.invoiceNumber}${n ? ` and reverse ${n}` : ''}? The invoice, its journal and any payment journals are removed from the books. A payment already in a bank deposit will stop this.`)) return;
+    const r = await window.api.invoices.deleteWithPayments(invoice.id);
+    if (!r.ok) { setError(r.error); return; }
+    await refresh();
+  }
+
   async function handleDelete(invoice: Invoice) {
     const customerName = customerNameById.get(invoice.customerId) ?? 'this customer';
     if (!window.confirm(`Delete invoice ${invoice.invoiceNumber} for ${customerName}? This permanently removes the invoice and voids its linked accounting entry. This cannot be undone.`)) return;
@@ -164,12 +172,15 @@ export function InvoicesPage({ embedded }: { embedded?: boolean } = {}) {
                           Receive Payment
                         </button>
                         <button type="button" onClick={() => void handleWriteOff(inv)} className="mr-2 text-xs font-medium text-gray-600 hover:underline" title="Close this invoice to Bad Debt Expense">Write off</button>
-                        {inv.paidCents === 0 && <button type="button" onClick={() => handleDelete(inv)} className="text-xs font-medium text-red-500 hover:underline">Delete</button>}
+                        {inv.paidCents === 0 ? <button type="button" onClick={() => handleDelete(inv)} className="text-xs font-medium text-red-500 hover:underline">Delete</button> : <button type="button" onClick={() => void handleDeleteWithPayments(inv)} className="text-xs font-medium text-red-500 hover:underline" title="Reverse the payments and delete the invoice">Delete with payments</button>}
                       </>
                     ) : (inv.writtenOffCents ?? 0) > 0 ? (
                       <button type="button" onClick={() => void handleUndoWriteOff(inv)} className="text-xs font-medium text-gray-600 hover:underline">Undo write-off</button>
                     ) : (
-                      <span className="text-xs text-gray-400">Paid in full</span>
+                      <>
+                        <span className="mr-2 text-xs text-gray-400">Paid in full</span>
+                        <button type="button" onClick={() => void handleDeleteWithPayments(inv)} className="text-xs font-medium text-red-500 hover:underline" title="Reverse the payments and delete the invoice">Delete with payments</button>
+                      </>
                     )}
                   </td>
                 </tr>

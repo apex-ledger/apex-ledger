@@ -825,6 +825,7 @@ const api = {
     reverseLastPayment: invoke<Invoice>('invoices:reverseLastPayment'),
     changeDate: invoke<{ invoice: Invoice; paymentsMoved: number }>('invoices:changeDate'),
     writeOff: invoke<Invoice>('invoices:writeOff'),
+    deleteWithPayments: invoke<{ deleted: true; paymentsReversed: number }>('invoices:deleteWithPayments'),
     undoWriteOff: invoke<Invoice>('invoices:undoWriteOff'),
     delete: invoke<{ deleted: true }>('invoices:delete'),
   },

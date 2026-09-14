@@ -15,6 +15,9 @@ interface DateInputProps {
 function normalizeTypedDate(raw: string): string | null {
   const trimmed = raw.trim();
   if (!trimmed) return null;
+  const digits = trimmed.replace(/\D/g, '');
+  // Eight digits typed straight through, "20250131", is the fastest way to enter a date.
+  if (/^\d{8}$/.test(digits) && /^[\d\s.\-/]+$/.test(trimmed)) return normalizeTypedDate(`${digits.slice(0, 4)}-${digits.slice(4, 6)}-${digits.slice(6, 8)}`);
   const isoMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (isoMatch) {
     const [, y, m, d] = isoMatch;
@@ -55,7 +58,12 @@ export function DateInput({ value, onChange, className = '' }: DateInputProps) {
         className="w-full rounded border border-gray-300 py-1.5 pl-2 pr-7 text-sm"
         placeholder="YYYY-MM-DD"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          const raw = e.target.value;
+          // Digits only: put the hyphens in as they type, so 2025 01 31 becomes 2025-01-31 without reaching for the minus key.
+          if (/^\d+$/.test(raw) && raw.length > 4 && raw.length <= 8) setText(`${raw.slice(0, 4)}-${raw.slice(4, 6)}${raw.length > 6 ? `-${raw.slice(6)}` : ''}`);
+          else setText(raw);
+        }}
         onBlur={() => {
           const normalized = normalizeTypedDate(text);
           if (normalized) {

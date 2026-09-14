@@ -80,7 +80,7 @@ import * as bills from './bills.handlers';
 import * as recon from './bankReconciliation.handlers';
 import * as salesReceipts from './salesReceipts.handlers';
 import { quickEntryCreate } from './quickEntry.handlers';
-import { journalCreateAndPost, journalGet, journalVoid } from './journal.handlers';
+import { journalCreateAndPost, journalGet, journalUpdateDate, journalVoid } from './journal.handlers';
 import { getAllAccounts, getAllJournalEntriesWithLines } from '../db/queries';
 import { trialBalance } from '@shared/domain/ledger/trialBalance';
 import { balanceSheet } from '@shared/domain/ledger/balanceSheet';
@@ -379,6 +379,38 @@ describe('At the end', () => {
     const moved = await salesReceipts.salesReceiptsChangeDate({ id: receipt.id, receiptDate: '2026-07-03' });
     expect(moved.receiptDate).toBe('2026-07-03');
     expect((await journalGet(receipt.journalEntryId!)).entryDate).toBe('2026-07-03');
+    await booksBalance();
+  });
+
+  it('changing the date of a document journal from the ledger side moves the document too', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Ledger-side Ltd', paymentTerms: 'net30' });
+    const inv = await invoices.invoicesCreate({ customerId: customer.id, invoiceNumber: 'INV-LS-1', invoiceDate: '2026-08-01', dueDate: '2026-08-31', lines: [{ description: 'Work', quantity: 1, unitPriceCents: 10_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    const paid = await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2026-08-10', bankAccountId: chequing, amountCents: 11_300 });
+    const payment = (await invoices.invoicesPayments(inv.id))[0];
+    await journalUpdateDate({ id: inv.invoiceJournalEntryId!, entryDate: '2026-08-05' });
+    await journalUpdateDate({ id: payment.journalEntryId, entryDate: '2026-08-12' });
+    const after = await invoices.invoicesGet(inv.id);
+    expect(after.invoiceDate).toBe('2026-08-05');
+    expect(after.dueDate).toBe('2026-09-04'); // kept its distance
+    expect((await invoices.invoicesPayments(inv.id))[0].paymentDate).toBe('2026-08-12');
+    expect(paid.status).toBe('paid');
+  });
+
+  it('a posted sale with a payment can be deleted in one step, reversing the payment first', async () => {
+    const revenue = await byCode('4000');
+    const customer = await contacts.customersSave({ name: 'Entered Twice Inc', paymentTerms: 'net30' });
+    const ar = await byName(ACCOUNTS_RECEIVABLE_ARGS[0]);
+    const arBefore = await balance(ar);
+    const chqBefore = await balance(chequing);
+    const inv = await invoices.invoicesCreate({ customerId: customer.id, invoiceNumber: 'INV-DUP-1', invoiceDate: '2026-08-15', dueDate: '2026-09-14', lines: [{ description: 'Duplicate', quantity: 1, unitPriceCents: 5_000, revenueAccountId: revenue, taxCode: 'HST' }] });
+    await invoices.invoicesReceivePayment({ id: inv.id, paymentDate: '2026-08-15', bankAccountId: chequing, amountCents: 5_650 });
+    expect(await balance(chequing)).toBe(chqBefore + 5_650);
+    const r = await invoices.invoicesDeleteWithPayments(inv.id);
+    expect(r).toEqual({ deleted: true, paymentsReversed: 1 });
+    await expect(invoices.invoicesGet(inv.id)).rejects.toThrow();
+    expect(await balance(ar)).toBe(arBefore); // the receivable and the bank are exactly as before the sale
+    expect(await balance(chequing)).toBe(chqBefore);
     await booksBalance();
   });
 });

@@ -453,6 +453,22 @@ export async function invoicesWriteOff(input: unknown) {
 }
 
 /** Puts a written-off invoice back on the books: the write-off journal is voided and the balance is owed again. */
+/** Deletes a posted invoice that has payments on it, the way a bookkeeper removes a sale entered
+ * twice: each payment is reversed (its journal voided) and then the invoice and its journal go.
+ * A payment already banked in a deposit stops it; delete the deposit first. */
+export async function invoicesDeleteWithPayments(id: number) {
+  const db = getCurrentDb();
+  const invoice = await invoicesGet(id);
+  if ((invoice.writtenOffCents ?? 0) > 0) await invoicesUndoWriteOff(id);
+  const payments = await db.selectFrom('invoicePayments').select(['id', 'depositId', 'paymentDate', 'amountCents']).where('invoiceId', '=', id).execute();
+  const banked = payments.find((p) => p.depositId !== null);
+  if (banked) throw new Error(`The payment of $${(banked.amountCents / 100).toFixed(2)} received on ${banked.paymentDate} is already in a bank deposit. Delete that deposit first, then delete the invoice.`);
+  let reversed = 0;
+  for (let i = 0; i < payments.length; i++) { await invoicesReverseLastPayment(id); reversed += 1; }
+  await invoicesDelete(id);
+  return { deleted: true as const, paymentsReversed: reversed };
+}
+
 export async function invoicesUndoWriteOff(id: number) {
   const db = getCurrentDb();
   const invoice = await invoicesGet(id);
