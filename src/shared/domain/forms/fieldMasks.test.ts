@@ -51,4 +51,12 @@ describe('dates', () => {
     expect(clampIsoDate('')).toBe('');
     expect(clampIsoMonth('20260-03')).toBe('2026-03');
   });
+
+  it('leaves a year that is still being typed alone, and clamps only finished years', () => {
+    expect(clampIsoDate('0002-01-31')).toBe('0002-01-31');
+    expect(clampIsoDate('0202-01-31')).toBe('0202-01-31');
+    expect(clampIsoDate('2025-01-31')).toBe('2025-01-31');
+    expect(clampIsoDate('1850-01-31')).toBe('1900-01-31');
+    expect(clampIsoDate('2250-01-31')).toBe('2100-01-31');
+  });
 });

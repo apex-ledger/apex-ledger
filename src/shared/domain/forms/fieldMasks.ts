@@ -63,6 +63,10 @@ export function clampIsoDate(iso: string): string {
   if (!match) return iso;
   let year = Number(match[1].slice(0, 4));
   if (Number.isNaN(year)) return iso;
+  // A browser date field reports the year as it is typed: "0002-01-31", then "0020-…", "0202-…",
+  // "2025-…". Clamping those partial years to 1900 snapped the field to 1900 mid-keystroke, so a
+  // year still being typed (under 1000) is left alone; only a finished year is kept in range.
+  if (year < 1000) return iso;
   year = Math.min(YEAR_MAX, Math.max(YEAR_MIN, year));
   return `${String(year).padStart(4, '0')}-${match[2]}-${match[3]}`;
 }
