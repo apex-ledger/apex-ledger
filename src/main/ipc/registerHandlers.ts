@@ -55,7 +55,6 @@ import * as qbExportHandlers from './qbExport.handlers';
 import * as clipboardHandlers from './clipboard.handlers';
 import * as recurringTemplatesHandlers from './recurringTemplates.handlers';
 import * as shareholdersHandlers from './shareholders.handlers';
-import * as marketHandlers from './market.handlers';
 import * as appHandlers from './app.handlers';
 import * as aiAssistantHandlers from './aiAssistant.handlers';
 import * as accessUsersHandlers from './accessUsers.handlers';
@@ -548,9 +547,6 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('fx:revaluationPreview', (_event, input) => toResult(() => fxHandlers.fxRevaluationPreview(input)));
   ipcMain.handle('fx:revaluationPost', (_event, input) => mutate('journal', () => fxHandlers.fxRevaluationPost(input)));
   ipcMain.handle('fxRates:getOnDate', (_event, currency, date) => toResult(() => fxRatesHandlers.fxRatesGetOnDate(currency, date)));
-
-  ipcMain.handle('market:quotes', () => toResult(() => marketHandlers.marketQuotes()));
-  ipcMain.handle('market:news', () => toResult(() => marketHandlers.marketNews()));
 
   ipcMain.handle('receiptInbox:list', () => toResult(() => receiptInboxHandlers.receiptInboxList()));
   ipcMain.handle('receiptInbox:history', () => toResult(() => receiptInboxHandlers.receiptInboxHistory()));

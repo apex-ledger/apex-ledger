@@ -7,7 +7,6 @@ vi.mock('./Sidebar', async (importOriginal) => ({ ...(await importOriginal<typeo
 vi.mock('./Header', () => ({ Header: () => <header /> }));
 vi.mock('./StatusBar', () => ({ StatusBar: () => <footer /> }));
 vi.mock('./UpdateBanner', () => ({ UpdateBanner: () => null }));
-vi.mock('./TickerStrip', () => ({ TickerStrip: () => null }));
 
 describe('compact application layout', () => {
   it('uses one compact visible title and reduced shared content padding', () => {

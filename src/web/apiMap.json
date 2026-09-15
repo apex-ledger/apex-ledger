@@ -477,10 +477,6 @@
       "getLatest": "fxRates:getLatest",
       "getOnDate": "fxRates:getOnDate"
     },
-    "market": {
-      "quotes": "market:quotes",
-      "news": "market:news"
-    },
     "receiptInbox": {
       "list": "receiptInbox:list",
       "history": "receiptInbox:history",

@@ -213,17 +213,6 @@ type CompanyOpenResult = { opened: false } | { opened: true; filePath: string; c
 type CompanyCreateResult = { created: false } | { created: true; filePath: string; company: CompanyInfo };
 type CompanySaveAsResult = { saved: false } | { saved: true; filePath: string; company: CompanyInfo };
 type GifiExportExcelResult = { saved: false } | { saved: true; filePath: string };
-interface MarketQuote {
-  symbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-}
-interface MarketNewsItem {
-  title: string;
-  link: string;
-}
 type ReadCsvFileResult = { loaded: false } | { loaded: true; fileName: string; content: string };
 type ReadPdfBankStatementResult =
   | { loaded: false; error?: string }
@@ -989,10 +978,6 @@ const api = {
   fxRates: {
     getLatest: (currency: ForeignCurrencyCode) => ipcRenderer.invoke('fxRates:getLatest', currency) as Promise<Result<{ rate: number; date: string }>>,
     getOnDate: (currency: ForeignCurrencyCode, date: string) => ipcRenderer.invoke('fxRates:getOnDate', currency, date) as Promise<Result<{ rate: number; date: string }>>,
-  },
-  market: {
-    quotes: invoke<MarketQuote[]>('market:quotes'),
-    news: invoke<MarketNewsItem[]>('market:news'),
   },
   receiptInbox: {
     list: invoke<ReceiptInboxEntry[]>('receiptInbox:list'),

@@ -37,10 +37,6 @@ export default {
         float: '0 8px 16px rgb(15 23 42 / 0.08), 0 24px 56px rgb(15 23 42 / 0.16)',
       },
       keyframes: {
-        marquee: {
-          '0%': { transform: 'translateX(0)' },
-          '100%': { transform: 'translateX(-50%)' },
-        },
         fadeIn: {
           from: { opacity: '0' },
           to: { opacity: '1' },
@@ -57,9 +53,6 @@ export default {
         },
       },
       animation: {
-        // Duration is set per-instance via an inline style (content length varies), this just
-        // supplies the linear/infinite/name part of the CSS `animation` shorthand.
-        marquee: 'marquee linear infinite',
         fadeIn: 'fadeIn 200ms cubic-bezier(0.32, 0.72, 0, 1) both',
         popIn: 'popIn 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both',
         viewIn: 'viewIn 260ms cubic-bezier(0.32, 0.72, 0, 1) both',

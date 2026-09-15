@@ -4,7 +4,6 @@ import { Header } from './Header';
 import { TopBar } from './TopBar';
 import { StatusBar } from './StatusBar';
 import { UpdateBanner } from './UpdateBanner';
-import { TickerStrip } from './TickerStrip';
 import { QuickScroll } from '../components/QuickScroll';
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -13,7 +12,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50" data-shell="root">
-      <TickerStrip />
       <div className="flex min-h-0 flex-1" data-shell="body">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col" data-shell="column">

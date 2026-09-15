@@ -114,9 +114,8 @@ export function AboutPage() {
           </p>
           <p>
             <strong>What leaves this device:</strong> only when you explicitly trigger it — checking for app updates (contacts the
-            update server to compare version numbers only), the optional market ticker (fetches public stock/news data, no company
-            data is sent), and anything you choose to email or message directly (e.g. "Send Feedback", client WhatsApp/email
-            reminders).
+            update server to compare version numbers only), and anything you choose to email or message directly (e.g. "Send Feedback",
+            client WhatsApp/email reminders).
           </p>
           <p>We do not sell, share, or transmit your client or company financial data to any third party.</p>
           <p className="text-gray-500">Questions about this policy: {CONTACT_EMAIL}.</p>
