@@ -196,12 +196,20 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
   const [receiving, setReceiving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Follows the chosen customer until somebody types over it, at which point it is theirs.
+  const [emailTo, setEmailTo] = useState('');
+  const [emailToEdited, setEmailToEdited] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
 
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [creditAvailableCents, setCreditAvailableCents] = useState(0);
+  useEffect(() => {
+    if (emailToEdited) return;
+    setEmailTo(customers.find((c) => c.id === customerId)?.email ?? '');
+  }, [customerId, customers, emailToEdited]);
+
   useEffect(() => {
     if (customerId === null) { setCreditAvailableCents(0); return; }
     let cancelled = false;
@@ -621,30 +629,29 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
         >
           ×
         </button>
-        {/* Print / Save as PDF / Email sit in the toolbar, always on screen — the first place
-          * anyone looks for "send this to the client". The niche routes (Outlook, WhatsApp, pick
-          * my own folder) stay behind Share. Only a saved invoice has a PDF to send. */}
+        {/* Print / PDF / Email sit in the sheet's own top row and stay there whether or not the
+          * invoice has been saved yet — greyed with the reason until it has, rather than appearing
+          * out of nowhere afterwards. The niche routes stay behind Share. */}
+        <DocumentActions
+          documentLabel={posted ? `invoice ${posted.invoiceNumber}` : 'this invoice'}
+          partyName={posted ? customerNameById.get(posted.customerId) ?? null : null}
+          partyEmail={emailTo || null}
+          emailSubject={`Invoice ${posted?.invoiceNumber ?? invoiceNumber}`}
+          emailBody={defaultEmailBody(posted ? customerNameById.get(posted.customerId) ?? null : null, `Please find attached invoice ${posted?.invoiceNumber ?? invoiceNumber}, due ${posted?.dueDate ?? dueDate}.`)}
+          unavailableReason={posted ? undefined : 'Save the invoice first — an unsaved invoice has no PDF yet.'}
+          fetchPdfBytes={() => window.api.invoicePdf.bytes({ invoiceId: posted!.id })}
+          saveToDownloads={() => window.api.invoicePdf.saveToDownloads({ invoiceId: posted!.id })}
+          sendEmail={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted!.id, to, subject, body, replyTo })}
+        />
         {posted && (
-          <>
-            <DocumentActions
-              documentLabel={`invoice ${posted.invoiceNumber}`}
-              partyName={customerNameById.get(posted.customerId) ?? null}
-              partyEmail={customers.find((c) => c.id === posted.customerId)?.email ?? null}
-              emailSubject={`Invoice ${posted.invoiceNumber}`}
-              emailBody={defaultEmailBody(customerNameById.get(posted.customerId) ?? null, `Please find attached invoice ${posted.invoiceNumber}, due ${posted.dueDate}.`)}
-              fetchPdfBytes={() => window.api.invoicePdf.bytes({ invoiceId: posted.id })}
-              saveToDownloads={() => window.api.invoicePdf.saveToDownloads({ invoiceId: posted.id })}
-              sendEmail={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted.id, to, subject, body, replyTo })}
-            />
-            <ShareMenu
-              busy={pdfBusy}
-              actions={[
-                { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
-                { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
-                { label: 'Save to a folder…', onClick: handleDownloadPdf },
-              ]}
-            />
-          </>
+          <ShareMenu
+            busy={pdfBusy}
+            actions={[
+              { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
+              { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
+              { label: 'Save to a folder…', onClick: handleDownloadPdf },
+            ]}
+          />
         )}
         {!posted && <ForeignCurrencySelector fx={fx} />}
         <div className="flex items-center gap-2">
@@ -667,6 +674,18 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
               <span className="block text-gray-500">Customer</span>
               <span className="font-medium text-gray-800">{customerNameById.get(posted.customerId) ?? '—'}</span>
             </div>
+            {/* Editable here too: the address the Email button will use, visible before pressing it
+              * rather than discovered inside the send dialog. */}
+            <label className="text-sm">
+              <span className="block text-gray-500">Email to</span>
+              <input
+                type="email"
+                className="mt-0.5 w-full rounded border border-gray-300 px-2 py-1 font-medium text-gray-800"
+                value={emailTo}
+                onChange={(e) => { setEmailTo(e.target.value); setEmailToEdited(true); }}
+                placeholder="name@example.com"
+              />
+            </label>
             <div className="text-sm">
               <span className="block text-gray-500">Invoice Date</span>
               <span className="font-medium text-gray-800"><DocumentDateCell value={posted.invoiceDate} title="Click to change the invoice date; the journal and a same-day payment move with it" onChange={async (next) => { const r = await window.api.invoices.changeDate({ id: posted.id, invoiceDate: next }); if (r.ok) setPosted(r.data.invoice); return r; }} note={(d) => { const n = (d as { paymentsMoved: number }).paymentsMoved; return n ? `Moved with ${n === 1 ? 'its payment' : `${n} payments`}.` : null; }} /></span>
@@ -797,6 +816,19 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
                 addNewLabel="+ Add New Customer"
               />
               {creditAvailableCents > 0 && <span className="mt-1 block text-xs text-emerald-800">This customer has <Money cents={creditAvailableCents} /> of credit available from unapplied credit notes. Apply it to this invoice after saving, from Sales → Credit notes.</span>}
+            </label>
+            {/* The address this invoice will be emailed to, on the invoice where it can be read and
+              * corrected — rather than only inside the send dialog, where a customer with no email
+              * on file becomes a surprise at the moment of sending. */}
+            <label className="block text-sm">
+              <span className="text-gray-600">Email to</span>
+              <input
+                type="email"
+                className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
+                value={emailTo}
+                onChange={(e) => { setEmailTo(e.target.value); setEmailToEdited(true); }}
+                placeholder={customerId === null ? 'Pick a customer first' : 'name@example.com'}
+              />
             </label>
             <label className="block text-sm">
               <span className="text-gray-600">Invoice #</span>

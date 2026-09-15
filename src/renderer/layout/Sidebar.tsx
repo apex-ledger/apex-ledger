@@ -7,16 +7,21 @@ import { confirmDialog } from '../app/store/confirmStore';
 import { Logo } from '../components/Logo';
 import { IconBell, IconPencil, IconUserGroup } from '../components/icons';
 import { webContext } from '../features/company-settings/WebOrganisationSection';
+import { useIpcQuery } from '../hooks/useIpcQuery';
 import { webSeat } from '../utils/platform';
 import { SEAT_NAV_HIDDEN } from '@shared/domain/seatScope';
 import {
   applyStoredOrder,
+  deleteYearEndLayout,
   loadColorOverrides,
   loadHiddenItems,
+  loadYearEndLayouts,
   loadYearEndTabs,
   resetSidebarPrefs,
+  saveYearEndLayout,
   setItemHidden,
   setYearEndTabPinned,
+  setYearEndTabs,
   storeColorOverride,
   storeSectionOrder,
   COLOR_SCHEMES,
@@ -741,6 +746,9 @@ function YearEndFocusNav() {
   const onWorkspacePage = useUiStore((s) => s.view.kind === 'yearEndWorkspace');
   const [pinnedLabels, setPinnedLabels] = useState<string[]>(() => loadYearEndTabs());
   const [picking, setPicking] = useState(false);
+  const [layouts, setLayouts] = useState<Record<string, string[]>>(() => loadYearEndLayouts());
+  const [saveName, setSaveName] = useState('');
+  const { data: identity } = useIpcQuery(() => window.api.access.getIdentity(), []);
 
   // Anything in the app's own navigation can be pinned, children included — the reviewer picks by
   // the same name they already know it by elsewhere.
@@ -753,6 +761,26 @@ function YearEndFocusNav() {
     const next = !pinnedLabels.includes(label);
     setYearEndTabPinned(label, next);
     setPinnedLabels((prev) => (next ? [...prev, label] : prev.filter((l) => l !== label)));
+  }
+
+  // Whoever is sitting here saves their arrangement under their own name, so the next person's
+  // does not overwrite it. Their signed-in name is the obvious default; they can type another.
+  const whoami = webContext()?.user.name ?? identity?.name ?? '';
+  function saveLayout() {
+    const name = (saveName.trim() || whoami).trim();
+    if (!name) return;
+    saveYearEndLayout(name, pinnedLabels);
+    setLayouts(loadYearEndLayouts());
+    setSaveName('');
+  }
+  function loadLayout(name: string) {
+    const labels = layouts[name] ?? [];
+    setYearEndTabs(labels);
+    setPinnedLabels(labels);
+  }
+  function removeLayout(name: string) {
+    deleteYearEndLayout(name);
+    setLayouts(loadYearEndLayouts());
   }
 
   function scrollToId(id: string) {
@@ -783,14 +811,41 @@ function YearEndFocusNav() {
         {picking ? 'Done adding' : '+ Add a tab'}
       </button>
       {picking && (
-        <div className="mb-2 max-h-64 overflow-y-auto rounded-lg border border-brand-200 bg-white p-2">
-          <p className="mb-1 text-[11px] text-gray-500">Tick anything else this review needs. Saved on this device.</p>
-          {addable.map((item) => (
-            <label key={item.label} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs text-gray-700 hover:bg-brand-50">
-              <input type="checkbox" checked={pinnedLabels.includes(item.label)} onChange={() => togglePinned(item.label)} />
-              {item.label}
-            </label>
-          ))}
+        <div className="mb-2 rounded-lg border border-brand-200 bg-white p-2">
+          <p className="mb-1 text-[11px] text-gray-500">Tick anything else this review needs.</p>
+          <div className="max-h-52 overflow-y-auto">
+            {addable.map((item) => (
+              <label key={item.label} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs text-gray-700 hover:bg-brand-50">
+                <input type="checkbox" checked={pinnedLabels.includes(item.label)} onChange={() => togglePinned(item.label)} />
+                {item.label}
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-2 border-t border-brand-100 pt-2">
+            <p className="mb-1 text-[11px] font-semibold text-brand-700">Save this workspace under your name</p>
+            <div className="flex items-center gap-1">
+              <input
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder={whoami || 'Your name'}
+                className="min-w-0 flex-1 rounded border border-gray-300 px-1.5 py-1 text-xs"
+              />
+              <button type="button" onClick={saveLayout} className="rounded bg-brand-700 px-2 py-1 text-xs font-medium text-white hover:bg-brand-800">Save</button>
+            </div>
+            {Object.keys(layouts).length > 0 && (
+              <ul className="mt-1.5 space-y-0.5">
+                {Object.keys(layouts).sort().map((name) => (
+                  <li key={name} className="flex items-center gap-1 text-xs">
+                    <button type="button" onClick={() => loadLayout(name)} className="min-w-0 flex-1 truncate rounded px-1 py-0.5 text-left text-brand-800 hover:bg-brand-50" title={`Load ${name}'s workspace`}>
+                      {name} <span className="text-gray-400">({layouts[name].length})</span>
+                    </button>
+                    <button type="button" onClick={() => removeLayout(name)} className="rounded px-1 text-gray-400 hover:bg-red-50 hover:text-red-600" title={`Delete ${name}'s saved workspace`}>✕</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
 

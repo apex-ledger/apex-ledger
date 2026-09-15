@@ -28,4 +28,23 @@ describe('InvoiceEditorPage save guidance', () => {
     await userEvent.click(save);
     await waitFor(() => expect(screen.getAllByText(/Select a customer from the list, or use/)).toHaveLength(2));
   });
+
+  it('shows Print, PDF and Email on an empty invoice, greyed with the reason until it is saved', async () => {
+    mockApi('invoices', 'nextNumber', 'INV-2026-0001');
+    mockApi('invoices', 'list', []);
+    mockApi('customers', 'list', []);
+    mockApi('accounts', 'list', []);
+    mockApi('products', 'list', []);
+
+    render(<InvoiceEditorPage id="new" />);
+
+    // Nothing entered yet: the three are on screen rather than appearing only after a save, which
+    // is what made them impossible to find.
+    for (const label of ['Print', 'PDF', 'Email']) {
+      const button = await screen.findByRole('button', { name: label });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('title', expect.stringContaining('Save the invoice first'));
+    }
+    expect(screen.getByText('Email to')).toBeInTheDocument();
+  });
 });

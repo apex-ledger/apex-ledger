@@ -431,19 +431,20 @@ export function SalesReceiptEditorPage({ id, customerId: presetCustomerId }: { i
         </button>
         <BackButton fallback={{ kind: 'salesReceipts' }} fallbackLabel="Sales Receipts" />
         {/* Print / PDF / Email stay on screen in the sheet's own top row, the same three on every
-          * document that goes out to someone. Only a saved receipt has a PDF to send. */}
-        {posted && (
-          <DocumentActions
-            documentLabel={`sales receipt ${posted.receiptNumber}`}
-            partyName={customers.find((c) => c.id === posted.customerId)?.name ?? null}
-            partyEmail={customers.find((c) => c.id === posted.customerId)?.email ?? null}
-            emailSubject={`Sales receipt ${posted.receiptNumber}`}
-            emailBody={defaultEmailBody(customers.find((c) => c.id === posted.customerId)?.name ?? null, `Please find attached sales receipt ${posted.receiptNumber}, dated ${posted.receiptDate}.`)}
-            fetchPdfBytes={() => window.api.salesReceiptPdf.bytes({ salesReceiptId: posted.id })}
-            saveToDownloads={() => window.api.salesReceiptPdf.saveToDownloads({ salesReceiptId: posted.id })}
-            sendEmail={({ to, subject, body, replyTo }) => window.api.salesReceiptPdf.sendDirect({ salesReceiptId: posted.id, to, subject, body, replyTo })}
-          />
-        )}
+          * document that goes out to someone — greyed with the reason until the receipt is saved
+          * and there is actually a PDF behind them. */}
+        <DocumentActions
+          documentLabel={posted ? `sales receipt ${posted.receiptNumber}` : 'this sales receipt'}
+          partyName={posted ? customers.find((c) => c.id === posted.customerId)?.name ?? null : null}
+          partyEmail={posted ? customers.find((c) => c.id === posted.customerId)?.email ?? null : null}
+          emailSubject={`Sales receipt ${posted?.receiptNumber ?? receiptNumber}`}
+          emailBody={defaultEmailBody(posted ? customers.find((c) => c.id === posted.customerId)?.name ?? null : null, `Please find attached sales receipt ${posted?.receiptNumber ?? receiptNumber}.`)}
+          unavailableReason={posted ? undefined : 'Save the receipt first — an unsaved receipt has no PDF yet.'}
+          fetchPdfBytes={() => window.api.salesReceiptPdf.bytes({ salesReceiptId: posted!.id })}
+          saveToDownloads={() => window.api.salesReceiptPdf.saveToDownloads({ salesReceiptId: posted!.id })}
+          sendEmail={({ to, subject, body, replyTo }) => window.api.salesReceiptPdf.sendDirect({ salesReceiptId: posted!.id, to, subject, body, replyTo })}
+        />
+
         {!posted && <ForeignCurrencySelector fx={fx} />}
         {posted && (
           <span className="ml-auto rounded bg-green-300 px-2 py-0.5 text-xs text-green-900">

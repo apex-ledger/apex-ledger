@@ -19,6 +19,7 @@ export function DocumentActions({
   fetchPdfBytes,
   saveToDownloads,
   sendEmail,
+  unavailableReason,
 }: {
   /** What this document is called in messages, e.g. "invoice INV-2026-0002". */
   documentLabel: string;
@@ -29,6 +30,10 @@ export function DocumentActions({
   fetchPdfBytes: () => Promise<Result<{ fileName: string; base64: string }>>;
   saveToDownloads: () => Promise<Result<{ filePath: string }>>;
   sendEmail: (fields: { to: string; subject: string; body: string; replyTo: string }) => Promise<Result<unknown>>;
+  /** Why the three buttons cannot act yet — an unsaved document has no PDF to print or send. They
+   * stay in the row and grey out rather than disappearing, so nobody has to discover that they
+   * exist only after saving. */
+  unavailableReason?: string;
 }) {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -51,18 +56,19 @@ export function DocumentActions({
     setNotice(`Saved to ${r.data.filePath}`);
   }
 
+  const off = Boolean(unavailableReason);
   const buttonClass = 'flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50';
 
   return (
     <>
       <div className="flex items-center gap-1.5" data-export-skip>
-        <button type="button" disabled={busy} onClick={() => void print()} className={buttonClass} title={`Print ${documentLabel}`}>
+        <button type="button" disabled={busy || off} onClick={() => void print()} className={buttonClass} title={unavailableReason ?? `Print ${documentLabel}`}>
           <IconPrinter width={16} height={16} /> Print
         </button>
-        <button type="button" disabled={busy} onClick={() => void savePdf()} className={buttonClass} title={`Save ${documentLabel} as a PDF`}>
+        <button type="button" disabled={busy || off} onClick={() => void savePdf()} className={buttonClass} title={unavailableReason ?? `Save ${documentLabel} as a PDF`}>
           <IconFilePdf width={16} height={16} /> PDF
         </button>
-        <button type="button" disabled={busy} onClick={() => setComposeOpen(true)} className={buttonClass} title={`Email ${documentLabel}`}>
+        <button type="button" disabled={busy || off} onClick={() => setComposeOpen(true)} className={buttonClass} title={unavailableReason ?? `Email ${documentLabel}`}>
           <IconMail width={16} height={16} /> Email
         </button>
       </div>

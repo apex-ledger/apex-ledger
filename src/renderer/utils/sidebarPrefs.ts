@@ -22,6 +22,9 @@ interface SidebarPrefs {
    * client's data entry, but which other screen a reviewer needs next is theirs to decide — one
    * firm wants Fixed Assets there, another Chart of Accounts. Empty by default. */
   yearEndTabs?: string[];
+  /** Named saves of that set, so two people sharing a machine each keep their own — "Nisha",
+   * "Resham" — instead of overwriting one shared arrangement every time the other sits down. */
+  yearEndLayouts?: Record<string, string[]>;
 }
 
 const STORAGE_KEY = 'northLedger.sidebarPrefs';
@@ -38,7 +41,7 @@ function loadPrefs(): SidebarPrefs {
     if (parsed.layoutVersion !== CURRENT_LAYOUT_VERSION) {
       return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: parsed.colors ?? {}, hidden: [] };
     }
-    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [], yearEndTabs: parsed.yearEndTabs ?? [] };
+    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [], yearEndTabs: parsed.yearEndTabs ?? [], yearEndLayouts: parsed.yearEndLayouts ?? {} };
   } catch {
     return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: {}, hidden: [] };
   }
@@ -106,6 +109,33 @@ export function setYearEndTabPinned(itemLabel: string, pinned: boolean): void {
   if (pinned) set.add(itemLabel);
   else set.delete(itemLabel);
   prefs.yearEndTabs = [...set];
+  savePrefs(prefs);
+}
+
+export function loadYearEndLayouts(): Record<string, string[]> {
+  return loadPrefs().yearEndLayouts ?? {};
+}
+
+/** Saves the tabs currently pinned under a person's name. Saving again under the same name
+ * replaces it — the whole point is that "Nisha" always means whatever Nisha last arranged. */
+export function saveYearEndLayout(name: string, labels: string[]): void {
+  const prefs = loadPrefs();
+  prefs.yearEndLayouts = { ...(prefs.yearEndLayouts ?? {}), [name]: labels };
+  savePrefs(prefs);
+}
+
+export function deleteYearEndLayout(name: string): void {
+  const prefs = loadPrefs();
+  const layouts = { ...(prefs.yearEndLayouts ?? {}) };
+  delete layouts[name];
+  prefs.yearEndLayouts = layouts;
+  savePrefs(prefs);
+}
+
+/** Replaces the pinned set wholesale — used when loading somebody's saved layout. */
+export function setYearEndTabs(labels: string[]): void {
+  const prefs = loadPrefs();
+  prefs.yearEndTabs = labels;
   savePrefs(prefs);
 }
 

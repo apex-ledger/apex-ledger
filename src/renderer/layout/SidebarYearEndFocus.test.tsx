@@ -58,4 +58,28 @@ describe('Sidebar in Year-End Workspace focus mode', () => {
 
     expect(screen.getByText('Fixed Assets')).toBeInTheDocument();
   });
+
+  it('saves the arrangement under the name of whoever is using it, and loads it back', async () => {
+    mockApi('receiptInbox', 'list', []);
+    mockApi('actionCentre', 'items', { counts: { overdue: 0, today: 0, soon: 0 } });
+    mockApi('access', 'getIdentity', { name: 'Nisha' });
+    window.localStorage.clear();
+    useUiStore.setState({ view: { kind: 'welcome' }, yearEndMode: false });
+    useUiStore.getState().setView({ kind: 'yearEndWorkspace' });
+
+    render(<Sidebar />);
+
+    await userEvent.click(screen.getByText('+ Add a tab'));
+    await userEvent.click(screen.getByLabelText('Fixed Assets'));
+
+    // Saving with the box left blank uses the signed-in name, so the common case is one click.
+    await userEvent.click(screen.getByText('Save'));
+    expect(await screen.findByTitle("Load Nisha's workspace")).toBeInTheDocument();
+
+    // Clearing the pin and loading the save puts it back.
+    await userEvent.click(screen.getByLabelText('Fixed Assets'));
+    expect(screen.getByLabelText('Fixed Assets')).not.toBeChecked();
+    await userEvent.click(screen.getByTitle("Load Nisha's workspace"));
+    expect(screen.getByLabelText('Fixed Assets')).toBeChecked();
+  });
 });
