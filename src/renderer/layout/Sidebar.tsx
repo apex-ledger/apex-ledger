@@ -714,6 +714,18 @@ function NavSection({
  * back out — the sidebar narrows to match the page instead of the page narrowing to fit the
  * sidebar. Leaving the workspace (via "Full menu" or any "Open" link inside it) restores the
  * normal sidebar automatically, since it is driven by the current view kind. */
+/** What the client entered themselves through the year, one click each — the whole point of a
+ * once-a-year review is checking this, not the settings/reports clutter the rest of the app
+ * carries. Picking one leaves the workspace (it opens a real page, with its own tabs, elsewhere
+ * in the app) — clicking Year-End Workspace again in the now-restored sidebar comes back here. */
+const DATA_ENTRY_REVIEW_NAV: NavItem[] = [
+  { label: 'All Sales', view: { kind: 'sales', tab: 'all' }, color: 'emerald', icon: <IconCart /> },
+  { label: 'Vendor Bills', view: { kind: 'expenses', tab: 'bills' }, color: 'amber', icon: <IconReceipt /> },
+  { label: 'Expense Transactions', view: { kind: 'expenses', tab: 'expense' }, color: 'teal', icon: <IconReceipt /> },
+  { label: 'Bank Transactions', view: { kind: 'banking', tab: 'transactions' }, color: 'sky', icon: <IconLedger /> },
+  { label: 'Journal Entries', view: { kind: 'journalList' }, color: 'indigo', icon: <IconLedger /> },
+];
+
 function YearEndFocusNav() {
   function scrollToId(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -728,7 +740,11 @@ function YearEndFocusNav() {
       >
         ← Full menu
       </button>
-      <div className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-500">Year-End Workspace</div>
+
+      <div className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-500">Client's data entry — the whole year</div>
+      {DATA_ENTRY_REVIEW_NAV.map((item) => <NavButton key={item.label} item={item} />)}
+
+      <div className="mt-2 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-500">Year-End Workspace</div>
       {[
         { id: 'year-end-signoff-section', label: 'Sign-off checklist' },
         { id: 'year-end-payroll-section', label: 'Payroll & regional filings' },

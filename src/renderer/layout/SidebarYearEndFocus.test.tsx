@@ -16,10 +16,19 @@ describe('Sidebar in Year-End Workspace focus mode', () => {
     expect(screen.getByText('Sign-off checklist')).toBeInTheDocument();
     expect(screen.getByText('Payroll & regional filings')).toBeInTheDocument();
     expect(screen.getByText('Final statements')).toBeInTheDocument();
+    expect(screen.getByText('All Sales')).toBeInTheDocument();
+    expect(screen.getByText('Vendor Bills')).toBeInTheDocument();
+    expect(screen.getByText('Expense Transactions')).toBeInTheDocument();
+    expect(screen.getByText('Bank Transactions')).toBeInTheDocument();
+    expect(screen.getByText('Journal Entries')).toBeInTheDocument();
     expect(screen.queryByText('Sales & Payments')).not.toBeInTheDocument();
     expect(screen.queryByText('Quick Entry')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('← Full menu'));
+    await userEvent.click(screen.getByText('Vendor Bills'));
+    expect(useUiStore.getState().view).toEqual({ kind: 'expenses', tab: 'bills' });
+
+    useUiStore.setState({ view: { kind: 'yearEndWorkspace' } });
+    await userEvent.click(await screen.findByText('← Full menu'));
     expect(useUiStore.getState().view.kind).toBe('dashboard');
   });
 });
