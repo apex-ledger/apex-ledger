@@ -25,6 +25,7 @@ export interface OutgoingMail {
   subject: string;
   body: string;
   attachmentPath?: string;
+  replyTo?: string;
 }
 
 class SmtpSession {
@@ -131,6 +132,7 @@ export function buildMime(options: SmtpOptions, mail: OutgoingMail): string {
     `Subject: ${encodeHeader(mail.subject)}`,
     `Date: ${new Date().toUTCString()}`,
     `Message-ID: <${crypto.randomUUID()}@apexledger>`,
+    ...(mail.replyTo ? [`Reply-To: ${mail.replyTo}`] : []),
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     '',

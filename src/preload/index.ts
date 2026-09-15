@@ -887,6 +887,7 @@ const api = {
   invoicePdf: {
     generate: invoke<{ saved: false } | { saved: true; filePath: string }>('invoicePdf:generate'),
     emailViaOutlook: invoke<{ sent: true }>('invoicePdf:emailViaOutlook'),
+    sendDirect: invoke<{ sent: true }>('invoicePdf:sendDirect'),
     saveToDownloads: invoke<{ filePath: string }>('invoicePdf:saveToDownloads'),
   },
   bankReconciliation: {

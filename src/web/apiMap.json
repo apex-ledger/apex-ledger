@@ -385,6 +385,7 @@
     "invoicePdf": {
       "generate": "invoicePdf:generate",
       "emailViaOutlook": "invoicePdf:emailViaOutlook",
+      "sendDirect": "invoicePdf:sendDirect",
       "saveToDownloads": "invoicePdf:saveToDownloads"
     },
     "bankReconciliation": {

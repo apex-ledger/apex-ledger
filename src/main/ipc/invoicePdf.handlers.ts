@@ -7,7 +7,7 @@ import { getCurrentDb } from '../companyFile';
 import { getInvoiceById } from '../db/queries';
 import { mapContactRow } from '../db/mappers';
 import { generateInvoicePdf } from '../forms/generateInvoicePdf';
-import { sendEmailWithAttachment } from '../email/sendEmail';
+import { sendEmailWithAttachment, sendPlatformEmailWithAttachment } from '../email/sendEmail';
 import { companyGet } from './company.handlers';
 
 function safeFileNamePart(s: string): string {
@@ -69,6 +69,20 @@ export async function invoicePdfEmailViaOutlook(input: unknown) {
       `Couldn't open Outlook (${err instanceof Error ? err.message : String(err)}). This only works if Outlook desktop is installed — try "Download PDF" and attach it manually instead.`,
     );
   }
+}
+
+/** Sends the invoice straight out through the platform's own mail relay — no Outlook required, so
+ * it works the same in the web app as on desktop. The compose box on the invoice page supplies
+ * who it's to, the subject/message (pre-filled but editable) and a reply-to address. */
+export async function invoicePdfSendDirect(input: unknown) {
+  const { invoiceId, to, subject, body, replyTo } = input as { invoiceId: number; to: string; subject: string; body: string; replyTo?: string };
+  if (!to || !to.trim()) throw new Error('Enter an email address to send to.');
+  const { invoice, bytes } = await resolveInvoicePdfBytes(invoiceId);
+
+  const tempPath = path.join(os.tmpdir(), `${crypto.randomUUID()}-${safeFileNamePart(suggestedFileName(invoice.invoiceNumber))}`);
+  fs.writeFileSync(tempPath, bytes);
+  await sendPlatformEmailWithAttachment(tempPath, to.trim(), subject, body, replyTo);
+  return { sent: true as const };
 }
 
 /** Saves the invoice PDF straight to Downloads (no dialog) — used for the Gmail flow, mirrors

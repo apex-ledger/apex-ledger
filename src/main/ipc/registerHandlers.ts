@@ -471,6 +471,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('invoicePdf:generate', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfGenerate(mainWindow, input)));
   ipcMain.handle('invoicePdf:emailViaOutlook', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfEmailViaOutlook(input)));
+  ipcMain.handle('invoicePdf:sendDirect', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSendDirect(input)));
   ipcMain.handle('invoicePdf:saveToDownloads', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSaveToDownloads(input)));
 
   ipcMain.handle('salesReceiptPdf:generate', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfGenerate(mainWindow, input)));

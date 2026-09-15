@@ -38,6 +38,8 @@ import { DocumentHistoryPanel } from '../../components/DocumentHistoryPanel';
 import { DocumentLineTagPicker, useHasTagGroups } from '../../components/DocumentLineTagPicker';
 import { expandBundle, productPickerOptions, productTypeOf } from '@shared/domain/inventory/productCatalogue';
 import { ErrorNotice } from '../../components/ErrorNotice';
+import { EmailComposeModal } from '../../components/EmailComposeModal';
+import { webContext } from '../company-settings/WebOrganisationSection';
 
 
 interface LineRow {
@@ -198,6 +200,7 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [creditAvailableCents, setCreditAvailableCents] = useState(0);
@@ -717,12 +720,25 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
             <ShareMenu
               busy={pdfBusy}
               actions={[
+                { label: 'Send Email…', onClick: () => setComposeOpen(true) },
                 { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
                 { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
                 { label: 'Export as PDF…', onClick: handleDownloadPdf },
                 { label: 'Save to Downloads', onClick: handleSaveToDownloads },
               ]}
             />
+            {posted && (
+              <EmailComposeModal
+                open={composeOpen}
+                onClose={() => setComposeOpen(false)}
+                title={`Email invoice ${posted.invoiceNumber}`}
+                defaultTo={customers.find((c) => c.id === posted.customerId)?.email ?? ''}
+                defaultSubject={`Invoice ${posted.invoiceNumber}`}
+                defaultBody={`Hi ${customerNameById.get(posted.customerId) ?? ''},\n\nPlease find attached invoice ${posted.invoiceNumber}, due ${posted.dueDate}.\n\nThanks!`}
+                defaultReplyTo={webContext()?.user.email}
+                onSend={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted.id, to, subject, body, replyTo })}
+              />
+            )}
             {posted.paidCents > 0 && (
               <button type="button" disabled={busy} onClick={handleReverseLastPayment} className="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50">
                 Reverse Last Payment
