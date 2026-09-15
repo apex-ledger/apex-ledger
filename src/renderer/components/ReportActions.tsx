@@ -65,7 +65,8 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
   const [matchIndex, setMatchIndex] = useState(-1);
   const [matchCount, setMatchCount] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [composeOpen, setComposeOpen] = useState(false);
+  // Which attachment the open send dialog will carry; null while it is closed.
+  const [composeAs, setComposeAs] = useState<'pdf' | 'excel' | null>(null);
   const matchesRef = useRef<HTMLElement[]>([]);
 
   function clearSearchMarks() {
@@ -179,6 +180,12 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
   }
 
   async function emailReport(fields: { to: string; subject: string; body: string; replyTo: string }) {
+    if (composeAs === 'excel') {
+      const rows = extractTables(targetRef.current);
+      if (rows.length === 0) return { ok: false as const, error: 'This report has no table on screen to put in a spreadsheet.' };
+      const exportRows = generatedAt ? [[`Generated on: ${generatedAt}`], [], ...rows] : rows;
+      return window.api.mail.sendReportExcel({ ...fields, reportName, rows: exportRows });
+    }
     const pdf = await reportPdf();
     if (!pdf) return { ok: false as const, error: 'This report has no table on screen to attach.' };
     return window.api.mail.sendAttachment({ ...fields, fileName: pdf.fileName, base64: bytesToBase64(pdf.bytes) });
@@ -200,8 +207,11 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
       <button type="button" disabled={busy} onClick={() => void printReport()} className={button} title="Print this report">
         Print
       </button>
-      <button type="button" disabled={busy} onClick={() => setComposeOpen(true)} className={button} title="Email this report as a PDF attachment">
-        Email
+      <button type="button" disabled={busy} onClick={() => setComposeAs('pdf')} className={button} title="Email this report with a PDF attached">
+        Email PDF
+      </button>
+      <button type="button" disabled={busy} onClick={() => setComposeAs('excel')} className={button} title="Email this report with an Excel workbook attached">
+        Email Excel
       </button>
       <div className="flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5">
         <input
@@ -222,9 +232,9 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
       </div>
       {status && <span className="text-xs text-gray-500">{status}</span>}
       <EmailComposeModal
-        open={composeOpen}
-        onClose={() => setComposeOpen(false)}
-        title={`Email ${reportName}`}
+        open={composeAs !== null}
+        onClose={() => setComposeAs(null)}
+        title={`Email ${reportName} as ${composeAs === 'excel' ? 'an Excel workbook' : 'a PDF'}`}
         defaultTo=""
         defaultSubject={reportName}
         defaultBody={`Hi,\n\nPlease find attached the ${reportName}${generatedAt ? `, generated on ${generatedAt}` : ''}.\n\nThanks!`}

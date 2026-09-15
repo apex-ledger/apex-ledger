@@ -39,6 +39,7 @@ import { DocumentLineTagPicker, useHasTagGroups } from '../../components/Documen
 import { expandBundle, productPickerOptions, productTypeOf } from '@shared/domain/inventory/productCatalogue';
 import { ErrorNotice } from '../../components/ErrorNotice';
 import { DocumentActions, defaultEmailBody } from '../../components/DocumentActions';
+import { CompanyLogoBox } from '../../components/CompanyLogoBox';
 
 
 interface LineRow {
@@ -830,6 +831,7 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
                 placeholder={customerId === null ? 'Pick a customer first' : 'name@example.com'}
               />
             </label>
+            <CompanyLogoBox />
             <label className="block text-sm">
               <span className="text-gray-600">Invoice #</span>
               <input

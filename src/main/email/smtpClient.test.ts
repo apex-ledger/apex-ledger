@@ -23,3 +23,13 @@ describe('outgoing mail', () => {
     expect(mime).not.toMatch(/\r\n\.\r\n/);
   });
 });
+
+describe('attachment labels', () => {
+  it('names the attachment type from its extension, so a workbook does not arrive labelled as a PDF', async () => {
+    const { attachmentMimeType } = await import('./smtpClient');
+    expect(attachmentMimeType('Trial Balance.xlsx')).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(attachmentMimeType('Invoice INV-1.PDF')).toBe('application/pdf');
+    expect(attachmentMimeType('rows.csv')).toBe('text/csv');
+    expect(attachmentMimeType('mystery')).toBe('application/octet-stream');
+  });
+});

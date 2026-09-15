@@ -889,6 +889,7 @@ const api = {
   },
   mail: {
     sendAttachment: invoke<{ sent: true }>('mail:sendAttachment'),
+    sendReportExcel: invoke<{ sent: true }>('mail:sendReportExcel'),
   },
   invoicePdf: {
     generate: invoke<{ saved: false } | { saved: true; filePath: string }>('invoicePdf:generate'),

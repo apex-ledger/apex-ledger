@@ -386,7 +386,8 @@
       "saveToDownloads": "salesReceiptPdf:saveToDownloads"
     },
     "mail": {
-      "sendAttachment": "mail:sendAttachment"
+      "sendAttachment": "mail:sendAttachment",
+      "sendReportExcel": "mail:sendReportExcel"
     },
     "invoicePdf": {
       "generate": "invoicePdf:generate",

@@ -123,6 +123,16 @@ function wrap76(base64: string): string {
   return base64.replace(/(.{76})/g, '$1\r\n');
 }
 
+/** Named from the file's extension — every attachment used to go out labelled as a PDF, which mail
+ * clients trust over the filename, so an Excel workbook arrived as a "PDF" that would not open. */
+export function attachmentMimeType(fileName: string): string {
+  const extension = fileName.toLowerCase().split('.').pop() ?? '';
+  if (extension === 'pdf') return 'application/pdf';
+  if (extension === 'xlsx') return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (extension === 'csv') return 'text/csv';
+  return 'application/octet-stream';
+}
+
 export function buildMime(options: SmtpOptions, mail: OutgoingMail): string {
   const boundary = `----=_Apex_${crypto.randomBytes(12).toString('hex')}`;
   const from = options.fromName ? `${encodeHeader(options.fromName)} <${options.fromAddress}>` : options.fromAddress;
@@ -146,7 +156,7 @@ export function buildMime(options: SmtpOptions, mail: OutgoingMail): string {
     const name = path.basename(mail.attachmentPath).replace(/"/g, '');
     lines.push(
       `--${boundary}`,
-      `Content-Type: application/pdf; name="${name}"`,
+      `Content-Type: ${attachmentMimeType(name)}; name="${name}"`,
       'Content-Transfer-Encoding: base64',
       `Content-Disposition: attachment; filename="${name}"`,
       '',

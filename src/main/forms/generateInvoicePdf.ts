@@ -10,13 +10,14 @@ const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const HEADER_HEIGHT = 70;
 
 // Same brand palette as generateFormPdf.ts (pdf-lib needs plain 0–1 rgb() values, not Tailwind hex).
-const BRAND_900 = rgb(0.0824, 0.2588, 0.1686); // #15422b
-const BRAND_700 = rgb(0.1098, 0.3882, 0.2353); // #1c633c
-const BRAND_50 = rgb(0.9412, 0.9804, 0.9529); // #f0faf3
-const GOLD_400 = rgb(0.8745, 0.6627, 0.1922); // #dfa931
-const GOLD_50 = rgb(0.9922, 0.9725, 0.9255); // #fdf8ec
-const GOLD_700 = rgb(0.5294, 0.3294, 0.0902); // #875417
-const WHITE = rgb(1, 1, 1);
+// Black and white on purpose: invoices go to printers, faxes and photocopiers, and a brand-green
+// band costs toner and turns to mud in greyscale. The company's own logo is the only colour.
+const BRAND_900 = rgb(0, 0, 0);
+const BRAND_700 = rgb(0, 0, 0);
+const BRAND_50 = rgb(1, 1, 1);
+const GOLD_400 = rgb(0, 0, 0);
+const GOLD_50 = rgb(0.9, 0.9, 0.9);
+const GOLD_700 = rgb(0, 0, 0);
 const TEXT_DARK = rgb(0.15, 0.15, 0.15);
 const TEXT_MUTED = rgb(0.4, 0.4, 0.4);
 
@@ -72,14 +73,14 @@ export async function generateInvoicePdf(invoice: Invoice, customer: Contact, co
     page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: BRAND_50 });
     if (pageNumber === 1) {
-      page.drawRectangle({ x: 0, y: PAGE_HEIGHT - HEADER_HEIGHT, width: PAGE_WIDTH, height: HEADER_HEIGHT, color: BRAND_900 });
-      page.drawRectangle({ x: 0, y: PAGE_HEIGHT - HEADER_HEIGHT - 4, width: PAGE_WIDTH, height: 4, color: GOLD_400 });
-      page.drawText('INVOICE', { x: MARGIN, y: PAGE_HEIGHT - 44, size: 22, font: boldFont, color: WHITE });
-      page.drawText(company.legalName, { x: MARGIN, y: PAGE_HEIGHT - 62, size: 10, font, color: rgb(0.85, 0.93, 0.87) });
+      
+      page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, thickness: 1.5, color: BRAND_900 });
+      page.drawText('INVOICE', { x: MARGIN, y: PAGE_HEIGHT - 44, size: 22, font: boldFont, color: BRAND_900 });
+      page.drawText(company.legalName, { x: MARGIN, y: PAGE_HEIGHT - 62, size: 10, font, color: TEXT_DARK });
       logoPromises.push(drawCompanyLogo(pdfDoc, page, company.logoDataUrl, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 10, HEADER_HEIGHT - 20, 180));
       y = PAGE_HEIGHT - HEADER_HEIGHT - 22;
     } else {
-      page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 4, width: PAGE_WIDTH, height: 4, color: GOLD_400 });
+      page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - 34 }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - 34 }, thickness: 0.75, color: BRAND_900 });
       page.drawText(`Invoice ${invoice.invoiceNumber}`, { x: MARGIN, y: PAGE_HEIGHT - 26, size: 10, font: boldFont, color: BRAND_700 });
       y = PAGE_HEIGHT - 46;
     }
@@ -185,7 +186,7 @@ export async function generateInvoicePdf(invoice: Invoice, customer: Contact, co
     const descLines = wrapText(line.description, font, 9, cols[0].width - 8);
     const rowHeight = Math.max(16, descLines.length * 11 + 4);
     ensureSpace(rowHeight + 4);
-    if (i % 2 === 1) page.drawRectangle({ x: MARGIN, y: y - rowHeight + 4, width: CONTENT_WIDTH, height: rowHeight - 2, color: rgb(0.97, 0.99, 0.975) });
+    if (i % 2 === 1) page.drawRectangle({ x: MARGIN, y: y - rowHeight + 4, width: CONTENT_WIDTH, height: rowHeight - 2, color: rgb(0.96, 0.96, 0.96) });
 
     descLines.forEach((dLine, li) => {
       page.drawText(dLine, { x: cols[0].x + 4, y: y - li * 11, size: 9, font, color: TEXT_DARK });
