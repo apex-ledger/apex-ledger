@@ -17,6 +17,7 @@ export function EmailComposeModal({
   onSend,
   summary,
   attachmentNote = 'The PDF is attached automatically.',
+  requireConfirmation,
 }: {
   open: boolean;
   onClose: () => void;
@@ -25,17 +26,21 @@ export function EmailComposeModal({
   defaultSubject: string;
   defaultBody: string;
   defaultReplyTo?: string;
-  onSend: (fields: { to: string; subject: string; body: string; replyTo: string }) => Promise<{ ok: true } | { ok: false; error: string }>;
+  onSend: (fields: { to: string; subject: string; body: string; replyTo: string; confirmed: boolean }) => Promise<{ ok: true } | { ok: false; error: string }>;
   /** Anything the sender should see before sending, above the fields — a reminder's tier and balance. */
   summary?: ReactNode;
   /** What travels with the message, said in the footnote. */
   attachmentNote?: string;
+  /** A statement the sender must tick before Send works — "the recipient agreed to receive this
+   * electronically" for a tax slip. Its answer travels to the server as `confirmed`. */
+  requireConfirmation?: string;
 }) {
   const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
   const [body, setBody] = useState(defaultBody);
   const [replyTo, setReplyTo] = useState(defaultReplyTo ?? '');
   const [busy, setBusy] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -45,15 +50,17 @@ export function EmailComposeModal({
     setBody(defaultBody);
     setReplyTo(defaultReplyTo ?? '');
     setError(null);
+    setConfirmed(false);
     // Only reset when the box opens — the caller's defaults can change out from under an edit in progress.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   async function send() {
     if (!to.trim()) return setError('Enter an email address to send to.');
+    if (requireConfirmation && !confirmed) return setError('Tick the confirmation above Send first.');
     setBusy(true);
     setError(null);
-    const r = await onSend({ to: to.trim(), subject, body, replyTo: replyTo.trim() });
+    const r = await onSend({ to: to.trim(), subject, body, replyTo: replyTo.trim(), confirmed });
     setBusy(false);
     if (!r.ok) return setError(r.error);
     onClose();
@@ -67,7 +74,7 @@ export function EmailComposeModal({
       footer={
         <>
           <button type="button" onClick={onClose} className={buttonClass('secondary')}>Cancel</button>
-          <button type="button" disabled={busy} onClick={() => void send()} className={buttonClass('primary')}>{busy ? 'Sending…' : 'Send'}</button>
+          <button type="button" disabled={busy || (Boolean(requireConfirmation) && !confirmed)} onClick={() => void send()} className={buttonClass('primary')}>{busy ? 'Sending…' : 'Send'}</button>
         </>
       }
     >
@@ -89,6 +96,12 @@ export function EmailComposeModal({
         <span className="text-gray-600">Reply-To (optional — where the client's reply should go)</span>
         <input type="email" value={replyTo} onChange={(e) => setReplyTo(e.target.value)} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" placeholder="you@yourfirm.com" />
       </label>
+      {requireConfirmation && (
+        <label className="mt-3 flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-sm text-amber-900">
+          <input type="checkbox" className="mt-0.5" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          <span>{requireConfirmation}</span>
+        </label>
+      )}
       <p className="mt-2 text-xs text-gray-400">{attachmentNote} Sent from Apex Ledger's own mail server — no Outlook or mail setup needed.</p>
     </Modal>
   );

@@ -339,7 +339,9 @@
     },
     "letters": {
       "list": "letters:list",
-      "generate": "letters:generate"
+      "generate": "letters:generate",
+      "emailDefaults": "letters:emailDefaults",
+      "sendDirect": "letters:sendDirect"
     },
     "workpapers": {
       "sheet": "workpapers:sheet",
@@ -388,6 +390,15 @@
       "sendDirect": "salesReceiptPdf:sendDirect",
       "bytes": "salesReceiptPdf:bytes",
       "saveToDownloads": "salesReceiptPdf:saveToDownloads"
+    },
+    "slips": {
+      "recipients": "slips:recipients",
+      "sendOne": "slips:sendOne",
+      "sendAll": "slips:sendAll"
+    },
+    "paystub": {
+      "emailDefaults": "paystub:emailDefaults",
+      "send": "paystub:send"
     },
     "documentPdf": {
       "bytes": "documentPdf:bytes",
@@ -564,7 +575,8 @@
     "forms": {
       "generatePdf": "forms:generatePdf",
       "emailViaOutlook": "forms:emailViaOutlook",
-      "saveToDownloads": "forms:saveToDownloads"
+      "saveToDownloads": "forms:saveToDownloads",
+      "sendDirect": "forms:sendDirect"
     },
     "voice": {
       "status": "voice:status",

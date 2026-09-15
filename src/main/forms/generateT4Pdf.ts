@@ -13,7 +13,9 @@ import { SLIP_WIDTH, beginSlip, boxMoney, drawBox, drawOtherInformation, drawSli
  * T4 Summary. Figures come from posted pay runs; every dollar should be checked against the
  * payroll records before anything is filed.
  */
-export async function generateT4Pdf(company: CompanyInfo, slips: T4SlipResult[], summary: T4SummaryResult, taxYear: number): Promise<Uint8Array> {
+/** `summary` null leaves the T4 Summary page off: an employee's own copy must not carry the totals
+ * for every employee on the payroll. */
+export async function generateT4Pdf(company: CompanyInfo, slips: T4SlipResult[], summary: T4SummaryResult | null, taxYear: number): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const fonts = await slipFonts(pdfDoc);
   const payrollAccount = company.payrollNumber ?? (company.businessNumber ? `${company.businessNumber}RP0001` : '');
@@ -71,6 +73,8 @@ export async function generateT4Pdf(company: CompanyInfo, slips: T4SlipResult[],
     drawT4(beginSlip(page, fonts, 0, 'T4  Statement of Remuneration Paid', 'État de la rémunération payée', taxYear, "Copy 2 – To be attached to the employee's federal return / Copie 2"), slip);
     drawT4(beginSlip(page, fonts, 1, 'T4  Statement of Remuneration Paid', 'État de la rémunération payée', taxYear, "Copy 3 – For the employee's records / Copie 3"), slip);
   }
+
+  if (summary === null) return pdfDoc.save();
 
   // T4 Summary page
   const font = fonts.regular;

@@ -5,7 +5,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { getFormTemplate, type FormTemplate } from '@shared/domain/forms/formTemplates';
 import { generateFormPdf } from '../forms/generateFormPdf';
-import { sendEmailWithAttachment } from '../email/sendEmail';
+import { z } from 'zod';
+import { sendEmailWithAttachment, sendPlatformEmailWithAttachment } from '../email/sendEmail';
 
 function safeFileNamePart(s: string): string {
   return s.replace(/[\\/:*?"<>|]/g, '').trim();
@@ -61,6 +62,24 @@ export async function formsEmailViaOutlook(input: unknown) {
       `Couldn't open Outlook (${err instanceof Error ? err.message : String(err)}). This only works if Outlook desktop is installed — try "Download PDF" and attach it manually instead.`,
     );
   }
+}
+
+/** Sends the fillable form through the platform mail relay with the PDF attached — the same path
+ * invoices and statements use, so it works on the web as well as the desktop app, with no Outlook. */
+export async function formsSendDirect(input: unknown) {
+  const { formId, clientName, to, subject, body, replyTo } = z.object({
+    formId: z.string().trim().min(1), clientName: z.string().trim().max(200).nullish(),
+    to: z.string().trim().min(1, 'Enter an email address to send to.'), subject: z.string().max(300), body: z.string().max(20_000), replyTo: z.string().trim().optional(),
+  }).parse(input);
+  const { template, bytes } = await resolveTemplateAndBytes(formId, clientName);
+  const tempPath = path.join(os.tmpdir(), `${crypto.randomUUID()}-${safeFileNamePart(suggestedFileName(template, clientName))}`);
+  fs.writeFileSync(tempPath, bytes);
+  try {
+    await sendPlatformEmailWithAttachment(tempPath, to, subject, body, replyTo);
+  } finally {
+    fs.rmSync(tempPath, { force: true });
+  }
+  return { sent: true as const };
 }
 
 /** Saves the PDF straight to the Downloads folder (no dialog) and returns its path — used for the

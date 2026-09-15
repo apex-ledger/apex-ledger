@@ -451,6 +451,8 @@ export interface Employee {
   /** True = vacation pay accrues to a Vacation Pay Payable liability instead of being paid out with
    * every cheque, with CPP/EI/tax deferred until it is actually paid (see calculatePay). */
   vacationPayAccrued: boolean;
+  /** Where pay stubs and T4 slips are emailed; absent on hand-built test objects. */
+  email?: string | null;
 }
 
 export type CpaNoteStatus = 'open' | 'resolved';

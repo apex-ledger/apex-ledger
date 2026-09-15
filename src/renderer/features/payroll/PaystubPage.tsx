@@ -3,6 +3,8 @@ import { BackButton } from '../../components/BackButton';
 import { employeeAddressLines } from '@shared/domain/payroll/employeeAddress';
 import { Money } from '../../components/Money';
 import { useUiStore } from '../../app/store/uiStore';
+import { EmailComposeModal } from '../../components/EmailComposeModal';
+import { webContext } from '../company-settings/WebOrganisationSection';
 
 type PaystubResult = Extract<Awaited<ReturnType<typeof window.api.payrollRuns.getPaystub>>, { ok: true }>['data'];
 
@@ -24,6 +26,16 @@ export function PaystubPage({ runId }: { runId: number }) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [emailDefaults, setEmailDefaults] = useState<{ to: string | null; subject: string; body: string } | null>(null);
+  const [emailNotice, setEmailNotice] = useState<string | null>(null);
+
+  async function openEmail() {
+    setSaveError(null);
+    setEmailNotice(null);
+    const r = await window.api.paystub.emailDefaults({ id: runId });
+    if (!r.ok) return setSaveError(r.error);
+    setEmailDefaults(r.data);
+  }
 
   async function handleSavePdf() {
     setSaving(true);
@@ -78,13 +90,34 @@ export function PaystubPage({ runId }: { runId: number }) {
       <div className="mx-auto mb-3 flex max-w-2xl items-center gap-3 print:hidden">
         <BackButton fallback={{ kind: 'payroll' }} fallbackLabel="Payroll" />
         {saveError && <span className="ml-auto text-sm text-red-600">{saveError}</span>}
-        <button type="button" disabled={saving} onClick={handleSavePdf} className={`${saveError ? '' : 'ml-auto '}rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50`}>
+        {!saveError && emailNotice && <span className="ml-auto text-sm text-emerald-700">{emailNotice}</span>}
+        <button type="button" disabled={saving} onClick={handleSavePdf} className={`${saveError || emailNotice ? '' : 'ml-auto '}rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50`}>
           {saving ? 'Saving…' : 'Save as PDF'}
         </button>
         <button type="button" onClick={() => window.print()} className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
           Print
         </button>
+        <button type="button" onClick={() => void openEmail()} className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+          Email
+        </button>
       </div>
+      {emailDefaults && (
+        <EmailComposeModal
+          open
+          onClose={() => setEmailDefaults(null)}
+          title={`Pay stub to ${data.employee.name}`}
+          defaultTo={emailDefaults.to ?? ''}
+          defaultSubject={emailDefaults.subject}
+          defaultBody={emailDefaults.body}
+          defaultReplyTo={webContext()?.user.email}
+          attachmentNote="The pay stub PDF is attached automatically. It shows only the last digits of the SIN."
+          onSend={async (fields) => {
+            const r = await window.api.paystub.send({ id: runId, to: fields.to, subject: fields.subject, body: fields.body, replyTo: fields.replyTo || undefined });
+            if (r.ok) setEmailNotice(`Pay stub sent to ${fields.to}.`);
+            return r;
+          }}
+        />
+      )}
 
       <div className="mx-auto max-w-2xl rounded-lg border border-gray-200 bg-white p-8 shadow-sm print:border-0 print:shadow-none">
         <div className="flex items-start justify-between border-b border-gray-300 pb-4">

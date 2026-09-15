@@ -58,6 +58,7 @@ export function EmployeeFormModal({
   const [rrspEmployerMatchCents, setRrspEmployerMatchCents] = useState(0);
   const [healthBenefitCents, setHealthBenefitCents] = useState(0);
   const [sin, setSin] = useState('');
+  const [email, setEmail] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
   const [addressCity, setAddressCity] = useState('');
@@ -90,6 +91,7 @@ export function EmployeeFormModal({
     setRrspEmployerMatchCents(editing?.rrspEmployerMatchCents ?? 0);
     setHealthBenefitCents(editing?.healthBenefitCents ?? 0);
     setSin(editing?.sin ?? '');
+    setEmail(editing?.email ?? '');
     setAddressLine1(editing?.addressLine1 ?? '');
     setAddressLine2(editing?.addressLine2 ?? '');
     setAddressCity(editing?.addressCity ?? '');
@@ -105,7 +107,7 @@ export function EmployeeFormModal({
     setName(''); setProvince('ON'); setPayType('Hourly'); setHourlyRateCents(0); setAnnualSalaryCents(0);
     setPayPeriodsPerYear(26); setVacationPayRate(4); setVacationPayAccrued(false);
     setFederalTotalClaimCents(null); setProvincialTotalClaimCents(null); setAdditionalTaxCents(0);
-    setRrspEmployerMatchCents(0); setHealthBenefitCents(0); setSin('');
+    setRrspEmployerMatchCents(0); setHealthBenefitCents(0); setSin(''); setEmail('');
     setAddressLine1(''); setAddressLine2(''); setAddressCity(''); setAddressProvince('ON'); setAddressPostalCode('');
   }
 
@@ -128,6 +130,7 @@ export function EmployeeFormModal({
       rrspEmployerMatchCents: rrspEmployerMatchCents > 0 ? rrspEmployerMatchCents : null,
       healthBenefitCents: healthBenefitCents > 0 ? healthBenefitCents : null,
       sin: sin.trim() ? formatSin(sin) : null,
+      email: email.trim() || null,
       sinLastFour: sin.trim() ? sin.trim().replace(/\D/g, '').slice(-4) : null,
       addressLine1: addressLine1.trim() ? capitalizeWords(addressLine1) : null,
       addressLine2: addressLine2.trim() ? capitalizeWords(addressLine2) : null,
@@ -261,6 +264,18 @@ export function EmployeeFormModal({
             onBlur={(e) => setSin(formatSin(e.target.value))}
           />
           <span className="mt-1 block text-xs text-gray-400">Only used to print T4 slips at year end — pay stubs still show just the last 4 digits.</span>
+        </label>
+
+        <label className="block text-sm">
+          <span className="text-gray-600">Email (optional)</span>
+          <input
+            type="email"
+            className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
+            placeholder="name@example.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <span className="mt-1 block text-xs text-gray-400">Where pay stubs and T4 slips are emailed. A T4 is only emailed once the employee has agreed to receive it electronically.</span>
         </label>
 
         <div className="rounded border border-gray-200 bg-gray-50 p-3">

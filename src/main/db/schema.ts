@@ -465,6 +465,8 @@ export interface EmployeeTable {
   /** 1 = accrue vacation pay to a liability instead of paying it out each period (see
    * calculatePay's vacationPayAccrued). Defaults to 0, the original pay-it-out behaviour. */
   vacationPayAccrued: Generated<number>;
+  /** Where pay stubs and T4 slips are emailed. */
+  email: string | null;
 }
 
 export interface PayrollRunTable {

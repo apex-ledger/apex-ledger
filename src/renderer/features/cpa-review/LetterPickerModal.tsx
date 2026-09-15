@@ -4,6 +4,8 @@ import { LETTER_FIELDS } from '@shared/domain/letters/letterTemplates';
 import type { LetterTemplateSummary } from '../../../preload';
 import { Modal } from '../../components/Modal';
 import { localIsoDate } from '@shared/domain/dates/localDate';
+import { EmailComposeModal } from '../../components/EmailComposeModal';
+import { webContext } from '../company-settings/WebOrganisationSection';
 
 function todayIso(): string {
   return localIsoDate();
@@ -31,6 +33,8 @@ export function LetterPickerModal({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
+  const [emailDefaults, setEmailDefaults] = useState<{ subject: string; body: string } | null>(null);
+  const [sentNotice, setSentNotice] = useState<string | null>(null);
 
   const selected = templates.find((t) => t.id === selectedId) ?? null;
 
@@ -38,6 +42,7 @@ export function LetterPickerModal({
     if (!open) return;
     setError(null);
     setSavedPath(null);
+    setSentNotice(null);
     setSelectedId(null);
     setValues({ letterDate: todayIso(), ...defaults });
     window.api.letters.list().then((r) => {
@@ -61,7 +66,17 @@ export function LetterPickerModal({
     if (result.data.saved) setSavedPath(result.data.filePath);
   }
 
+  async function openEmail() {
+    if (!selected) return;
+    setError(null);
+    setSavedPath(null);
+    const result = await window.api.letters.emailDefaults({ templateId: selected.id, values });
+    if (!result.ok) return setError(result.error);
+    setEmailDefaults(result.data);
+  }
+
   return (
+    <>
     <Modal
       open={open}
       onClose={onClose}
@@ -79,6 +94,15 @@ export function LetterPickerModal({
             className="rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50"
           >
             Generate PDF
+          </button>
+          <button
+            type="button"
+            disabled={busy || selected === null || blanks.length > 0}
+            onClick={() => void openEmail()}
+            title={blanks.length > 0 ? 'Fill in every field before emailing the letter' : 'Email the finished letter as a PDF'}
+            className="rounded-full border border-brand-200 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+          >
+            Email
           </button>
         </>
       }
@@ -145,7 +169,28 @@ export function LetterPickerModal({
         )}
 
         {savedPath && <p className="text-xs text-emerald-700">Saved to {savedPath}</p>}
+        {sentNotice && <p className="text-xs text-emerald-700">{sentNotice}</p>}
+        {selected && blanks.length > 0 && <p className="text-xs text-gray-500">Email is available once every field is filled — a letter with blanks is saved as a draft, not issued.</p>}
       </div>
     </Modal>
+    {selected && emailDefaults && (
+      <EmailComposeModal
+        open
+        onClose={() => setEmailDefaults(null)}
+        title={`Email ${selected.name}`}
+        defaultTo=""
+        defaultSubject={emailDefaults.subject}
+        defaultBody={emailDefaults.body}
+        defaultReplyTo={webContext()?.user.email}
+        attachmentNote="The finished letter is attached as a PDF."
+        requireConfirmation={selected.practitionerReviewRequired ? 'I have read this letter through and take responsibility for its wording before it is issued.' : undefined}
+        onSend={async ({ to, subject, body, replyTo, confirmed }) => {
+          const r = await window.api.letters.sendDirect({ templateId: selected.id, values, to, subject, body, replyTo: replyTo || undefined, reviewedConfirmed: confirmed });
+          if (r.ok) setSentNotice(`${selected.name} sent to ${to}.`);
+          return r;
+        }}
+      />
+    )}
+    </>
   );
 }

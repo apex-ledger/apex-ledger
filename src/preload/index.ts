@@ -842,6 +842,8 @@ const api = {
   letters: {
     list: invoke<LetterTemplateSummary[]>('letters:list'),
     generate: invoke<{ saved: false } | { saved: true; filePath: string }>('letters:generate'),
+    emailDefaults: invoke<{ subject: string; body: string }>('letters:emailDefaults'),
+    sendDirect: invoke<{ sent: true }>('letters:sendDirect'),
   },
   workpapers: {
     sheet: invoke<WorkpaperSheet>('workpapers:sheet'),
@@ -890,6 +892,15 @@ const api = {
     sendDirect: invoke<{ sent: true }>('salesReceiptPdf:sendDirect'),
     bytes: invoke<{ fileName: string; base64: string }>('salesReceiptPdf:bytes'),
     saveToDownloads: invoke<{ filePath: string }>('salesReceiptPdf:saveToDownloads'),
+  },
+  slips: {
+    recipients: invoke<Array<{ key: number; name: string; email: string | null; amountCents: number; subject: string; body: string }>>('slips:recipients'),
+    sendOne: invoke<{ sent: true }>('slips:sendOne'),
+    sendAll: invoke<{ sent: string[]; skipped: string[]; failed: Array<{ name: string; error: string }> }>('slips:sendAll'),
+  },
+  paystub: {
+    emailDefaults: invoke<{ to: string | null; subject: string; body: string }>('paystub:emailDefaults'),
+    send: invoke<{ sent: true }>('paystub:send'),
   },
   documentPdf: {
     bytes: invoke<{ fileName: string; base64: string }>('documentPdf:bytes'),
@@ -1067,6 +1078,7 @@ const api = {
     generatePdf: invoke<{ saved: false } | { saved: true; filePath: string }>('forms:generatePdf'),
     emailViaOutlook: invoke<{ sent: true }>('forms:emailViaOutlook'),
     saveToDownloads: invoke<{ filePath: string }>('forms:saveToDownloads'),
+    sendDirect: invoke<{ sent: true }>('forms:sendDirect'),
   },
   voice: {
     status: invoke<VoiceStatus>('voice:status'),

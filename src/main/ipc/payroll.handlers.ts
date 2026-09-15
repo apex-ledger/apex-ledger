@@ -69,6 +69,7 @@ export async function employeesCreate(input: unknown) {
       bankTransit: payload.bankTransit ?? null,
       bankAccount: payload.bankAccount ?? null,
       vacationPayAccrued: payload.vacationPayAccrued ? 1 : 0,
+      email: payload.email ?? null,
     })
     .returningAll()
     .executeTakeFirstOrThrow();
@@ -103,6 +104,7 @@ export async function employeesUpdate(input: unknown) {
   if (patch.bankTransit !== undefined) updateValues.bankTransit = patch.bankTransit;
   if (patch.bankAccount !== undefined) updateValues.bankAccount = patch.bankAccount;
   if (patch.vacationPayAccrued !== undefined) updateValues.vacationPayAccrued = patch.vacationPayAccrued ? 1 : 0;
+  if (patch.email !== undefined) updateValues.email = patch.email;
   if (Object.keys(updateValues).length > 0) {
     await db.updateTable('employees').set(updateValues).where('id', '=', id).execute();
   }

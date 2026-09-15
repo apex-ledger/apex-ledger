@@ -4,6 +4,8 @@ import { FORM_TEMPLATES, type FormTemplate } from '@shared/domain/forms/formTemp
 import { toWhatsAppUrl } from '../../utils/phone';
 import { IconWhatsApp } from '../../components/icons';
 import { loadFavouritePages, toggleFavouritePage, type FavouritePage } from '../../utils/favouritePages';
+import { EmailComposeModal } from '../../components/EmailComposeModal';
+import { webContext } from '../company-settings/WebOrganisationSection';
 
 const CLIENT_COMPLIANCE_FORMS = FORM_TEMPLATES.filter((f) => f.category === 'client_compliance');
 const TAX_ACCOUNTING_FORMS = FORM_TEMPLATES.filter((f) => (f.category ?? 'tax_accounting') === 'tax_accounting');
@@ -21,6 +23,7 @@ export function FormsPage({ mode = 'all', embedded = false, requestedFormId }: F
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [favourites, setFavourites] = useState<Set<FavouritePage>>(() => loadFavouritePages());
+  const [emailing, setEmailing] = useState<FormTemplate | null>(null);
 
   useEffect(() => {
     window.api.clients.list().then((r) => r.ok && setClients(r.data));
@@ -58,17 +61,6 @@ export function FormsPage({ mode = 'all', embedded = false, requestedFormId }: F
     window.location.href = `mailto:${selectedClient.email}?subject=${subject}&body=${body}`;
   }
 
-  async function handleOutlook(formId: string, formTitle: string) {
-    if (!selectedClient?.email) return;
-    const key = busyKey(formId, 'outlook');
-    setBusy(key);
-    setError(null);
-    setMessage(null);
-    const result = await window.api.forms.emailViaOutlook({ formId, clientName: selectedClient.clientName, clientEmail: selectedClient.email });
-    setBusy(null);
-    if (!result.ok) return setError(result.error);
-    setMessage(`Opened in Outlook with "${formTitle}" attached — review and click Send when ready.`);
-  }
 
   async function handleGmail(formId: string, formTitle: string) {
     if (!selectedClient?.email) return;
@@ -144,12 +136,11 @@ export function FormsPage({ mode = 'all', embedded = false, requestedFormId }: F
                 </button>
                 <button
                   type="button"
-                  disabled={!selectedClient?.email || busy === busyKey(form.id, 'outlook')}
-                  onClick={() => handleOutlook(form.id, form.title)}
-                  title={selectedClient?.email ? 'Opens Outlook with the PDF already attached' : 'Select a client with an email address'}
-                  className="rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200 disabled:opacity-40"
+                  onClick={() => { setError(null); setMessage(null); setEmailing(form); }}
+                  title="Email the fillable PDF, attached, from inside Apex Ledger"
+                  className="rounded-full bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-200"
                 >
-                  {busy === busyKey(form.id, 'outlook') ? 'Opening Outlook…' : '📎 Outlook (attach PDF)'}
+                  ✉️ Email (PDF attached)
                 </button>
                 <button
                   type="button"
@@ -248,7 +239,7 @@ export function FormsPage({ mode = 'all', embedded = false, requestedFormId }: F
 
       <div className="rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-500">
         <p>
-          <strong>Outlook</strong> genuinely attaches the PDF (via Outlook automation) — a draft opens ready to send.
+          <strong>Email</strong> sends the fillable PDF attached, straight from Apex Ledger — on the desktop app and the web, with no Outlook needed. Replies go to your address.
         </p>
         <p className="mt-1">
           <strong>Gmail</strong> can't be auto-attached to from outside the browser (no web email allows that) — the PDF saves to your
@@ -262,6 +253,24 @@ export function FormsPage({ mode = 'all', embedded = false, requestedFormId }: F
           <strong>Other Email App</strong> only opens a pre-written message — attach the downloaded file yourself.
         </p>
       </div>
+
+      {emailing && (
+        <EmailComposeModal
+          open
+          onClose={() => setEmailing(null)}
+          title={`Email ${emailing.title}`}
+          defaultTo={selectedClient?.email ?? ''}
+          defaultSubject={`${emailing.title} — please complete`}
+          defaultBody={`Hi ${selectedClient?.clientName || 'there'},\n\nAttached is the "${emailing.title}" — please fill it out and send it back when you have a chance.\n\nThanks!`}
+          defaultReplyTo={webContext()?.user.email}
+          attachmentNote={`The fillable PDF${selectedClient ? `, with ${selectedClient.clientName} filled in,` : ''} is attached automatically.`}
+          onSend={async ({ to, subject, body, replyTo }) => {
+            const r = await window.api.forms.sendDirect({ formId: emailing.id, clientName: selectedClient?.clientName ?? null, to, subject, body, replyTo: replyTo || undefined });
+            if (r.ok) setMessage(`"${emailing.title}" sent to ${to}.`);
+            return r;
+          }}
+        />
+      )}
     </div>
   );
 }

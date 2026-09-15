@@ -352,6 +352,7 @@ export const newEmployeeSchema = z
     bankTransit: z.string().trim().max(5).nullable().optional().default(null),
     bankAccount: z.string().trim().max(12).nullable().optional().default(null),
     vacationPayAccrued: z.boolean().optional().default(false),
+    email: z.string().trim().max(200).email('Enter a valid email address, or leave it blank.').nullable().optional().or(z.literal('').transform(() => null)).default(null),
   })
   .refine((v) => (v.payType === 'Hourly' ? v.hourlyRateCents !== null : v.annualSalaryCents !== null), {
     message: 'Hourly employees need an hourly rate; salaried employees need an annual salary.',
@@ -384,6 +385,7 @@ export const updateEmployeeSchema = z.object({
     bankTransit: z.string().trim().max(5).nullable().optional(),
     bankAccount: z.string().trim().max(12).nullable().optional(),
     vacationPayAccrued: z.boolean().optional(),
+    email: z.string().trim().max(200).email('Enter a valid email address, or leave it blank.').nullable().optional().or(z.literal('').transform(() => null)),
   }),
 });
 

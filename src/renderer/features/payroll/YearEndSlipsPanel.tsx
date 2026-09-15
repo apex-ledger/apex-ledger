@@ -3,6 +3,7 @@ import type { T4SlipResult } from '@shared/domain/payroll/computeT4Slip';
 import type { T4ASlipResult } from '@shared/domain/payroll/computeT4ASlip';
 import type { T5018SlipResult } from '@shared/domain/payroll/computeT5018Slip';
 import { Money } from '../../components/Money';
+import { SlipEmailModal, type SlipKind } from './SlipEmailModal';
 
 function currentTaxYear(): number {
   return new Date().getFullYear();
@@ -13,6 +14,7 @@ export function YearEndSlipsPanel() {
   const [t4Preview, setT4Preview] = useState<T4SlipResult[]>([]);
   const [t4aPreview, setT4aPreview] = useState<T4ASlipResult[]>([]);
   const [t5018Preview, setT5018Preview] = useState<T5018SlipResult[]>([]);
+  const [emailing, setEmailing] = useState<SlipKind | null>(null);
   const [t4Downloading, setT4Downloading] = useState(false);
   const [t4aDownloading, setT4aDownloading] = useState(false);
   const [t5018Downloading, setT5018Downloading] = useState(false);
@@ -67,7 +69,7 @@ export function YearEndSlipsPanel() {
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-1">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">T4 — Employees</h3>
             <button
               type="button"
@@ -76,6 +78,15 @@ export function YearEndSlipsPanel() {
               className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50"
             >
               {t4Downloading ? 'Generating…' : 'Download T4 Slips (PDF)'}
+            </button>
+            <button
+              type="button"
+              disabled={t4Preview.length === 0}
+              onClick={() => setEmailing('t4')}
+              className="rounded-full border border-brand-200 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+              title="Email each person their own T4 slip, SIN masked"
+            >
+              Email T4 slips
             </button>
           </div>
           {t4Error && <p className="mb-2 text-xs text-red-600">{t4Error}</p>}
@@ -104,7 +115,7 @@ export function YearEndSlipsPanel() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-1">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">T4A — Contractors (Box 048)</h3>
             <button
               type="button"
@@ -113,6 +124,15 @@ export function YearEndSlipsPanel() {
               className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50"
             >
               {t4aDownloading ? 'Generating…' : 'Download T4A Slips (PDF)'}
+            </button>
+            <button
+              type="button"
+              disabled={t4aPreview.length === 0}
+              onClick={() => setEmailing('t4a')}
+              className="rounded-full border border-brand-200 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+              title="Email each person their own T4A slip, SIN masked"
+            >
+              Email T4A slips
             </button>
           </div>
           {t4aError && <p className="mb-2 text-xs text-red-600">{t4aError}</p>}
@@ -143,7 +163,7 @@ export function YearEndSlipsPanel() {
         </div>
 
         <div>
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-1">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">T5018 — Subcontractors (Box 22)</h3>
             <button
               type="button"
@@ -152,6 +172,15 @@ export function YearEndSlipsPanel() {
               className="rounded-full bg-brand-100 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50"
             >
               {t5018Downloading ? 'Generating…' : 'Download T5018 Slips (PDF)'}
+            </button>
+            <button
+              type="button"
+              disabled={t5018Preview.length === 0}
+              onClick={() => setEmailing('t5018')}
+              className="rounded-full border border-brand-200 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+              title="Email each person their own T5018 slip, SIN masked"
+            >
+              Email T5018 slips
             </button>
           </div>
           {t5018Error && <p className="mb-2 text-xs text-red-600">{t5018Error}</p>}
@@ -185,6 +214,7 @@ export function YearEndSlipsPanel() {
       <p className="mt-3 text-xs text-gray-400">
         Working copies only — verify the information and amounts before filing the required slips and summaries.
       </p>
+    {emailing && <SlipEmailModal kind={emailing} taxYear={taxYear} open onClose={() => setEmailing(null)} />}
     </section>
   );
 }

@@ -5,6 +5,7 @@ import { Money } from '../../components/Money';
 import { ShareholderFormModal } from './ShareholderFormModal';
 import { T5PaymentFormModal } from './T5PaymentFormModal';
 import { JournalEntryLink } from '../../components/JournalEntryLink';
+import { SlipEmailModal } from './SlipEmailModal';
 
 function currentTaxYear(): number {
   return new Date().getFullYear();
@@ -27,6 +28,7 @@ export function ShareholdersPanel() {
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [t5Downloading, setT5Downloading] = useState(false);
   const [t5Error, setT5Error] = useState<string | null>(null);
+  const [emailingT5, setEmailingT5] = useState(false);
 
   async function refresh() {
     const [shareholdersResult, paymentsResult] = await Promise.all([window.api.shareholders.list(), window.api.t5Payments.list()]);
@@ -162,6 +164,15 @@ export function ShareholdersPanel() {
         >
           {t5Downloading ? 'Generating…' : 'Download T5 Slips (PDF)'}
         </button>
+        <button
+          type="button"
+          disabled={t5Preview.length === 0}
+          onClick={() => setEmailingT5(true)}
+          className="rounded-full border border-brand-200 px-4 py-1.5 text-sm font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+          title="Email each shareholder their own T5 slip, SIN masked"
+        >
+          Email T5 slips
+        </button>
       </div>
       {t5Error && <p className="mt-2 text-xs text-red-600">{t5Error}</p>}
       {t5Preview.length === 0 && <p className="mt-2 text-sm text-gray-400">No shareholder payments dated in {taxYear}.</p>}
@@ -177,6 +188,7 @@ export function ShareholdersPanel() {
         editing={editingShareholder}
       />
       <T5PaymentFormModal open={showPaymentModal} onClose={() => setShowPaymentModal(false)} onSaved={refresh} shareholders={activeShareholders} />
+      {emailingT5 && <SlipEmailModal kind="t5" taxYear={taxYear} open onClose={() => setEmailingT5(false)} />}
     </section>
   );
 }

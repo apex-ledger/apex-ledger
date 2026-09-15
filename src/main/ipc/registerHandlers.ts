@@ -30,6 +30,7 @@ import * as auditEngagementHandlers from './auditEngagement.handlers';
 import * as lettersHandlers from './letters.handlers';
 import * as mailHandlers from './mail.handlers';
 import * as documentPdfHandlers from './documentPdf.handlers';
+import * as slipEmailHandlers from './slipEmail.handlers';
 import * as invoicePdfHandlers from './invoicePdf.handlers';
 import * as salesReceiptPdfHandlers from './salesReceiptPdf.handlers';
 import * as bankReconciliationHandlers from './bankReconciliation.handlers';
@@ -475,11 +476,18 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('letters:list', () => toResult(() => lettersHandlers.lettersList()));
   ipcMain.handle('letters:generate', (_e, input) => toResult(() => lettersHandlers.lettersGenerate(mainWindow, input)));
+  ipcMain.handle('letters:emailDefaults', (_e, input) => toResult(() => lettersHandlers.lettersEmailDefaults(input)));
+  ipcMain.handle('letters:sendDirect', (_e, input) => toResult(() => lettersHandlers.lettersSendDirect(input)));
 
   ipcMain.handle('invoicePdf:generate', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfGenerate(mainWindow, input)));
   ipcMain.handle('invoicePdf:emailViaOutlook', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfEmailViaOutlook(input)));
   ipcMain.handle('invoicePdf:sendDirect', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSendDirect(input)));
   ipcMain.handle('mail:sendAttachment', (_e, input) => toResult(() => mailHandlers.mailSendAttachment(input)));
+  ipcMain.handle('slips:recipients', (_e, input) => toResult(() => slipEmailHandlers.slipsRecipients(input)));
+  ipcMain.handle('slips:sendOne', (_e, input) => toResult(() => slipEmailHandlers.slipsSendOne(input)));
+  ipcMain.handle('slips:sendAll', (_e, input) => toResult(() => slipEmailHandlers.slipsSendAll(input)));
+  ipcMain.handle('paystub:emailDefaults', (_e, input) => toResult(() => slipEmailHandlers.paystubEmailDefaults(input)));
+  ipcMain.handle('paystub:send', (_e, input) => toResult(() => slipEmailHandlers.paystubSend(input)));
   ipcMain.handle('documentPdf:bytes', (_e, input) => toResult(() => documentPdfHandlers.documentPdfBytes(input)));
   ipcMain.handle('documentPdf:saveToDownloads', (_e, input) => toResult(() => documentPdfHandlers.documentPdfSaveToDownloads(input)));
   ipcMain.handle('documentPdf:sendDirect', (_e, input) => toResult(() => documentPdfHandlers.documentPdfSendDirect(input)));
@@ -585,4 +593,5 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('forms:generatePdf', (_e, input) => toResult(() => formsHandlers.formsGeneratePdf(mainWindow, input)));
   ipcMain.handle('forms:emailViaOutlook', (_e, input) => toResult(() => formsHandlers.formsEmailViaOutlook(input)));
   ipcMain.handle('forms:saveToDownloads', (_e, input) => toResult(() => formsHandlers.formsSaveToDownloads(input)));
+  ipcMain.handle('forms:sendDirect', (_e, input) => toResult(() => formsHandlers.formsSendDirect(input)));
 }

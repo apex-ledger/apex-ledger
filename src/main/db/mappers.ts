@@ -169,6 +169,7 @@ export function mapEmployeeRow(row: Selectable<EmployeeTable>): Employee {
     bankTransit: row.bankTransit ?? null,
     bankAccount: row.bankAccount ?? null,
     vacationPayAccrued: Boolean(row.vacationPayAccrued),
+    email: row.email ?? null,
   };
 }
 
