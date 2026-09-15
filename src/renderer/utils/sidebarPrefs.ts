@@ -18,6 +18,10 @@ interface SidebarPrefs {
   /** Labels of nav items hidden from the sidebar entirely (still reachable via the "+ New" menu,
    * Settings menu, or Quick Search — hiding is a declutter preference, not a permission). */
   hidden: string[];
+  /** Extra destinations pinned into the Year-End Workspace's focused nav. It ships with the
+   * client's data entry, but which other screen a reviewer needs next is theirs to decide — one
+   * firm wants Fixed Assets there, another Chart of Accounts. Empty by default. */
+  yearEndTabs?: string[];
 }
 
 const STORAGE_KEY = 'northLedger.sidebarPrefs';
@@ -34,7 +38,7 @@ function loadPrefs(): SidebarPrefs {
     if (parsed.layoutVersion !== CURRENT_LAYOUT_VERSION) {
       return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: parsed.colors ?? {}, hidden: [] };
     }
-    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [] };
+    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [], yearEndTabs: parsed.yearEndTabs ?? [] };
   } catch {
     return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: {}, hidden: [] };
   }
@@ -89,6 +93,19 @@ export function setItemHidden(itemLabel: string, hidden: boolean): void {
   if (hidden) set.add(itemLabel);
   else set.delete(itemLabel);
   prefs.hidden = [...set];
+  savePrefs(prefs);
+}
+
+export function loadYearEndTabs(): string[] {
+  return loadPrefs().yearEndTabs ?? [];
+}
+
+export function setYearEndTabPinned(itemLabel: string, pinned: boolean): void {
+  const prefs = loadPrefs();
+  const set = new Set(prefs.yearEndTabs ?? []);
+  if (pinned) set.add(itemLabel);
+  else set.delete(itemLabel);
+  prefs.yearEndTabs = [...set];
   savePrefs(prefs);
 }
 

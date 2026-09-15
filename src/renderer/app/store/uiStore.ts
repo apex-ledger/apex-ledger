@@ -236,6 +236,12 @@ interface UiState {
    * search box should be pre-filled (e.g. a client name into Client Hub) — the destination page
    * reads it once on mount and clears it, so it never lingers or reapplies on a later visit. */
   pendingSearchTerm: string | null;
+  /** The Year-End Workspace is a mode, not a screen. Opening it turns this on and it STAYS on
+   * while the reviewer walks through the client's sales, bills and journals — otherwise the
+   * day-to-day sidebar springs back the moment they open All Sales, which is the one thing the
+   * focused nav exists to prevent. Only "Full menu" turns it off. */
+  yearEndMode: boolean;
+  setYearEndMode: (on: boolean) => void;
   setView: (view: View) => void;
   goBack: () => void;
   /** Back along the trail if there is one, else to the page a screen naturally belongs under. */
@@ -299,6 +305,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   fontFamily: loadStoredFontFamily(),
   zoomPercent: loadStoredZoomPercent(),
   pendingSearchTerm: null,
+  yearEndMode: false,
+  setYearEndMode: (on) => set({ yearEndMode: on }),
   setView: (requested) => {
     if (requested.kind === 'helpTutor') { set({ helpTutorOpen: true }); return; }
     const view = canonicalView(requested);
@@ -306,7 +314,10 @@ export const useUiStore = create<UiState>((set, get) => ({
       set({ pendingView: view });
       return;
     }
-    set({ view, history: pushView(get().history, view, sameView) });
+    // However the workspace is reached — sidebar, favourites, quick search — arriving there is
+    // what starts the mode, so no one route has to remember to switch it on.
+    const yearEndMode = view.kind === 'yearEndWorkspace' ? true : get().yearEndMode;
+    set({ view, history: pushView(get().history, view, sameView), yearEndMode });
   },
 
   /** Back and forward move the pointer through the trail rather than recording a move — otherwise

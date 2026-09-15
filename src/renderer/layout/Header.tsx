@@ -49,9 +49,10 @@ import {
   IconUndo,
   IconUserGroup,
   IconBell,
+  IconShieldCheck,
 } from '../components/icons';
 
-type ActionColor = 'rose' | 'emerald' | 'orange' | 'blue' | 'purple' | 'violet' | 'cyan' | 'gray';
+type ActionColor = 'rose' | 'emerald' | 'orange' | 'blue' | 'purple' | 'violet' | 'cyan' | 'amber' | 'gray';
 
 // Written out in full (not composed from a template string) so Tailwind's JIT scanner can find
 // and generate these classes — see the same note in Sidebar.tsx.
@@ -66,6 +67,7 @@ const ACTION_COLOR_CLASSES: Record<ActionColor, string> = {
   purple: 'text-purple-700 bg-white hover:bg-purple-50',
   violet: 'text-violet-700 bg-white hover:bg-violet-50',
   cyan: 'text-cyan-700 bg-white hover:bg-cyan-50',
+  amber: 'text-amber-700 bg-white hover:bg-amber-50',
   gray: 'text-gray-500 bg-white hover:bg-gray-50',
 };
 
@@ -1086,6 +1088,7 @@ export function Header() {
         {!isWeb() && <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />}
         {seatAllowsToolbar(webSeat(), 'accountant') && <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />}
         {can('crm') && seatAllowsToolbar(webSeat(), 'crm') && <ActionButton icon={<IconUserGroup />} label="Client Management (CRM)" onClick={() => setView({ kind: 'clientHub' })} color="purple" />}
+        {seatAllowsToolbar(webSeat(), 'accountant') && <ActionButton icon={<IconShieldCheck />} label="Year-End" onClick={() => setView({ kind: 'yearEndWorkspace' })} color="amber" />}
       </div>
 
       {toast && (
