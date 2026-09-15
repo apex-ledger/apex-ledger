@@ -8,6 +8,7 @@ import { ContactPaymentHistory } from '../../components/ContactPaymentHistory';
 import { EnteredTd, EnteredText, EnteredTh } from '../../components/EnteredCell';
 import { localIsoDate } from '@shared/domain/dates/localDate';
 import { MergeContactModal } from '../../components/MergeContactModal';
+import { DocumentDateCell } from '../../components/DocumentDateCell';
 
 interface PurchaseOrderSummary {
   createdAt?: string;
@@ -181,7 +182,16 @@ export function VendorWorkspace({
                   <thead><tr className="border-b text-left text-xs uppercase tracking-wide text-gray-400"><th className="pb-2">Date</th><EnteredTh className="pb-2" /><th className="pb-2">Type</th><th className="pb-2">Reference</th><th className="pb-2">Status</th><th className="pb-2 text-right">Total</th><th className="pb-2" /></tr></thead>
                   <tbody>{activity.map((row) => (
                     <tr key={row.key} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-2 tabular-nums text-gray-600">{row.date}</td><EnteredTd at={row.createdAt} className="py-2" />
+                      <td className="py-2 tabular-nums text-gray-600">
+                        {row.kind === 'Bill' ? (
+                          <DocumentDateCell
+                            value={row.date}
+                            title="Click to change the bill date; the journal and a same-day payment move with it"
+                            onChange={async (next) => { const r = await window.api.bills.changeDate({ id: row.billId, billDate: next }); if (r.ok) onRefresh(); return r; }}
+                            note={(d) => { const n = (d as { paymentsMoved: number }).paymentsMoved; return n ? `Moved with ${n === 1 ? 'its payment' : `${n} payments`}.` : null; }}
+                          />
+                        ) : row.date}
+                      </td><EnteredTd at={row.createdAt} className="py-2" />
                       <td className="py-2">{row.kind}</td>
                       <td className="py-2 font-medium">{row.reference}</td>
                       <td className="py-2 capitalize text-gray-600">{row.status}</td>
