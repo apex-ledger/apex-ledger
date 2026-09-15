@@ -350,6 +350,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('bills:create', (_e, input) => mutate('bills', () => billsHandlers.billsCreate(input)));
   ipcMain.handle('bills:pay', (_e, input) => mutate('bills', () => billsHandlers.billsPay(input)));
   ipcMain.handle('bills:changeDate', (_e, input) => mutate('bills', () => billsHandlers.billsChangeDate(input)));
+  ipcMain.handle('bills:update', (_e, input) => mutate('bills', () => billsHandlers.billsUpdate(input)));
+  ipcMain.handle('bills:lineTags', (_e, id) => toResult(() => billsHandlers.billsLineTags(id)));
   ipcMain.handle('bills:reverseLastPayment', (_e, id) => mutate('bills', () => billsHandlers.billsReverseLastPayment(id)));
   ipcMain.handle('bills:delete', (_e, id) => mutate('bills', () => billsHandlers.billsDelete(id)));
   ipcMain.handle('bills:setApproval', (_e, input) => mutate('bills', () => billsHandlers.billsSetApproval(input)));

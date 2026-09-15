@@ -250,6 +250,8 @@
       "pay": "bills:pay",
       "reverseLastPayment": "bills:reverseLastPayment",
       "changeDate": "bills:changeDate",
+      "update": "bills:update",
+      "lineTags": "bills:lineTags",
       "delete": "bills:delete",
       "setApproval": "bills:setApproval",
       "approvalReport": "bills:approvalReport"

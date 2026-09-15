@@ -27,6 +27,8 @@ export function PurchasesPage({ embedded, requestedTab, requestedBillId, request
   const [vendors, setVendors] = useState<Contact[]>([]);
   const [payments, setPayments] = useState<BillPayment[]>([]);
   const [showBillModal, setShowBillModal] = useState(false);
+  /** A saved, unpaid bill opened for correction in the same form that entered it. */
+  const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [payingBillId, setPayingBillId] = useState<number | null>(null);
   const [tab, setTab] = useState<BillTab>(requestedTab ?? 'unpaid');
   const [search, setSearch] = useState('');
@@ -364,6 +366,7 @@ export function PurchasesPage({ embedded, requestedTab, requestedBillId, request
                             Needs approval
                           </span>
                         )}
+                        {b.paidCents === 0 && <button type="button" onClick={() => setEditingBill(b)} className="mr-2 text-xs font-medium text-brand-700 hover:underline" title="Add, remove or change lines — allowed until the bill is paid">Edit</button>}
                         {b.paidCents === 0 && <button type="button" onClick={() => handleDelete(b)} className="text-xs font-medium text-red-500 hover:underline">Delete</button>}
                       </>
                     ) : (
@@ -377,7 +380,7 @@ export function PurchasesPage({ embedded, requestedTab, requestedBillId, request
         )}
       </div>}
 
-      <BillFormModal open={showBillModal} onClose={() => setShowBillModal(false)} onSaved={refresh} vendors={vendors} />
+      <BillFormModal open={showBillModal || editingBill !== null} onClose={() => { setShowBillModal(false); setEditingBill(null); }} onSaved={refresh} vendors={vendors} editing={editingBill} />
       <PayBillModal open={payingBillId !== null} onClose={() => setPayingBillId(null)} onPaid={refresh} billId={payingBillId} />
       <BulkPayBillsModal
         open={showBulkPay}

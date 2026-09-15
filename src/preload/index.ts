@@ -746,6 +746,8 @@ const api = {
     pay: invoke<Bill>('bills:pay'),
     reverseLastPayment: invoke<Bill>('bills:reverseLastPayment'),
     changeDate: invoke<{ bill: Bill; paymentsMoved: number }>('bills:changeDate'),
+    update: invoke<Bill>('bills:update'),
+    lineTags: invoke<number[][]>('bills:lineTags'),
     delete: invoke<{ deleted: true }>('bills:delete'),
     setApproval: invoke<Bill>('bills:setApproval'),
     approvalReport: invoke<BillApprovalResponse>('bills:approvalReport'),

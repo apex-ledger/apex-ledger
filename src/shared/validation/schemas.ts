@@ -516,6 +516,10 @@ export const newBillSchema = z.object({
   ...foreignCurrencyFieldsSchema,
 });
 
+/** A vendor bill corrected before it is paid: the same fields as a new bill, addressed to the bill
+ * being changed. See billsUpdate. */
+export const updateBillSchema = newBillSchema.extend({ id: z.number().int().positive() });
+
 export const payBillSchema = z.object({
   id: z.number().int().positive(),
   bankAccountId: z.number().int().positive(),

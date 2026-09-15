@@ -1,5 +1,6 @@
 import { tagLinesWithContact } from '@shared/domain/ledger/tagLinesWithContact';
-import { changeBillDateSchema, newBillSchema, payBillSchema, periodReportQuerySchema } from '@shared/validation/schemas';
+import { changeBillDateSchema, newBillSchema, payBillSchema, periodReportQuerySchema, updateBillSchema } from '@shared/validation/schemas';
+import { approvalAfterBillEdit, billEditRefusalReason } from '@shared/domain/purchases/billEditing';
 import { currencyMatchRefusalReason, moneyAccountRefusalReason } from '@shared/domain/banking/bankAccountRules';
 import { paymentDateRefusalReason } from '@shared/domain/documents/paymentTiming';
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
@@ -9,7 +10,7 @@ import { mapBillLineRow, mapBillRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ACCOUNTS_PAYABLE_ARGS, EXCHANGE_GAIN_LOSS_ACCOUNT_ARGS } from '../db/controlAccounts';
 import { buildTaxSplitJournalLines } from '../db/buildTaxSplitLines';
-import { journalCreate, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
+import { journalCreate, journalPost, journalUpdateDate, journalVoid, recordRevisions } from './journal.handlers';
 import { APPROVAL_LABELS, canTransition, filterApprovalRowsByPeriod, isPayable, summariseApprovals, type ApprovalStatus, type BillApprovalRow } from '@shared/domain/purchases/billApproval';
 import type { AppDb } from '../db/schema';
 import { assertPurchaseLineAccounts } from './purchaseLineAccounts';
@@ -17,7 +18,7 @@ import { billHeaderFigures, billLinesFromPayload, billLinesRefusalReason } from 
 import type { NewJournalEntryLineInput } from '@shared/domain/types';
 import { localIsoDate } from '@shared/domain/dates/localDate';
 import { foreignOutstandingCents, settleForeignPayment } from '@shared/domain/currency/fxSettlement';
-import { tagDocumentLines } from '@shared/domain/ledger/tagDocumentLines';
+import { documentLineTags, tagDocumentLines } from '@shared/domain/ledger/tagDocumentLines';
 
 export async function billsList() {
   const db = getCurrentDb();
@@ -44,6 +45,174 @@ export async function billsPayments(billId?: number) {
 export async function billsCreate(input: unknown, executor?: AppDb) {
   const payload = newBillSchema.parse(input);
   const db = executor ?? getCurrentDb();
+  const prepared = await prepareBillPosting(db, payload, null);
+
+  // The GL post and the bill row commit together: a failure anywhere in here rolls back both,
+  // rather than leaving a posted journal entry with no bill behind it.
+  const create = async (trx: AppDb) => {
+    const posted = await postBillJournal(trx, payload, prepared);
+    const inserted = await trx
+      .insertInto('bills')
+      .values({
+        vendorId: payload.vendorId,
+        billNumber: prepared.billNumber,
+        purchaseOrderNumber: payload.purchaseOrderNumber,
+        billDate: payload.billDate,
+        dueDate: payload.dueDate,
+        categoryAccountId: prepared.header.categoryAccountId,
+        amountCents: prepared.totalCents,
+        taxCode: prepared.header.taxCode,
+        manualHstCents: prepared.header.taxCode ? prepared.header.taxCents : null,
+        memo: payload.memo,
+        status: 'unpaid',
+        billJournalEntryId: posted.id,
+        paymentJournalEntryId: null,
+        foreignCurrency: payload.foreignCurrency,
+        foreignAmountCents: payload.foreignAmountCents,
+        exchangeRate: payload.exchangeRate,
+        receiptFilePath: payload.receiptFilePath,
+        paymentTerms: payload.paymentTerms ?? null,
+        productId: prepared.billLines[0]?.productId ?? null,
+        quantity: prepared.billLines[0]?.productId ? prepared.billLines[0]?.quantity ?? null : null,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+    const insertedLines = await writeBillLinesAndStock(trx, inserted.id, payload, prepared, posted.id);
+    return { inserted, insertedLines };
+  };
+  const { inserted, insertedLines } = await (executor ? create(db) : db.transaction().execute(create));
+
+  return mapBillRow(inserted, insertedLines.map(mapBillLineRow));
+}
+
+/** Corrects a vendor bill already in the books — vendor, number, dates, terms, memo, and adding,
+ * removing or changing lines — while nothing else depends on its figures (billEditRefusalReason).
+ *
+ * The bill keeps its row and its history. Its old journal is voided and a new one posted in the
+ * same transaction, so the ledger never shows both or neither and the superseded figures stay on
+ * the adjustments trail. Voiding refuses a locked period, a filed GST/HST return and a reconciled
+ * line — the rules that stop a delete stop an edit too, and a refused edit rolls back whole. Stock
+ * the bill brought in is restated with it, which is only allowed while no later transaction has
+ * been costed from it. An approval given to a different total is withdrawn (approvalAfterBillEdit). */
+export async function billsUpdate(input: unknown) {
+  const { id, ...fields } = updateBillSchema.parse(input);
+  const payload = newBillSchema.parse(fields);
+  const db = getCurrentDb();
+  const existing = await billsGet(id);
+
+  const [paymentRow, creditRow, matchedPo, billMovements] = await Promise.all([
+    db.selectFrom('billPayments').select((eb) => eb.fn.countAll<number>().as('n')).where('billId', '=', id).executeTakeFirst(),
+    db.selectFrom('creditNoteApplications')
+      .innerJoin('creditNotes', 'creditNotes.id', 'creditNoteApplications.creditNoteId')
+      .select((eb) => eb.fn.coalesce(eb.fn.sum<number>('creditNoteApplications.amountCents'), eb.val(0)).as('cents'))
+      .where('creditNotes.kind', '=', 'vendor')
+      .where('creditNoteApplications.targetId', '=', id)
+      .executeTakeFirst(),
+    db.selectFrom('purchaseOrders').select('poNumber').where('matchedBillId', '=', id).executeTakeFirst(),
+    db.selectFrom('inventoryMovements').select(['id', 'productId']).where('sourceDocumentType', '=', 'bill').where('sourceDocumentId', '=', id).execute(),
+  ]);
+
+  // Stock from this bill has been "used later" when any movement of the same product was recorded
+  // after it: that later sale or adjustment took its moving-average cost from this bill's price.
+  let stockUsedLaterFor: string | null = null;
+  for (const movement of billMovements) {
+    const later = await db.selectFrom('inventoryMovements').select('id').where('productId', '=', movement.productId).where('id', '>', movement.id)
+      .where((eb) => eb.or([eb('sourceDocumentType', 'is', null), eb('sourceDocumentType', '!=', 'bill'), eb('sourceDocumentId', '!=', id)]))
+      .executeTakeFirst();
+    if (later) {
+      stockUsedLaterFor = (await db.selectFrom('products').select('name').where('id', '=', movement.productId).executeTakeFirst())?.name ?? 'a product';
+      break;
+    }
+  }
+
+  const refusal = billEditRefusalReason({
+    paymentCount: Number(paymentRow?.n ?? 0) + (existing.paidCents > 0 ? 1 : 0),
+    creditAppliedCents: Number(creditRow?.cents ?? 0),
+    matchedPurchaseOrderNumber: matchedPo?.poNumber ?? null,
+    stockUsedLaterFor,
+    foreignCurrency: existing.foreignCurrency ?? payload.foreignCurrency ?? null,
+  });
+  if (refusal) throw new Error(refusal);
+
+  const prepared = await prepareBillPosting(db, payload, id);
+  const approval = approvalAfterBillEdit({ approvalStatus: existing.approvalStatus, approvedAt: existing.approvedAt ?? null, amountCents: existing.amountCents }, prepared.totalCents);
+
+  return db.transaction().execute(async (trx) => {
+    // The restated receipt replaces the old one; removed before the journal it points at is voided.
+    await trx.deleteFrom('inventoryMovements').where('sourceDocumentType', '=', 'bill').where('sourceDocumentId', '=', id).execute();
+    if (existing.billJournalEntryId !== null) await journalVoid(existing.billJournalEntryId, false, trx, true);
+    const posted = await postBillJournal(trx, payload, prepared);
+
+    const updated = await trx
+      .updateTable('bills')
+      .set({
+        vendorId: payload.vendorId,
+        billNumber: prepared.billNumber,
+        purchaseOrderNumber: payload.purchaseOrderNumber,
+        billDate: payload.billDate,
+        dueDate: payload.dueDate,
+        categoryAccountId: prepared.header.categoryAccountId,
+        amountCents: prepared.totalCents,
+        taxCode: prepared.header.taxCode,
+        manualHstCents: prepared.header.taxCode ? prepared.header.taxCents : null,
+        memo: payload.memo,
+        status: 'unpaid',
+        billJournalEntryId: posted.id,
+        // The scanned vendor invoice stays attached unless a new one is supplied.
+        receiptFilePath: payload.receiptFilePath ?? existing.receiptFilePath ?? null,
+        paymentTerms: payload.paymentTerms ?? null,
+        productId: prepared.billLines[0]?.productId ?? null,
+        quantity: prepared.billLines[0]?.productId ? prepared.billLines[0]?.quantity ?? null : null,
+        ...(approval ?? {}),
+      })
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    await trx.deleteFrom('billLines').where('billId', '=', id).execute();
+    const insertedLines = await writeBillLinesAndStock(trx, id, payload, prepared, posted.id);
+
+    const describe = (total: number, count: number) => `${(total / 100).toFixed(2)} — ${count} line${count === 1 ? '' : 's'}`;
+    await recordRevisions(trx, posted.id, [{
+      field: 'bill',
+      label: `Bill ${prepared.billNumber ?? `#${id}`} edited`,
+      kind: 'changed',
+      oldValue: describe(existing.amountCents, existing.lines?.length ?? 1),
+      newValue: describe(prepared.totalCents, insertedLines.length),
+    }]);
+    return mapBillRow(updated, insertedLines.map(mapBillLineRow));
+  });
+}
+
+/** Each line's class/location tags, in line order — read back from the bill's journal so the edit
+ * form can show and keep them. */
+export async function billsLineTags(id: number): Promise<number[][]> {
+  const db = getCurrentDb();
+  const bill = await billsGet(id);
+  const lines = bill.lines ?? [];
+  if (bill.billJournalEntryId === null) return lines.map(() => []);
+  const journalLines = await db.selectFrom('journalEntryLines').select(['id', 'accountId', 'debitCents', 'creditCents']).where('journalEntryId', '=', bill.billJournalEntryId).orderBy('lineOrder').execute();
+  const tagRows = await db
+    .selectFrom('journalEntryLineTags')
+    .innerJoin('journalEntryLines', 'journalEntryLines.id', 'journalEntryLineTags.journalEntryLineId')
+    .select(['journalEntryLineTags.journalEntryLineId as lineId', 'journalEntryLineTags.tagId as tagId'])
+    .where('journalEntryLines.journalEntryId', '=', bill.billJournalEntryId)
+    .execute();
+  const tagsByLine = new Map<number, number[]>();
+  for (const row of tagRows) tagsByLine.set(row.lineId, [...(tagsByLine.get(row.lineId) ?? []), row.tagId]);
+  return documentLineTags(
+    journalLines.map((line) => ({ ...line, tagIds: tagsByLine.get(line.id) ?? [] })),
+    lines.map((line) => ({ accountId: line.categoryAccountId, baseCents: line.baseCents })),
+  );
+}
+
+type BillPayload = ReturnType<typeof newBillSchema.parse>;
+
+/** Everything about a bill's posting that can be settled before a transaction opens: vendor, line
+ * and product checks, the duplicate vendor-invoice check (ignoring the bill being edited), control
+ * accounts, and the journal lines and total. Reads the outer connection, so it must run before
+ * db.transaction() — querying it from inside a transaction deadlocks on the single connection. */
+async function prepareBillPosting(db: AppDb, payload: BillPayload, editingBillId: number | null) {
   const vendor = await db.selectFrom('vendors').select(['name', 'isActive']).where('id', '=', payload.vendorId).executeTakeFirst();
   const vendorRefusal = inactiveContactRefusalReason('vendor', vendor && { name: vendor.name, isActive: Boolean(vendor.isActive) });
   if (vendorRefusal) throw new Error(vendorRefusal);
@@ -55,7 +224,7 @@ export async function billsCreate(input: unknown, executor?: AppDb) {
   const billNumber = payload.billNumber?.trim() || null;
 
   // Stock received on a line must land in that product's inventory asset account with a quantity.
-  const productIds = Array.from(new Set(billLines.map((line) => line.productId).filter((id): id is number => id !== null)));
+  const productIds = Array.from(new Set(billLines.map((line) => line.productId).filter((pid): pid is number => pid !== null)));
   const products = productIds.length === 0 ? [] : await db.selectFrom('products').selectAll().where('id', 'in', productIds).execute();
   for (const line of billLines) {
     if (line.productId === null) continue;
@@ -68,7 +237,9 @@ export async function billsCreate(input: unknown, executor?: AppDb) {
   }
 
   if (billNumber) {
-    const duplicate = await db.selectFrom('bills').select('id').where('vendorId', '=', payload.vendorId).where((eb) => eb.fn('lower', ['billNumber']), '=', billNumber.toLowerCase()).executeTakeFirst();
+    let duplicateQuery = db.selectFrom('bills').select('id').where('vendorId', '=', payload.vendorId).where((eb) => eb.fn('lower', ['billNumber']), '=', billNumber.toLowerCase());
+    if (editingBillId !== null) duplicateQuery = duplicateQuery.where('id', '!=', editingBillId);
+    const duplicate = await duplicateQuery.executeTakeFirst();
     if (duplicate) throw new Error('This vendor invoice number is already recorded on an existing bill. Open that bill instead of entering it again.');
   }
 
@@ -99,90 +270,68 @@ export async function billsCreate(input: unknown, executor?: AppDb) {
   }
   lines.push({ accountId: accountsPayableId, debitCents: 0, creditCents: totalCents, description: payload.memo ?? 'Vendor bill', vendorId: payload.vendorId });
 
-  // The GL post and the bill row commit together: a failure anywhere in here rolls back both,
-  // rather than leaving a posted journal entry with no bill behind it.
-  const create = async (trx: AppDb) => {
-    const entry = await journalCreate(
-      {
-        entryDate: payload.billDate,
-        memo: payload.memo ?? 'Vendor bill',
-        reference: billNumber,
-        lines,
-      },
-      trx,
-    );
-    const posted = await journalPost(entry.id, trx);
-    // Class / location: each document line's tags land on the journal line that carries it.
-    {
-      const tagPairs = tagDocumentLines(posted.lines.map((l) => ({ id: l.id, accountId: l.accountId, debitCents: l.debitCents, creditCents: l.creditCents })), billLines.map((line) => ({ accountId: line.categoryAccountId, baseCents: line.baseCents, tagIds: line.tagIds ?? [] })));
-      if (tagPairs.length > 0) await trx.insertInto('journalEntryLineTags').values(tagPairs).execute();
-    }
+  return { billLines, header, billNumber, products, lines, totalCents };
+}
 
-    const inserted = await trx
-      .insertInto('bills')
+type PreparedBill = Awaited<ReturnType<typeof prepareBillPosting>>;
+
+/** Posts the bill's journal and attaches each document line's class/location tags to the journal
+ * line that carries it. Runs inside the caller's transaction. */
+async function postBillJournal(trx: AppDb, payload: BillPayload, prepared: PreparedBill) {
+  const { billNumber } = prepared;
+  const entry = await journalCreate(
+    {
+      entryDate: payload.billDate,
+      memo: payload.memo ?? 'Vendor bill',
+      reference: billNumber,
+      lines: prepared.lines,
+    },
+    trx,
+  );
+  const posted = await journalPost(entry.id, trx);
+  const tagPairs = tagDocumentLines(posted.lines.map((l) => ({ id: l.id, accountId: l.accountId, debitCents: l.debitCents, creditCents: l.creditCents })), prepared.billLines.map((line) => ({ accountId: line.categoryAccountId, baseCents: line.baseCents, tagIds: line.tagIds ?? [] })));
+  if (tagPairs.length > 0) await trx.insertInto('journalEntryLineTags').values(tagPairs).execute();
+  return posted;
+}
+
+/** Writes the bill's lines and records the stock each tracked-product line brought in, at the
+ * price on the bill. Runs inside the caller's transaction. */
+async function writeBillLinesAndStock(trx: AppDb, billId: number, payload: BillPayload, prepared: PreparedBill, journalEntryId: number) {
+  const insertedLines = [];
+  for (const [index, line] of prepared.billLines.entries()) {
+    const insertedLine = await trx
+      .insertInto('billLines')
       .values({
-        vendorId: payload.vendorId,
-        billNumber,
-        purchaseOrderNumber: payload.purchaseOrderNumber,
-        billDate: payload.billDate,
-        dueDate: payload.dueDate,
-        categoryAccountId: header.categoryAccountId,
-        amountCents: totalCents,
-        taxCode: header.taxCode,
-        manualHstCents: header.taxCode ? header.taxCents : null,
-        memo: payload.memo,
-        status: 'unpaid',
-        billJournalEntryId: posted.id,
-        paymentJournalEntryId: null,
-        foreignCurrency: payload.foreignCurrency,
-        foreignAmountCents: payload.foreignAmountCents,
-        exchangeRate: payload.exchangeRate,
-        receiptFilePath: payload.receiptFilePath,
-        paymentTerms: payload.paymentTerms ?? null,
-        productId: billLines[0]?.productId ?? null,
-        quantity: billLines[0]?.productId ? billLines[0]?.quantity ?? null : null,
+        billId,
+        lineOrder: index,
+        categoryAccountId: line.categoryAccountId,
+        description: line.description,
+        baseCents: line.baseCents,
+        taxCode: line.taxCode,
+        taxCents: line.taxCode ? line.taxCents : 0,
+        productId: line.productId,
+        quantity: line.productId ? line.quantity : null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
-    const insertedLines = [];
-    for (const [index, line] of billLines.entries()) {
-      const insertedLine = await trx
-        .insertInto('billLines')
-        .values({
-          billId: inserted.id,
-          lineOrder: index,
-          categoryAccountId: line.categoryAccountId,
-          description: line.description,
-          baseCents: line.baseCents,
-          taxCode: line.taxCode,
-          taxCents: line.taxCode ? line.taxCents : 0,
-          productId: line.productId,
-          quantity: line.productId ? line.quantity : null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      insertedLines.push(insertedLine);
-      const product = line.productId === null ? undefined : products.find((row) => row.id === line.productId);
-      if (product?.trackQuantity && line.quantity) {
-        await trx.insertInto('inventoryMovements').values({
-          productId: product.id,
-          movementDate: payload.billDate,
-          quantityDelta: line.quantity,
-          unitCostCents: Math.round(line.baseCents / line.quantity),
-          kind: 'purchase',
-          journalEntryId: posted.id,
-          note: `${billNumber ?? `Bill ${inserted.id}`} — ${line.description ?? payload.memo ?? product.name}`,
-          sourceDocumentType: 'bill',
-          sourceDocumentId: inserted.id,
-          sourceLineId: insertedLine.id,
-        }).execute();
-      }
+    insertedLines.push(insertedLine);
+    const product = line.productId === null ? undefined : prepared.products.find((row) => row.id === line.productId);
+    if (product?.trackQuantity && line.quantity) {
+      await trx.insertInto('inventoryMovements').values({
+        productId: product.id,
+        movementDate: payload.billDate,
+        quantityDelta: line.quantity,
+        unitCostCents: Math.round(line.baseCents / line.quantity),
+        kind: 'purchase',
+        journalEntryId,
+        note: `${prepared.billNumber ?? `Bill ${billId}`} — ${line.description ?? payload.memo ?? product.name}`,
+        sourceDocumentType: 'bill',
+        sourceDocumentId: billId,
+        sourceLineId: insertedLine.id,
+      }).execute();
     }
-    return { inserted, insertedLines };
-  };
-  const { inserted, insertedLines } = await (executor ? create(db) : db.transaction().execute(create));
-
-  return mapBillRow(inserted, insertedLines.map(mapBillLineRow));
+  }
+  return insertedLines;
 }
 
 /** Paying a bill posts a second entry (Debit Accounts Payable, Credit the bank account chosen),

@@ -69,11 +69,15 @@ export function BillFormModal({
   onClose,
   onSaved,
   vendors,
+  editing = null,
 }: {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
   vendors: Contact[];
+  /** A saved, unpaid bill to correct. The form opens filled with it exactly as it was saved, and
+   * Save re-posts that bill rather than entering a new one. */
+  editing?: Bill | null;
 }) {
   const { province: taxProvince, defaultTaxCode, loaded: taxDefaultLoaded } = useCompanyTaxDefault();
   const TAX_CODE_OPTIONS = taxCodeOptions('expense', taxProvince);
@@ -150,6 +154,36 @@ export function BillFormModal({
     window.api.accounts.list({ activeOnly: true }).then((r) => r.ok && setAccounts(r.data));
     window.api.bills.list().then((r) => r.ok && setRecentBills(r.data));
     window.api.products.list({ activeOnly: true }).then((r) => r.ok && setProducts(r.data));
+    if (editing) {
+      setVendorId(editing.vendorId);
+      setBillNumber(editing.billNumber ?? '');
+      setPurchaseOrderNumber(editing.purchaseOrderNumber ?? '');
+      setBillDate(editing.billDate);
+      setDueDate(editing.dueDate);
+      setPaymentTerms(editing.paymentTerms ?? termFromDates(editing.billDate, editing.dueDate));
+      setMemo(editing.memo ?? '');
+      // Saved lines hold the pre-tax base and the exact tax that was posted, so reopening in
+      // tax-exclusive mode with that tax typed in reproduces the bill to the cent.
+      const savedLines = editing.lines && editing.lines.length > 0
+        ? editing.lines.map((saved) => ({ categoryAccountId: saved.categoryAccountId, description: saved.description ?? '', productId: saved.productId, quantity: saved.quantity ?? 1, baseCents: saved.baseCents, taxCode: saved.taxCode, taxCents: saved.taxCents }))
+        : [{ categoryAccountId: editing.categoryAccountId, description: editing.memo ?? '', productId: editing.productId ?? null, quantity: editing.quantity ?? 1, baseCents: editing.amountCents - (editing.manualHstCents ?? 0), taxCode: editing.taxCode, taxCents: editing.manualHstCents ?? 0 }];
+      setLines(savedLines.map((saved) => ({
+        key: `line-${++lineKeyCounter}`,
+        categoryAccountId: saved.categoryAccountId,
+        description: saved.description,
+        productId: saved.productId,
+        quantity: saved.quantity,
+        amountCents: saved.baseCents,
+        taxCode: saved.taxCode,
+        typedTaxCents: saved.taxCode ? saved.taxCents : null,
+        tagIds: [],
+      })));
+      // Class/location tags live on the journal; read back so saving the correction keeps them.
+      window.api.bills.lineTags(editing.id).then((r) => {
+        if (!r.ok) return;
+        setLines((current) => current.map((row, index) => ({ ...row, tagIds: r.data[index] ?? row.tagIds })));
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -170,7 +204,9 @@ export function BillFormModal({
     });
     // A list that arrives with exactly one vendor can only mean that one; several means a choice
     // the person has to make, so nothing is picked for them.
+    if (editing) return;
     setVendorId((current) => current ?? (vendors.length === 1 ? vendors[0].id : null));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, vendors]);
 
   // Escape closes, like every full-screen sheet.
@@ -202,6 +238,9 @@ export function BillFormModal({
       setLastVendorCategory(null);
       return;
     }
+    // A bill being corrected already has its own terms, due date and categories; suggestions from
+    // the vendor record would quietly overwrite what was actually billed.
+    if (editing) return;
     const lastBillFromVendor = recentBills.filter((b) => b.vendorId === vendorId).sort((a, b) => b.billDate.localeCompare(a.billDate))[0];
     const vendorRecord = localVendors.find((v) => v.id === vendorId);
     if (vendorRecord?.paymentTerms) {
@@ -333,7 +372,10 @@ export function BillFormModal({
     }
     setBusy(true);
     setError(null);
-    const result = await window.api.bills.create({
+    const saveBill = editing
+      ? (payload: Parameters<typeof window.api.bills.create>[0]) => window.api.bills.update({ id: editing.id, ...(payload as object) })
+      : window.api.bills.create;
+    const result = await saveBill({
       vendorId,
       billNumber: billNumber.trim() || null,
       purchaseOrderNumber: purchaseOrderNumber.trim() || null,
@@ -378,7 +420,7 @@ export function BillFormModal({
   return createPortal(
     <div className="fixed inset-0 z-40 flex flex-col bg-white" role="dialog" aria-modal="true" aria-labelledby="bill-form-title">
       <div className="flex items-center justify-between border-b border-gray-200 px-5 py-2">
-        <h1 id="bill-form-title" className="text-lg font-semibold text-gray-900">Bill</h1>
+        <h1 id="bill-form-title" className="text-lg font-semibold text-gray-900">{editing ? `Edit bill${editing.billNumber ? ` ${editing.billNumber}` : ''}` : 'Bill'}</h1>
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => void readFromFile()} className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50" title="Pick the vendor's PDF or a scan; the vendor, date and amounts are filled in for you to check">
             Read from PDF or scan…
@@ -659,9 +701,20 @@ export function BillFormModal({
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-2">
+        {editing && (
+          <p className="mr-auto text-xs text-gray-500">
+            Saving re-posts this bill: its old journal is voided and a new one posted. If someone approved it and the total changes, it goes back for approval before it can be paid.
+          </p>
+        )}
         <button type="button" onClick={onClose} className={buttonClass('secondary')}>Cancel</button>
-        <button type="button" disabled={saveDisabled} onClick={() => handleSave('next')} className={buttonClass('secondary')}>Save &amp; Next</button>
-        <button type="button" disabled={saveDisabled} onClick={() => handleSave('close')} className={buttonClass('primary')}>Save &amp; Close</button>
+        {editing ? (
+          <button type="button" disabled={saveDisabled} onClick={() => handleSave('close')} className={buttonClass('primary')}>Save changes</button>
+        ) : (
+          <>
+            <button type="button" disabled={saveDisabled} onClick={() => handleSave('next')} className={buttonClass('secondary')}>Save &amp; Next</button>
+            <button type="button" disabled={saveDisabled} onClick={() => handleSave('close')} className={buttonClass('primary')}>Save &amp; Close</button>
+          </>
+        )}
       </div>
 
       <ContactFormModal

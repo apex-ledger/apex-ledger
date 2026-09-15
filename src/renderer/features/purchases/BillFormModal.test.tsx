@@ -73,3 +73,37 @@ describe('entering a bill from a receipt that shows the total and the tax', () =
     expect(screen.getByRole('button', { name: 'Add line' })).toBeInTheDocument();
   });
 });
+
+describe('correcting a saved bill', () => {
+  it('opens with the bill exactly as saved — its own terms, not the vendor record — and saves it back as the same bill', async () => {
+    mockApi('accounts', 'list', [{ id: 50, code: '5040', name: 'Office Supplies', accountType: 'Expense', accountSubtype: null, normalBalance: 'Debit', parentId: null, gifiCode: null, isActive: true, isSystem: false, description: null, accountNumber: null, isTransferEligible: false }]);
+    mockApi('bills', 'list', []);
+    mockApi('products', 'list', []);
+    mockApi('bills', 'lineTags', [[4]]);
+    mockApi('bills', 'update', { id: 77 });
+    const onSaved = vi.fn();
+    const saved = {
+      id: 77, vendorId: 31, billNumber: 'BELL-0912', purchaseOrderNumber: null, billDate: '2026-09-04', dueDate: '2026-09-19', paymentTerms: null,
+      categoryAccountId: 50, amountCents: 11_300, taxCode: 'HST', manualHstCents: 1_300, memo: 'September', status: 'unpaid', approvalStatus: 'approved', approvedAt: null,
+      paidCents: 0, balanceDueCents: 11_300, billJournalEntryId: 9, paymentJournalEntryId: null, foreignCurrency: null, foreignAmountCents: null, exchangeRate: null, receiptFilePath: null, productId: null, quantity: null,
+      lines: [{ id: 1, billId: 77, lineOrder: 0, categoryAccountId: 50, description: 'Toner', baseCents: 10_000, taxCode: 'HST', taxCents: 1_300, productId: null, quantity: null }],
+    };
+
+    render(<BillFormModal open onClose={vi.fn()} onSaved={onSaved} vendors={[vendor]} editing={saved as never} />);
+
+    expect(screen.getByRole('heading', { name: 'Edit bill BELL-0912' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('BELL-0912')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Toner')).toBeInTheDocument();
+    // The vendor's net-30 terms must not quietly move the due date that was actually billed.
+    expect(screen.getByDisplayValue('2026-09-19')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Save & Next' })).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(window.api.bills.update).toHaveBeenCalledWith(expect.objectContaining({
+      id: 77, vendorId: 31, billNumber: 'BELL-0912', dueDate: '2026-09-19',
+      lines: [expect.objectContaining({ categoryAccountId: 50, description: 'Toner', baseCents: 10_000, taxCents: 1_300, tagIds: [4] })],
+    })));
+    expect(onSaved).toHaveBeenCalled();
+  });
+});
