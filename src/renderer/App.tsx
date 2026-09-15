@@ -92,7 +92,8 @@ import { PaystubPage } from './features/payroll/PaystubPage';
 import { FormsPage } from './features/forms/FormsPage';
 import { UserGuidePage } from './features/user-guide/UserGuidePage';
 import { ToolsPage } from './features/tools/ToolsPage';
-import { ReportActions, ReportGeneratedStamp } from './components/ReportActions';
+import { ReportActions, ReportGeneratedStamp, extractTables } from './components/ReportActions';
+import { ReportChart, type ChartKind } from './components/ReportChart';
 import { ReportPeriodControls } from './components/ReportPeriodControls';
 import { KnowledgeBasePage } from './features/knowledge-base/KnowledgeBasePage';
 import { AuditorCentrePage } from './features/audit/AuditorCentrePage';
@@ -180,6 +181,29 @@ function ReportView({ report }: { report: ReportKind }) {
     }).format(new Date()),
     [report],
   );
+
+  const [chartKind, setChartKind] = useState<ChartKind>('none');
+  const [chartRows, setChartRows] = useState<string[][]>([]);
+  // Reports load their data after this renders, and reload again whenever a date or filter moves,
+  // so the chart watches the sheet rather than reading it once and going stale. Only while a chart
+  // is actually being shown — no observer runs on the ordinary path.
+  useEffect(() => {
+    if (chartKind === 'none') return;
+    const target = reportRef.current;
+    if (!target) return;
+    let frame = 0;
+    const reread = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => setChartRows(extractTables(target)));
+    };
+    reread();
+    const observer = new MutationObserver(reread);
+    observer.observe(target, { childList: true, subtree: true, characterData: true });
+    return () => {
+      observer.disconnect();
+      window.cancelAnimationFrame(frame);
+    };
+  }, [chartKind, report]);
 
   function renderReport() {
     switch (report) {
@@ -321,6 +345,27 @@ function ReportView({ report }: { report: ReportKind }) {
           </button>
         </div>
       </div>
+      {/* Charts sit above the sheet and never replace it: the table stays the record, the picture
+          is the glance. Built from the same rows the export reads, so they cannot disagree. */}
+      <div className="flex flex-wrap items-center gap-1.5" data-export-skip>
+        <span className="mr-1 text-xs font-medium text-gray-500">Chart</span>
+        {([
+          ['none', 'Off'],
+          ['bars', 'Bars'],
+          ['horizontal', 'Horizontal'],
+          ['pie', 'Pie'],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setChartKind(value)}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${chartKind === value ? 'bg-brand-800 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {chartKind !== 'none' && <ReportChart rows={chartRows} kind={chartKind} />}
       <div ref={reportRef} className="w-full min-w-0">
         <ReportGeneratedStamp generatedAt={generatedAt} />
         {renderReport()}

@@ -19,7 +19,7 @@ import { webContext } from '../features/company-settings/WebOrganisationSection'
  * rows to the main process, which creates a genuine .xlsx workbook.
  */
 
-function extractTables(root: HTMLElement | null): string[][] {
+export function extractTables(root: HTMLElement | null): string[][] {
   if (!root) return [];
   const rows: string[][] = [];
 
