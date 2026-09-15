@@ -385,6 +385,9 @@
       "bytes": "salesReceiptPdf:bytes",
       "saveToDownloads": "salesReceiptPdf:saveToDownloads"
     },
+    "mail": {
+      "sendAttachment": "mail:sendAttachment"
+    },
     "invoicePdf": {
       "generate": "invoicePdf:generate",
       "emailViaOutlook": "invoicePdf:emailViaOutlook",

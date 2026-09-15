@@ -28,6 +28,7 @@ import * as cpaNotesHandlers from './cpaNotes.handlers';
 import * as workpapersHandlers from './workpapers.handlers';
 import * as auditEngagementHandlers from './auditEngagement.handlers';
 import * as lettersHandlers from './letters.handlers';
+import * as mailHandlers from './mail.handlers';
 import * as invoicePdfHandlers from './invoicePdf.handlers';
 import * as salesReceiptPdfHandlers from './salesReceiptPdf.handlers';
 import * as bankReconciliationHandlers from './bankReconciliation.handlers';
@@ -473,6 +474,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('invoicePdf:generate', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfGenerate(mainWindow, input)));
   ipcMain.handle('invoicePdf:emailViaOutlook', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfEmailViaOutlook(input)));
   ipcMain.handle('invoicePdf:sendDirect', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSendDirect(input)));
+  ipcMain.handle('mail:sendAttachment', (_e, input) => toResult(() => mailHandlers.mailSendAttachment(input)));
   ipcMain.handle('invoicePdf:bytes', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfBytes(input)));
   ipcMain.handle('invoicePdf:saveToDownloads', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSaveToDownloads(input)));
 

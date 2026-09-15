@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { normalizeCellForExport, rowsToTsv } from '@shared/domain/reporting/tableToCsv';
+import { NothingToRenderError, buildTablePdf, bytesToBase64, downloadPdf } from '../utils/buildTablePdf';
+import { printPdfFromBase64 } from '../utils/printPdf';
+import { EmailComposeModal } from './EmailComposeModal';
+import { webContext } from '../features/company-settings/WebOrganisationSection';
 
 /** Export controls: Excel, clipboard, PDF.
  *
@@ -60,6 +64,8 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
   const [search, setSearch] = useState('');
   const [matchIndex, setMatchIndex] = useState(-1);
   const [matchCount, setMatchCount] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const matchesRef = useRef<HTMLElement[]>([]);
 
   function clearSearchMarks() {
@@ -140,10 +146,42 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
     if (result.data.saved) flash('Saved.');
   }
 
+  /** The report's own rows, laid out as a PDF in the browser. The Electron main process can render
+   * the whole page with Chromium instead, but that route does not exist on the web, and a report
+   * that can only be turned into a PDF on one of the two platforms is a report nobody can rely on
+   * sending. One path, both platforms, same file. */
+  async function reportPdf(): Promise<{ bytes: Uint8Array; fileName: string } | null> {
+    const rows = extractTables(targetRef.current);
+    try {
+      const bytes = await buildTablePdf({ title: reportName, subtitle: generatedAt ? `Generated on: ${generatedAt}` : undefined, rows });
+      return { bytes, fileName: `${reportName.replace(/[\\/:*?"<>|]/g, '-')}.pdf` };
+    } catch (e) {
+      flash(e instanceof NothingToRenderError ? e.message : e instanceof Error ? e.message : String(e));
+      return null;
+    }
+  }
+
   async function savePdf() {
-    const result = await window.api.app.savePdf({});
-    if (!result.ok) return flash(result.error);
-    if (result.data.saved) flash('Saved.');
+    setBusy(true);
+    const pdf = await reportPdf();
+    setBusy(false);
+    if (!pdf) return;
+    downloadPdf(pdf.bytes, pdf.fileName);
+    flash('Saved.');
+  }
+
+  async function printReport() {
+    setBusy(true);
+    const pdf = await reportPdf();
+    setBusy(false);
+    if (!pdf) return;
+    printPdfFromBase64(bytesToBase64(pdf.bytes));
+  }
+
+  async function emailReport(fields: { to: string; subject: string; body: string; replyTo: string }) {
+    const pdf = await reportPdf();
+    if (!pdf) return { ok: false as const, error: 'This report has no table on screen to attach.' };
+    return window.api.mail.sendAttachment({ ...fields, fileName: pdf.fileName, base64: bytesToBase64(pdf.bytes) });
   }
 
   const button = 'rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100';
@@ -156,8 +194,14 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
       <button type="button" onClick={() => void copyToClipboard()} className={button} title="Copy for pasting into Excel">
         Copy
       </button>
-      <button type="button" onClick={() => void savePdf()} className={button} title="Save this page as a PDF">
+      <button type="button" disabled={busy} onClick={() => void savePdf()} className={button} title="Save this report as a PDF">
         Save as PDF
+      </button>
+      <button type="button" disabled={busy} onClick={() => void printReport()} className={button} title="Print this report">
+        Print
+      </button>
+      <button type="button" disabled={busy} onClick={() => setComposeOpen(true)} className={button} title="Email this report as a PDF attachment">
+        Email
       </button>
       <div className="flex items-center gap-1 rounded border border-gray-300 bg-white px-1.5 py-0.5">
         <input
@@ -177,6 +221,16 @@ export function ReportActions({ targetRef, reportName, generatedAt }: { targetRe
         <button type="button" disabled={matchCount === 0} onClick={() => activateMatch(matchIndex + 1)} className="rounded px-1 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-30" aria-label="Next report match">↓</button>
       </div>
       {status && <span className="text-xs text-gray-500">{status}</span>}
+      <EmailComposeModal
+        open={composeOpen}
+        onClose={() => setComposeOpen(false)}
+        title={`Email ${reportName}`}
+        defaultTo=""
+        defaultSubject={reportName}
+        defaultBody={`Hi,\n\nPlease find attached the ${reportName}${generatedAt ? `, generated on ${generatedAt}` : ''}.\n\nThanks!`}
+        defaultReplyTo={webContext()?.user.email}
+        onSend={emailReport}
+      />
     </div>
   );
 }
