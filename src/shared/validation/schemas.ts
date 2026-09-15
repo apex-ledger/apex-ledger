@@ -184,6 +184,13 @@ export const generalLedgerQuerySchema = z.object({
   dateTo: ISO_DATE,
 });
 
+/** Every account's ledger in one run — the bound General Ledger an accountant expects, rather than
+ * picking accounts off a list one at a time. */
+export const generalLedgerAllQuerySchema = z.object({
+  dateFrom: ISO_DATE,
+  dateTo: ISO_DATE,
+});
+
 export const incomeStatementQuerySchema = z.object({
   periodStart: ISO_DATE,
   periodEnd: ISO_DATE,

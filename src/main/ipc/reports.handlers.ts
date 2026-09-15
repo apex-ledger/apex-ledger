@@ -2,6 +2,7 @@ import type { BrowserWindow } from 'electron';
 import {
   balanceSheetQuerySchema,
   periodReportQuerySchema,
+  generalLedgerAllQuerySchema,
   generalLedgerQuerySchema,
   gifiExportQuerySchema,
   hstSummaryQuerySchema,
@@ -74,6 +75,44 @@ export async function reportsGeneralLedger(input: unknown) {
     vendorNames: new Map(vendors.map((vendor) => [vendor.id, vendor.name])),
     transactionTypes,
   });
+}
+
+/** Every account's ledger in one pass, the way a bound General Ledger reads.
+ *
+ * Entries are bucketed by the accounts they touch first, so each account's ledger is computed from
+ * only its own entries instead of re-walking the whole journal once per account — the difference
+ * between a report that opens and one that hangs on a file with a real year in it. An account with
+ * no activity and nothing brought forward is left out: an accountant wants the accounts that moved,
+ * not two hundred empty headings. */
+export async function reportsGeneralLedgerAllAccounts(input: unknown) {
+  const { dateFrom, dateTo } = generalLedgerAllQuerySchema.parse(input);
+  const db = getCurrentDb();
+  const [accounts, entries, customers, vendors, transactionTypes] = await Promise.all([
+    getAllAccounts(db),
+    getAllJournalEntriesWithLines(db),
+    db.selectFrom('customers').select(['id', 'name']).execute(),
+    db.selectFrom('vendors').select(['id', 'name']).execute(),
+    generalLedgerTransactionTypes(db),
+  ]);
+
+  const entriesByAccount = new Map<number, typeof entries>();
+  for (const entry of entries) {
+    for (const accountId of new Set(entry.lines.map((line) => line.accountId))) {
+      const bucket = entriesByAccount.get(accountId);
+      if (bucket) bucket.push(entry);
+      else entriesByAccount.set(accountId, [entry]);
+    }
+  }
+
+  const context = {
+    allAccounts: accounts,
+    customerNames: new Map(customers.map((customer) => [customer.id, customer.name])),
+    vendorNames: new Map(vendors.map((vendor) => [vendor.id, vendor.name])),
+    transactionTypes,
+  };
+  return accounts
+    .map((account) => generalLedger(account, entriesByAccount.get(account.id) ?? [], dateFrom, dateTo, context))
+    .filter((result) => result.lines.length > 0 || result.openingBalanceCents !== 0);
 }
 
 async function generalLedgerTransactionTypes(db: ReturnType<typeof getCurrentDb>): Promise<Map<number, string>> {

@@ -51,6 +51,49 @@ function fallbackTransactionType(source: JournalEntrySource): string {
   return 'Journal Entry';
 }
 
+/** Which side of the books a ledger line came from. A reviewer reading a year of someone else's
+ * bookkeeping asks three different questions of one account — what did sales put here, what did
+ * bills put here, and what did somebody key in by hand — and a single undifferentiated list
+ * answers none of them. "Manual" means keyed rather than raised from a document, so Quick Entry
+ * belongs with journal entries: neither has an invoice or a bill behind it. */
+export type LedgerEntryGroup = 'sales' | 'purchases' | 'manual' | 'payrollTax' | 'banking' | 'other';
+
+export const LEDGER_ENTRY_GROUP_LABELS: Record<LedgerEntryGroup, string> = {
+  sales: 'Sales',
+  purchases: 'Bills & expenses',
+  manual: 'Manual entries',
+  payrollTax: 'Payroll & tax',
+  banking: 'Bank & imports',
+  other: 'Other',
+};
+
+const GROUP_BY_TRANSACTION_TYPE: Record<string, LedgerEntryGroup> = {
+  Invoice: 'sales',
+  'Customer Payment': 'sales',
+  'Sales Receipt': 'sales',
+  Deposit: 'sales',
+  'Customer Credit': 'sales',
+  'Customer Refund': 'sales',
+  Bill: 'purchases',
+  'Bill Payment': 'purchases',
+  'Vendor Credit': 'purchases',
+  'Vendor Refund': 'purchases',
+  'Mileage Claim': 'purchases',
+  'Inventory Receipt': 'purchases',
+  Payroll: 'payrollTax',
+  'GST/HST Filing': 'payrollTax',
+  'T5 Payment': 'payrollTax',
+  'Journal Entry': 'manual',
+  'Quick Entry': 'manual',
+  'Bank Import': 'banking',
+  'Client Import': 'banking',
+  'Inventory Adjustment': 'other',
+};
+
+export function ledgerEntryGroup(transactionType: string): LedgerEntryGroup {
+  return GROUP_BY_TRANSACTION_TYPE[transactionType] ?? 'other';
+}
+
 function lineTaxAmountCents(line: JournalEntryLine): number {
   if (!line.taxCode) return 0;
   if (line.taxCode === 'Manual') return Math.max(0, line.manualHstCents ?? 0);
