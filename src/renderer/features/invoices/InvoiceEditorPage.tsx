@@ -38,9 +38,7 @@ import { DocumentHistoryPanel } from '../../components/DocumentHistoryPanel';
 import { DocumentLineTagPicker, useHasTagGroups } from '../../components/DocumentLineTagPicker';
 import { expandBundle, productPickerOptions, productTypeOf } from '@shared/domain/inventory/productCatalogue';
 import { ErrorNotice } from '../../components/ErrorNotice';
-import { EmailComposeModal } from '../../components/EmailComposeModal';
-import { webContext } from '../company-settings/WebOrganisationSection';
-import { printPdfFromBase64 } from '../../utils/printPdf';
+import { DocumentActions, defaultEmailBody } from '../../components/DocumentActions';
 
 
 interface LineRow {
@@ -201,7 +199,6 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
-  const [composeOpen, setComposeOpen] = useState(false);
 
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [creditAvailableCents, setCreditAvailableCents] = useState(0);
@@ -572,28 +569,6 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     setPdfNotice('Outlook draft opened with the invoice attached.');
   }
 
-  async function handlePrint() {
-    if (posted === null) return;
-    setPdfBusy(true);
-    setPdfError(null);
-    setPdfNotice(null);
-    const result = await window.api.invoicePdf.bytes({ invoiceId: posted.id });
-    setPdfBusy(false);
-    if (!result.ok) return setPdfError(result.error);
-    printPdfFromBase64(result.data.base64);
-  }
-
-  async function handleSaveToDownloads() {
-    if (posted === null) return;
-    setPdfBusy(true);
-    setPdfError(null);
-    setPdfNotice(null);
-    const result = await window.api.invoicePdf.saveToDownloads({ invoiceId: posted.id });
-    setPdfBusy(false);
-    if (!result.ok) return setPdfError(result.error);
-    setPdfNotice(`Saved to ${result.data.filePath}`);
-  }
-
   /** WhatsApp has no public way for a desktop app to attach a local file to a chat directly (no
    * API, no URI scheme for it, whether Desktop or Web) — so this saves the PDF to Downloads and
    * opens a WhatsApp chat with a pre-filled message (addressed to the customer's own phone number
@@ -646,21 +621,30 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
         >
           ×
         </button>
-        {/* Print / Email / PDF live in the toolbar with the other document actions, not buried at
-          * the foot of the page under the payment buttons — this is the first place anyone looks
-          * for "send this to the client". Only a saved invoice has a PDF to send. */}
+        {/* Print / Save as PDF / Email sit in the toolbar, always on screen — the first place
+          * anyone looks for "send this to the client". The niche routes (Outlook, WhatsApp, pick
+          * my own folder) stay behind Share. Only a saved invoice has a PDF to send. */}
         {posted && (
-          <ShareMenu
-            busy={pdfBusy}
-            actions={[
-              { label: 'Print…', onClick: handlePrint },
-              { label: 'Send Email…', onClick: () => setComposeOpen(true) },
-              { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
-              { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
-              { label: 'Save as PDF…', onClick: handleDownloadPdf },
-              { label: 'Save to Downloads', onClick: handleSaveToDownloads },
-            ]}
-          />
+          <>
+            <DocumentActions
+              documentLabel={`invoice ${posted.invoiceNumber}`}
+              partyName={customerNameById.get(posted.customerId) ?? null}
+              partyEmail={customers.find((c) => c.id === posted.customerId)?.email ?? null}
+              emailSubject={`Invoice ${posted.invoiceNumber}`}
+              emailBody={defaultEmailBody(customerNameById.get(posted.customerId) ?? null, `Please find attached invoice ${posted.invoiceNumber}, due ${posted.dueDate}.`)}
+              fetchPdfBytes={() => window.api.invoicePdf.bytes({ invoiceId: posted.id })}
+              saveToDownloads={() => window.api.invoicePdf.saveToDownloads({ invoiceId: posted.id })}
+              sendEmail={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted.id, to, subject, body, replyTo })}
+            />
+            <ShareMenu
+              busy={pdfBusy}
+              actions={[
+                { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
+                { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
+                { label: 'Save to a folder…', onClick: handleDownloadPdf },
+              ]}
+            />
+          </>
         )}
         {!posted && <ForeignCurrencySelector fx={fx} />}
         <div className="flex items-center gap-2">
@@ -745,18 +729,6 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
           <div className="mt-3"><AttachmentsPanel entityType="invoice" entityId={posted.id} /><div className="mt-2"><DocumentHistoryPanel entityType="invoice" entityId={posted.id} /></div></div>
 
           <div className="mt-3 flex gap-2">
-            {posted && (
-              <EmailComposeModal
-                open={composeOpen}
-                onClose={() => setComposeOpen(false)}
-                title={`Email invoice ${posted.invoiceNumber}`}
-                defaultTo={customers.find((c) => c.id === posted.customerId)?.email ?? ''}
-                defaultSubject={`Invoice ${posted.invoiceNumber}`}
-                defaultBody={`Hi ${customerNameById.get(posted.customerId) ?? ''},\n\nPlease find attached invoice ${posted.invoiceNumber}, due ${posted.dueDate}.\n\nThanks!`}
-                defaultReplyTo={webContext()?.user.email}
-                onSend={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted.id, to, subject, body, replyTo })}
-              />
-            )}
             {posted.paidCents > 0 && (
               <button type="button" disabled={busy} onClick={handleReverseLastPayment} className="rounded-full bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 hover:bg-amber-100 disabled:opacity-50">
                 Reverse Last Payment

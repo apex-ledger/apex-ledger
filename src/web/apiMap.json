@@ -381,6 +381,8 @@
     "salesReceiptPdf": {
       "generate": "salesReceiptPdf:generate",
       "emailViaOutlook": "salesReceiptPdf:emailViaOutlook",
+      "sendDirect": "salesReceiptPdf:sendDirect",
+      "bytes": "salesReceiptPdf:bytes",
       "saveToDownloads": "salesReceiptPdf:saveToDownloads"
     },
     "invoicePdf": {

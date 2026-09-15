@@ -13,6 +13,36 @@ export function IconInvoicePlus(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconPrinter(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M7 9V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v5" />
+      <path d="M5 9h14a2 2 0 0 1 2 2v5a1 1 0 0 1-1 1h-3" />
+      <path d="M7 17H4a1 1 0 0 1-1-1v-5a2 2 0 0 1 2-2" />
+      <path d="M7 14h10v6a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1Z" />
+    </Icon>
+  );
+}
+
+export function IconMail(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M3 6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
+      <path d="m3.5 6.5 8.5 7 8.5-7" />
+    </Icon>
+  );
+}
+
+export function IconFilePdf(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+      <path d="M14 3v4h4" />
+      <path d="M8 17v-4h1.5a1.25 1.25 0 0 1 0 2.5H8M13 17v-4h1a1.6 1.6 0 0 1 1.6 2 1.6 1.6 0 0 1-1.6 2Z" />
+    </Icon>
+  );
+}
+
 export function IconBillPlus(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon {...props}>

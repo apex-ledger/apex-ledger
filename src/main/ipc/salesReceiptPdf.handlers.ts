@@ -7,7 +7,7 @@ import { getCurrentDb } from '../companyFile';
 import { getSalesReceiptById } from '../db/queries';
 import { mapContactRow } from '../db/mappers';
 import { generateSalesReceiptPdf } from '../forms/generateSalesReceiptPdf';
-import { sendEmailWithAttachment } from '../email/sendEmail';
+import { sendEmailWithAttachment, sendPlatformEmailWithAttachment } from '../email/sendEmail';
 import { companyGet } from './company.handlers';
 
 function safeFileNamePart(s: string): string {
@@ -29,6 +29,27 @@ async function resolveSalesReceiptPdfBytes(salesReceiptId: number) {
   const company = await companyGet();
   const bytes = await generateSalesReceiptPdf(receipt, customer, company, depositAccount?.name ?? 'Undeposited Funds');
   return { receipt, customer, bytes };
+}
+
+/** The receipt PDF itself, base64 over the wire, so the renderer can put it straight into a print
+ * dialog without a download-and-find-it step. Mirrors invoicePdfBytes. */
+export async function salesReceiptPdfBytes(input: unknown) {
+  const { salesReceiptId } = input as { salesReceiptId: number };
+  const { receipt, bytes } = await resolveSalesReceiptPdfBytes(salesReceiptId);
+  return { fileName: suggestedFileName(receipt.receiptNumber), base64: Buffer.from(bytes).toString('base64') };
+}
+
+/** Sends the receipt out through the platform's own mail relay — no Outlook required, so it works
+ * the same in the web app as on desktop. Mirrors invoicePdfSendDirect. */
+export async function salesReceiptPdfSendDirect(input: unknown) {
+  const { salesReceiptId, to, subject, body, replyTo } = input as { salesReceiptId: number; to: string; subject: string; body: string; replyTo?: string };
+  if (!to || !to.trim()) throw new Error('Enter an email address to send to.');
+  const { receipt, bytes } = await resolveSalesReceiptPdfBytes(salesReceiptId);
+
+  const tempPath = path.join(os.tmpdir(), `${crypto.randomUUID()}-${safeFileNamePart(suggestedFileName(receipt.receiptNumber))}`);
+  fs.writeFileSync(tempPath, bytes);
+  await sendPlatformEmailWithAttachment(tempPath, to.trim(), subject, body, replyTo);
+  return { sent: true as const };
 }
 
 /** Generates the sales receipt PDF, lets the accountant pick where to save it, then opens it in the

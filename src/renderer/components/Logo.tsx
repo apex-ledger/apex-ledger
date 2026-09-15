@@ -42,7 +42,9 @@ interface LogoProps {
 }
 
 export function Logo({ size = 'lg', showTagline = false, variant = 'light' }: LogoProps) {
-  const iconSize = size === 'lg' ? 48 : 32;
+  // The mark carries the brand; the wordmark beside it is already small at 'sm'. Sized up so the
+  // star inside the squircle actually reads as a star rather than a gold speck.
+  const iconSize = size === 'lg' ? 56 : 44;
   const isDark = variant === 'dark';
   return (
     <div className="flex items-center gap-3">

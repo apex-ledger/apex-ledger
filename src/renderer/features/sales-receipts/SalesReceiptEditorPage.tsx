@@ -14,6 +14,7 @@ import { CurrencyInput } from '../../components/CurrencyInput';
 import { ForeignCurrencyDetails, ForeignCurrencySelector } from '../../components/ForeignCurrencyFields';
 import { Money } from '../../components/Money';
 import { ShareMenu } from '../../components/ShareMenu';
+import { DocumentActions, defaultEmailBody } from '../../components/DocumentActions';
 import { SuggestionDatalist } from '../../components/SuggestionDatalist';
 import { useForeignCurrencyAmount } from '../../hooks/useForeignCurrencyAmount';
 import { useUiStore } from '../../app/store/uiStore';
@@ -429,6 +430,20 @@ export function SalesReceiptEditorPage({ id, customerId: presetCustomerId }: { i
           ×
         </button>
         <BackButton fallback={{ kind: 'salesReceipts' }} fallbackLabel="Sales Receipts" />
+        {/* Print / PDF / Email stay on screen in the sheet's own top row, the same three on every
+          * document that goes out to someone. Only a saved receipt has a PDF to send. */}
+        {posted && (
+          <DocumentActions
+            documentLabel={`sales receipt ${posted.receiptNumber}`}
+            partyName={customers.find((c) => c.id === posted.customerId)?.name ?? null}
+            partyEmail={customers.find((c) => c.id === posted.customerId)?.email ?? null}
+            emailSubject={`Sales receipt ${posted.receiptNumber}`}
+            emailBody={defaultEmailBody(customers.find((c) => c.id === posted.customerId)?.name ?? null, `Please find attached sales receipt ${posted.receiptNumber}, dated ${posted.receiptDate}.`)}
+            fetchPdfBytes={() => window.api.salesReceiptPdf.bytes({ salesReceiptId: posted.id })}
+            saveToDownloads={() => window.api.salesReceiptPdf.saveToDownloads({ salesReceiptId: posted.id })}
+            sendEmail={({ to, subject, body, replyTo }) => window.api.salesReceiptPdf.sendDirect({ salesReceiptId: posted.id, to, subject, body, replyTo })}
+          />
+        )}
         {!posted && <ForeignCurrencySelector fx={fx} />}
         {posted && (
           <span className="ml-auto rounded bg-green-300 px-2 py-0.5 text-xs text-green-900">

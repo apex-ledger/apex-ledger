@@ -883,6 +883,8 @@ const api = {
   salesReceiptPdf: {
     generate: invoke<{ saved: false } | { saved: true; filePath: string }>('salesReceiptPdf:generate'),
     emailViaOutlook: invoke<{ sent: true }>('salesReceiptPdf:emailViaOutlook'),
+    sendDirect: invoke<{ sent: true }>('salesReceiptPdf:sendDirect'),
+    bytes: invoke<{ fileName: string; base64: string }>('salesReceiptPdf:bytes'),
     saveToDownloads: invoke<{ filePath: string }>('salesReceiptPdf:saveToDownloads'),
   },
   invoicePdf: {

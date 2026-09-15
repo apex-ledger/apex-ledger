@@ -478,6 +478,8 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('salesReceiptPdf:generate', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfGenerate(mainWindow, input)));
   ipcMain.handle('salesReceiptPdf:emailViaOutlook', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfEmailViaOutlook(input)));
+  ipcMain.handle('salesReceiptPdf:sendDirect', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfSendDirect(input)));
+  ipcMain.handle('salesReceiptPdf:bytes', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfBytes(input)));
   ipcMain.handle('salesReceiptPdf:saveToDownloads', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfSaveToDownloads(input)));
 
   ipcMain.handle('bankReconciliation:list', (_e, accountId) => toResult(() => bankReconciliationHandlers.bankReconciliationList(accountId)));
