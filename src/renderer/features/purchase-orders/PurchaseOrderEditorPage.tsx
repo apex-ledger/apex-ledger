@@ -5,6 +5,7 @@ import { Combobox } from '../../components/Combobox';
 import { CurrencyInput } from '../../components/CurrencyInput';
 import { Money } from '../../components/Money';
 import { RecordNavigator } from '../../components/RecordNavigator';
+import { PrintableDocumentActions } from '../../components/PrintableDocumentActions';
 import { purchaseLineAccountPickerOptions } from '../../utils/accountLabel';
 import { lineAmountCents } from '@shared/domain/sales/commitmentDocuments';
 import { compareDocumentNumbers } from '@shared/domain/documents/documentNumbering';
@@ -237,6 +238,7 @@ export function PurchaseOrderEditorPage({ id, prefill }: { id: number | 'new'; p
         <button type="button" onClick={() => setView({ kind: 'purchaseOrders' })} className="text-sm text-brand-600 hover:underline">
           ← All purchase orders
         </button>
+        <PrintableDocumentActions kind="purchaseOrder" id={typeof id === 'number' ? id : null} />
       </div>
 
       {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}

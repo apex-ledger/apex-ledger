@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { PrintableDocumentActions } from '../../components/PrintableDocumentActions';
 import type { Account, Bill, Contact, CreditNote, CreditNoteKind, Invoice } from '@shared/domain/types';
 import { Money } from '../../components/Money';
 import { CreditNoteFormModal } from './CreditNoteFormModal';
@@ -169,6 +170,7 @@ export function CreditNotesPage({ kind: fixedKind }: { kind?: CreditNoteKind } =
                 <th className="py-1 text-right">Amount</th>
                 <th className="py-1">Status</th>
                 <th className="py-1">Settle</th>
+                <th className="py-1">Send</th>
               </tr>
             </thead>
             <tbody>
@@ -269,6 +271,18 @@ export function CreditNotesPage({ kind: fixedKind }: { kind?: CreditNoteKind } =
                         </button>
                       </div>
                     )}
+                  </td>
+                  <td className="py-2">
+                    <PrintableDocumentActions
+                      kind="creditNote"
+                      id={note.id}
+                      known={{
+                        partyName: contactName(note.contactId),
+                        partyEmail: contacts.find((c) => c.id === note.contactId)?.email ?? null,
+                        subject: `${kind === 'customer' ? 'Credit note' : 'Vendor credit'} ${note.creditNoteNumber}`,
+                        sentence: `Please find attached ${kind === 'customer' ? 'credit note' : 'vendor credit'} ${note.creditNoteNumber}, dated ${note.creditNoteDate}.`,
+                      }}
+                    />
                   </td>
                 </tr>
               ))}

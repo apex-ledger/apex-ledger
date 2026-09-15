@@ -389,6 +389,12 @@
       "bytes": "salesReceiptPdf:bytes",
       "saveToDownloads": "salesReceiptPdf:saveToDownloads"
     },
+    "documentPdf": {
+      "bytes": "documentPdf:bytes",
+      "saveToDownloads": "documentPdf:saveToDownloads",
+      "sendDirect": "documentPdf:sendDirect",
+      "emailDefaults": "documentPdf:emailDefaults"
+    },
     "mail": {
       "sendAttachment": "mail:sendAttachment",
       "sendReportExcel": "mail:sendReportExcel"

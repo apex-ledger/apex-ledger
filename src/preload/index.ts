@@ -891,6 +891,12 @@ const api = {
     bytes: invoke<{ fileName: string; base64: string }>('salesReceiptPdf:bytes'),
     saveToDownloads: invoke<{ filePath: string }>('salesReceiptPdf:saveToDownloads'),
   },
+  documentPdf: {
+    bytes: invoke<{ fileName: string; base64: string }>('documentPdf:bytes'),
+    saveToDownloads: invoke<{ filePath: string }>('documentPdf:saveToDownloads'),
+    sendDirect: invoke<{ sent: true }>('documentPdf:sendDirect'),
+    emailDefaults: invoke<{ partyName: string; partyEmail: string | null; subject: string; sentence: string }>('documentPdf:emailDefaults'),
+  },
   mail: {
     sendAttachment: invoke<{ sent: true }>('mail:sendAttachment'),
     sendReportExcel: invoke<{ sent: true }>('mail:sendReportExcel'),
