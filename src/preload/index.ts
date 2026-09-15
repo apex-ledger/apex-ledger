@@ -968,7 +968,7 @@ const api = {
   },
   paymentReminders: {
     preview: invoke<ReminderPreview | null>('paymentReminders:preview'),
-    emailViaOutlook: invoke<{ opened: true; tier: string; totalCents: number }>('paymentReminders:emailViaOutlook'),
+    sendDirect: invoke<{ sent: true; tier: string; totalCents: number }>('paymentReminders:sendDirect'),
     overdueCustomers: invoke<OverdueCustomerReminder[]>('paymentReminders:overdueCustomers'),
   },
   appSettings: {
@@ -979,8 +979,10 @@ const api = {
   },
   customerStatements: {
     list: invoke<StatementRow[]>('customerStatements:list'),
-    saveAll: invoke<{ saved: false } | { saved: true; folder: string; count: number }>('customerStatements:saveAll'),
-    email: invoke<{ opened: true; totalCents: number }>('customerStatements:email'),
+    emailDefaults: invoke<{ to: string | null; subject: string; body: string }>('customerStatements:emailDefaults'),
+    sendDirect: invoke<{ sent: true; totalCents: number }>('customerStatements:sendDirect'),
+    sendAll: invoke<{ sent: string[]; skipped: string[]; failed: Array<{ customerName: string; error: string }> }>('customerStatements:sendAll'),
+    saveCombined: invoke<{ filePath: string; count: number }>('customerStatements:saveCombined'),
   },
   attachments: {
     list: invoke<AttachmentRow[]>('attachments:list'),

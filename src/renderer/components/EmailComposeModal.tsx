@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Modal } from './Modal';
 import { buttonClass } from './Button';
 
@@ -15,6 +15,8 @@ export function EmailComposeModal({
   defaultBody,
   defaultReplyTo,
   onSend,
+  summary,
+  attachmentNote = 'The PDF is attached automatically.',
 }: {
   open: boolean;
   onClose: () => void;
@@ -24,6 +26,10 @@ export function EmailComposeModal({
   defaultBody: string;
   defaultReplyTo?: string;
   onSend: (fields: { to: string; subject: string; body: string; replyTo: string }) => Promise<{ ok: true } | { ok: false; error: string }>;
+  /** Anything the sender should see before sending, above the fields — a reminder's tier and balance. */
+  summary?: ReactNode;
+  /** What travels with the message, said in the footnote. */
+  attachmentNote?: string;
 }) {
   const [to, setTo] = useState(defaultTo);
   const [subject, setSubject] = useState(defaultSubject);
@@ -65,6 +71,7 @@ export function EmailComposeModal({
         </>
       }
     >
+      {summary && <div className="mb-3">{summary}</div>}
       {error && <div className="mb-3 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       <label className="block text-sm">
         <span className="text-gray-600">To</span>
@@ -82,7 +89,7 @@ export function EmailComposeModal({
         <span className="text-gray-600">Reply-To (optional — where the client's reply should go)</span>
         <input type="email" value={replyTo} onChange={(e) => setReplyTo(e.target.value)} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" placeholder="you@yourfirm.com" />
       </label>
-      <p className="mt-2 text-xs text-gray-400">The PDF is attached automatically. Sent from Apex Ledger's own mail server — no Outlook or mail setup needed.</p>
+      <p className="mt-2 text-xs text-gray-400">{attachmentNote} Sent from Apex Ledger's own mail server — no Outlook or mail setup needed.</p>
     </Modal>
   );
 }

@@ -535,7 +535,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('recurringInvoices:generateDue', (_event, input) => mutate('invoices', () => recurringInvoicesHandlers.recurringInvoicesGenerateDue(input)));
   ipcMain.handle('documentHistory:get', (_event, input) => toResult(() => documentHistoryHandlers.documentHistory(input)));
   ipcMain.handle('paymentReminders:preview', (_event, input) => toResult(() => paymentRemindersHandlers.paymentRemindersPreview(input)));
-  ipcMain.handle('paymentReminders:emailViaOutlook', (_event, input) => toResult(() => paymentRemindersHandlers.paymentRemindersEmailViaOutlook(input)));
+  ipcMain.handle('paymentReminders:sendDirect', (_event, input) => toResult(() => paymentRemindersHandlers.paymentRemindersSendDirect(input)));
   ipcMain.handle('paymentReminders:overdueCustomers', () => toResult(() => paymentRemindersHandlers.paymentRemindersOverdueCustomers()));
   ipcMain.handle('receiptInbox:pickAndExtract', () => toResult(() => receiptInboxHandlers.receiptInboxPickAndExtract(mainWindow)));
   ipcMain.handle('journal:reclassifyCandidates', (_e, input) => toResult(() => reclassifyHandlers.reclassifyCandidates(input)));
@@ -553,8 +553,10 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('company:pickLogo', () => toResult(() => companyHandlers.companyPickLogoHandler(mainWindow)));
   ipcMain.handle('reports:activityLog', (_e, input) => toResult(() => reportsHandlers.reportsActivityLog(input)));
   ipcMain.handle('customerStatements:list', () => toResult(() => customerStatementsHandlers.customerStatementsList()));
-  ipcMain.handle('customerStatements:saveAll', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsSaveAll(mainWindow, input)));
-  ipcMain.handle('customerStatements:email', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsEmail(input)));
+  ipcMain.handle('customerStatements:emailDefaults', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsEmailDefaults(input)));
+  ipcMain.handle('customerStatements:sendDirect', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsSendDirect(input)));
+  ipcMain.handle('customerStatements:sendAll', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsSendAll(input)));
+  ipcMain.handle('customerStatements:saveCombined', (_e, input) => toResult(() => customerStatementsHandlers.customerStatementsSaveCombined(input)));
   ipcMain.handle('attachments:list', (_event, input) => toResult(() => attachmentsHandlers.attachmentsList(input)));
   ipcMain.handle('attachments:add', (_event, input) => toResult(() => attachmentsHandlers.attachmentsAdd(mainWindow, input)));
   ipcMain.handle('attachments:open', (_event, id) => toResult(() => attachmentsHandlers.attachmentsOpen(id)));

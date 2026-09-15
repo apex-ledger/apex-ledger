@@ -9,8 +9,8 @@ import { localIsoDate } from '@shared/domain/dates/localDate';
 import { getCurrentDb } from '../companyFile';
 import { getAllInvoices } from '../db/queries';
 import { mapContactRow } from '../db/mappers';
-import { sendEmailWithAttachment } from '../email/sendEmail';
-import { BORDER, BRAND_900, PAGE_HEIGHT, PAGE_WIDTH, TEXT_DARK, TEXT_MUTED, companyAddressLines, drawCompanyLogo } from '../forms/pdfStyle';
+import { sendPlatformEmailWithAttachment } from '../email/sendEmail';
+import { BORDER, PAGE_HEIGHT, PAGE_WIDTH, TEXT_DARK, TEXT_MUTED, companyAddressLines, drawCompanyLogo } from '../forms/pdfStyle';
 import { companyGet } from './company.handlers';
 import { recordUserActivity } from '../userActivity';
 
@@ -59,7 +59,7 @@ async function statementPdf(preview: ReminderPreview): Promise<Uint8Array> {
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   let y = PAGE_HEIGHT - 60;
   await drawCompanyLogo(doc, page, company.logoDataUrl, PAGE_WIDTH - 50, PAGE_HEIGHT - 40, 50, 160);
-  page.drawText(company.displayName || company.legalName, { x: 50, y, size: 16, font: bold, color: BRAND_900 });
+  page.drawText(company.displayName || company.legalName, { x: 50, y, size: 16, font: bold, color: TEXT_DARK });
   y -= 16;
   for (const line of companyAddressLines(company)) { page.drawText(line, { x: 50, y, size: 9, font, color: TEXT_MUTED }); y -= 12; }
   y -= 10;
@@ -98,23 +98,27 @@ async function statementPdf(preview: ReminderPreview): Promise<Uint8Array> {
   return doc.save();
 }
 
-/** Opens Outlook with the reminder addressed, written and the statement attached. The person
- * reviews and presses Send — nothing leaves the firm without a human looking at it. */
-export async function paymentRemindersEmailViaOutlook(input: unknown): Promise<{ opened: true; tier: ReminderDraft['tier']; totalCents: number }> {
-  const { customerId } = inputSchema.parse(input);
+const sendSchema = z.object({
+  customerId: z.number().int().positive(),
+  to: z.string().trim().min(1, 'Enter an email address to send to.'),
+  subject: z.string().max(300),
+  body: z.string().max(20_000),
+  replyTo: z.string().trim().optional(),
+});
+
+/** Sends the reminder through the platform's mail relay, with the statement of account attached —
+ * the route that works in the web app, where there is no desktop Outlook to open. The wording has
+ * already been read and, if need be, changed in the send box, so nothing goes out unseen. */
+export async function paymentRemindersSendDirect(input: unknown): Promise<{ sent: true; tier: ReminderDraft['tier']; totalCents: number }> {
+  const { customerId, to, subject, body, replyTo } = sendSchema.parse(input);
   const preview = await draftFor(customerId);
   if (!preview) throw new Error('This customer has nothing outstanding.');
-  if (!preview.customerEmail) throw new Error('This customer has no email address on file — add one in Customers first.');
   const bytes = await statementPdf(preview);
   const tempPath = path.join(os.tmpdir(), `${crypto.randomUUID()}-Statement-${preview.customerName.replace(/[^A-Za-z0-9]+/g, '_')}.pdf`);
   fs.writeFileSync(tempPath, bytes);
-  try {
-    await sendEmailWithAttachment(tempPath, preview.customerEmail, preview.subject, preview.body);
-  } catch (err) {
-    throw new Error(`Email could not be sent (${err instanceof Error ? err.message : String(err)}).`);
-  }
+  await sendPlatformEmailWithAttachment(tempPath, to, subject, body, replyTo);
   await recordUserActivity('paymentReminder', { name: `${preview.customerName} — ${preview.tier}` });
-  return { opened: true, tier: preview.tier, totalCents: preview.totalCents };
+  return { sent: true, tier: preview.tier, totalCents: preview.totalCents };
 }
 
 /** Every customer with an overdue balance, with the reminder tier each would get — the bulk view. */

@@ -466,7 +466,7 @@
     },
     "paymentReminders": {
       "preview": "paymentReminders:preview",
-      "emailViaOutlook": "paymentReminders:emailViaOutlook",
+      "sendDirect": "paymentReminders:sendDirect",
       "overdueCustomers": "paymentReminders:overdueCustomers"
     },
     "appSettings": {
@@ -477,8 +477,10 @@
     },
     "customerStatements": {
       "list": "customerStatements:list",
-      "saveAll": "customerStatements:saveAll",
-      "email": "customerStatements:email"
+      "emailDefaults": "customerStatements:emailDefaults",
+      "sendDirect": "customerStatements:sendDirect",
+      "sendAll": "customerStatements:sendAll",
+      "saveCombined": "customerStatements:saveCombined"
     },
     "attachments": {
       "list": "attachments:list",
