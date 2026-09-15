@@ -201,6 +201,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('reports:trialBalance', (_e, input) => toResult(() => reportsHandlers.reportsTrialBalance(input)));
   ipcMain.handle('reports:generalLedger', (_e, input) => toResult(() => reportsHandlers.reportsGeneralLedger(input)));
+  ipcMain.handle('reports:generalLedgerAllAccounts', (_e, input) => toResult(() => reportsHandlers.reportsGeneralLedgerAllAccounts(input)));
   ipcMain.handle('reports:incomeStatement', (_e, input) => toResult(() => reportsHandlers.reportsIncomeStatement(input)));
   ipcMain.handle('reports:balanceSheet', (_e, input) => toResult(() => reportsHandlers.reportsBalanceSheet(input)));
   ipcMain.handle('reports:profitAndLossDetail', (_e, input) => toResult(() => reportsHandlers.reportsProfitAndLossDetail(input)));
@@ -472,6 +473,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('invoicePdf:generate', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfGenerate(mainWindow, input)));
   ipcMain.handle('invoicePdf:emailViaOutlook', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfEmailViaOutlook(input)));
   ipcMain.handle('invoicePdf:sendDirect', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSendDirect(input)));
+  ipcMain.handle('invoicePdf:bytes', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfBytes(input)));
   ipcMain.handle('invoicePdf:saveToDownloads', (_e, input) => toResult(() => invoicePdfHandlers.invoicePdfSaveToDownloads(input)));
 
   ipcMain.handle('salesReceiptPdf:generate', (_e, input) => toResult(() => salesReceiptPdfHandlers.salesReceiptPdfGenerate(mainWindow, input)));

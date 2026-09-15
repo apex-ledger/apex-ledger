@@ -40,6 +40,7 @@ import { expandBundle, productPickerOptions, productTypeOf } from '@shared/domai
 import { ErrorNotice } from '../../components/ErrorNotice';
 import { EmailComposeModal } from '../../components/EmailComposeModal';
 import { webContext } from '../company-settings/WebOrganisationSection';
+import { printPdfFromBase64 } from '../../utils/printPdf';
 
 
 interface LineRow {
@@ -571,6 +572,17 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     setPdfNotice('Outlook draft opened with the invoice attached.');
   }
 
+  async function handlePrint() {
+    if (posted === null) return;
+    setPdfBusy(true);
+    setPdfError(null);
+    setPdfNotice(null);
+    const result = await window.api.invoicePdf.bytes({ invoiceId: posted.id });
+    setPdfBusy(false);
+    if (!result.ok) return setPdfError(result.error);
+    printPdfFromBase64(result.data.base64);
+  }
+
   async function handleSaveToDownloads() {
     if (posted === null) return;
     setPdfBusy(true);
@@ -634,6 +646,22 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
         >
           ×
         </button>
+        {/* Print / Email / PDF live in the toolbar with the other document actions, not buried at
+          * the foot of the page under the payment buttons — this is the first place anyone looks
+          * for "send this to the client". Only a saved invoice has a PDF to send. */}
+        {posted && (
+          <ShareMenu
+            busy={pdfBusy}
+            actions={[
+              { label: 'Print…', onClick: handlePrint },
+              { label: 'Send Email…', onClick: () => setComposeOpen(true) },
+              { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
+              { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
+              { label: 'Save as PDF…', onClick: handleDownloadPdf },
+              { label: 'Save to Downloads', onClick: handleSaveToDownloads },
+            ]}
+          />
+        )}
         {!posted && <ForeignCurrencySelector fx={fx} />}
         <div className="flex items-center gap-2">
           {posted && (
@@ -717,16 +745,6 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
           <div className="mt-3"><AttachmentsPanel entityType="invoice" entityId={posted.id} /><div className="mt-2"><DocumentHistoryPanel entityType="invoice" entityId={posted.id} /></div></div>
 
           <div className="mt-3 flex gap-2">
-            <ShareMenu
-              busy={pdfBusy}
-              actions={[
-                { label: 'Send Email…', onClick: () => setComposeOpen(true) },
-                { label: 'Email via Outlook', onClick: handleEmailViaOutlook },
-                { label: 'Share via WhatsApp', onClick: handleShareWhatsApp },
-                { label: 'Export as PDF…', onClick: handleDownloadPdf },
-                { label: 'Save to Downloads', onClick: handleSaveToDownloads },
-              ]}
-            />
             {posted && (
               <EmailComposeModal
                 open={composeOpen}

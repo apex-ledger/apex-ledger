@@ -71,6 +71,16 @@ export async function invoicePdfEmailViaOutlook(input: unknown) {
   }
 }
 
+/** The invoice PDF itself, base64 over the wire, so the renderer can put it straight into a print
+ * dialog. Printing is the one output that must not touch the filesystem first: on the web there is
+ * no "open the saved file" step, and telling an accountant to download a PDF and find it in their
+ * Downloads folder to print it is not a print button. */
+export async function invoicePdfBytes(input: unknown) {
+  const { invoiceId } = input as { invoiceId: number };
+  const { invoice, bytes } = await resolveInvoicePdfBytes(invoiceId);
+  return { fileName: suggestedFileName(invoice.invoiceNumber), base64: Buffer.from(bytes).toString('base64') };
+}
+
 /** Sends the invoice straight out through the platform's own mail relay — no Outlook required, so
  * it works the same in the web app as on desktop. The compose box on the invoice page supplies
  * who it's to, the subject/message (pre-filled but editable) and a reply-to address. */

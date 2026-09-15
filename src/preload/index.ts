@@ -601,6 +601,7 @@ const api = {
   reports: {
     trialBalance: invoke<TrialBalanceResult>('reports:trialBalance'),
     generalLedger: invoke<GeneralLedgerResult>('reports:generalLedger'),
+    generalLedgerAllAccounts: invoke<GeneralLedgerResult[]>('reports:generalLedgerAllAccounts'),
     incomeStatement: invoke<IncomeStatementResult>('reports:incomeStatement'),
     balanceSheet: invoke<BalanceSheetResult>('reports:balanceSheet'),
     cashFlow: invoke<CashFlowResult>('reports:cashFlow'),
@@ -888,6 +889,7 @@ const api = {
     generate: invoke<{ saved: false } | { saved: true; filePath: string }>('invoicePdf:generate'),
     emailViaOutlook: invoke<{ sent: true }>('invoicePdf:emailViaOutlook'),
     sendDirect: invoke<{ sent: true }>('invoicePdf:sendDirect'),
+    bytes: invoke<{ fileName: string; base64: string }>('invoicePdf:bytes'),
     saveToDownloads: invoke<{ filePath: string }>('invoicePdf:saveToDownloads'),
   },
   bankReconciliation: {

@@ -105,6 +105,7 @@
     "reports": {
       "trialBalance": "reports:trialBalance",
       "generalLedger": "reports:generalLedger",
+      "generalLedgerAllAccounts": "reports:generalLedgerAllAccounts",
       "incomeStatement": "reports:incomeStatement",
       "balanceSheet": "reports:balanceSheet",
       "cashFlow": "reports:cashFlow",
@@ -386,6 +387,7 @@
       "generate": "invoicePdf:generate",
       "emailViaOutlook": "invoicePdf:emailViaOutlook",
       "sendDirect": "invoicePdf:sendDirect",
+      "bytes": "invoicePdf:bytes",
       "saveToDownloads": "invoicePdf:saveToDownloads"
     },
     "bankReconciliation": {
