@@ -7,6 +7,7 @@ export const TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
   actionCentre: 'Action Centre',
   audit: 'Auditor Centre',
+  yearEndWorkspace: 'Year-End Workspace',
   fixedAssets: 'Fixed Assets',
   approvals: 'Approvals',
   reclassify: 'Reclassify Transactions',
@@ -123,7 +124,7 @@ const SECTIONS: Record<string, string> = {
   chartOfAccounts: 'Accounting', journalList: 'Accounting', journalForm: 'Accounting', fixedAssets: 'Accounting', monthEndClose: 'Accounting', taxGifi: 'Accounting',
   products: 'Inventory', projects: 'Projects', tags: 'Settings', companySettings: 'Settings', accessPermissions: 'Settings', webAdmin: 'Administration',
   payroll: 'Payroll', paystub: 'Payroll', hstCentre: 'Sales Tax (GST/HST)',
-  approvals: 'Accounting', reclassify: 'Accountant', reportsHub: 'Reports', report: 'Reports', audit: 'Auditor', accountantCentre: 'Accountant', workpapers: 'Accountant', cpaReview: 'Accountant', clientHub: 'CRM',
+  approvals: 'Accounting', reclassify: 'Accountant', reportsHub: 'Reports', report: 'Reports', audit: 'Auditor', accountantCentre: 'Accountant', workpapers: 'Accountant', cpaReview: 'Accountant', clientHub: 'CRM', yearEndWorkspace: 'Accountant',
 };
 
 export function usePageBreadcrumb(): { section: string | null; title: string | null } {

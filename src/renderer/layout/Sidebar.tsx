@@ -172,6 +172,9 @@ export const MAIN_NAV: NavItem[] = [
   },
 
   // Close and review only after the daily source documents above are entered.
+  // One screen for the accountant who only opens the file once a year — sign-off checklist,
+  // payroll info-slip/regional deadlines and the final statements, without the day-to-day pages.
+  { label: 'Year-End Workspace', view: { kind: 'yearEndWorkspace' }, color: 'amber', icon: <IconShieldCheck /> },
   { label: 'Auditor Centre', view: { kind: 'audit' }, color: 'rose', icon: <IconClipboardCheck /> },
   { label: 'Month-End Close', view: { kind: 'monthEndClose' }, color: 'violet', icon: <IconCalendar /> },
   { label: 'Business Tax & GIFI', view: { kind: 'taxGifi' }, color: 'purple', icon: <IconFileText /> },

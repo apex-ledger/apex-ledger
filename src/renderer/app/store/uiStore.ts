@@ -180,6 +180,7 @@ export type View =
   | { kind: 'tools' }
   | { kind: 'knowledgeBase' }
   | { kind: 'audit'; tab?: 'exceptions' | 'checks' | 'package' }
+  | { kind: 'yearEndWorkspace' }
   | { kind: 'about' }
   | { kind: 'whatsNew' }
   | { kind: 'accessPermissions' }

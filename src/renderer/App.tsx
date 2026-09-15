@@ -96,6 +96,7 @@ import { ReportActions, ReportGeneratedStamp } from './components/ReportActions'
 import { ReportPeriodControls } from './components/ReportPeriodControls';
 import { KnowledgeBasePage } from './features/knowledge-base/KnowledgeBasePage';
 import { AuditorCentrePage } from './features/audit/AuditorCentrePage';
+import { YearEndWorkspacePage } from './features/year-end/YearEndWorkspacePage';
 import { CalendarPage } from './features/calendar/CalendarPage';
 import { QuickBooksImportPage } from './features/qb-import/QuickBooksImportPage';
 import { AboutPage } from './features/about/AboutPage';
@@ -483,6 +484,7 @@ export default function App() {
           {view.kind === 'tools' && <ToolsPage />}
           {view.kind === 'knowledgeBase' && <KnowledgeBasePage />}
           {view.kind === 'audit' && <AuditorCentrePage tab={view.tab} />}
+          {view.kind === 'yearEndWorkspace' && <YearEndWorkspacePage />}
           {view.kind === 'about' && <AboutPage />}
           {view.kind === 'whatsNew' && <WhatsNewPage />}
           {view.kind === 'accessPermissions' && <AccessPermissionsPage />}
