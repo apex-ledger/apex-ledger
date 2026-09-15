@@ -573,6 +573,10 @@ export const newInvoiceSchema = z.object({
   ...foreignCurrencyFieldsSchema,
 });
 
+/** A saved invoice changed before any payment is received against it: the same fields as a new
+ * invoice, addressed to the invoice being changed. See invoicesUpdate. */
+export const updateInvoiceSchema = newInvoiceSchema.extend({ id: z.number().int().positive() });
+
 /** Receiving a payment normally posts to Undeposited Funds, matching QuickBooks Desktop's Receive
  * Payment → Make Deposit workflow (see makeDepositSchema) — UNLESS bankAccountId is given, which
  * posts directly to that account instead. That direct path is for Bank Import matching only: when

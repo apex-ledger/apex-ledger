@@ -34,3 +34,21 @@ export function tagDocumentLines(journalLines: PostedJournalLineForTagging[], do
   }
   return out;
 }
+
+/** The reverse of tagDocumentLines: reads a posted document's tags back onto its own lines, by the
+ * same account-and-amount match, so that opening a saved invoice for editing and saving it again
+ * does not silently strip its class and location tags. Two lines with the same account and amount
+ * are indistinguishable in the journal, so their tags may swap places — which changes nothing any
+ * tag report can show, since the account and amount carrying the tag are the same. */
+export function documentLineTags(
+  journalLines: Array<PostedJournalLineForTagging & { tagIds: number[] }>,
+  documentLines: Array<{ accountId: number; baseCents: number }>,
+): number[][] {
+  const claimed = new Set<number>();
+  return documentLines.map((doc) => {
+    const match = journalLines.find((line) => !claimed.has(line.id) && line.accountId === doc.accountId && Math.max(line.debitCents, line.creditCents) === doc.baseCents);
+    if (!match) return [];
+    claimed.add(match.id);
+    return [...new Set(match.tagIds)];
+  });
+}

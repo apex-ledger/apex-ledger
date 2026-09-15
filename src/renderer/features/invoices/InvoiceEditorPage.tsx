@@ -40,6 +40,7 @@ import { expandBundle, productPickerOptions, productTypeOf } from '@shared/domai
 import { ErrorNotice } from '../../components/ErrorNotice';
 import { DocumentActions, defaultEmailBody } from '../../components/DocumentActions';
 import { CompanyLogoBox } from '../../components/CompanyLogoBox';
+import { invoiceEditRefusalReason } from '@shared/domain/sales/invoiceEditing';
 
 
 interface LineRow {
@@ -85,8 +86,8 @@ function invoiceLineTaxCents(line: Pick<InvoiceLine, 'taxCode' | 'manualHstCents
   return suggestTaxCents(line.taxCode, line.amountCents);
 }
 
-/** Read-only view of a posted invoice's line items — creation is the only supported write path
- * (mirrors Bills: no edit after posting), so an existing invoice is display-only here. */
+/** Read-only view of a saved invoice's line items. Changing them goes through Edit invoice, which
+ * reopens the entry form and re-posts the invoice — allowed until a payment is received. */
 function PostedInvoiceLines({
   lines,
   discountCents,
@@ -192,6 +193,9 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
    * somebody discovers weeks later that their stock never moved. */
   const [customers, setCustomers] = useState<Contact[]>([]);
   const [posted, setPosted] = useState<Invoice | null>(null);
+  /** The saved invoice currently open in the form for changes. While set, Save re-posts that invoice
+   * instead of creating a new one, and Cancel puts it back exactly as it was. */
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const hasTagGroups = useHasTagGroups();
   const [payments, setPayments] = useState<InvoicePayment[]>([]);
   const [receiving, setReceiving] = useState(false);
@@ -460,7 +464,10 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     setBusy(true);
     setError(null);
     const foreignTotalCents = fx.isForeign ? lines.reduce((sum, l) => sum + lineAmountCents(l), 0) : null;
-    const result = await window.api.invoices.create({
+    const saveInvoice = editingInvoice
+      ? (payload: Parameters<typeof window.api.invoices.create>[0]) => window.api.invoices.update({ id: editingInvoice.id, ...(payload as object) })
+      : window.api.invoices.create;
+    const result = await saveInvoice({
       customerId,
       invoiceNumber: invoiceNumber.trim(),
       invoiceDate,
@@ -499,6 +506,13 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     // Stock/COGS is posted atomically inside invoices.create; no second inventory call is needed.
 
     setBusy(false);
+    if (editingInvoice) {
+      setEditingInvoice(null);
+      setPosted(result.data);
+      window.api.invoices.payments(result.data.id).then((r) => r.ok && setPayments(r.data));
+      if (after === 'close') return setView({ kind: 'sales', tab: 'invoices' });
+      return;
+    }
 
     // Refresh the arrows' list so an invoice just saved can be paged back to.
     window.api.invoices.list({}).then((r) => {
@@ -542,6 +556,66 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
     if (posted === null) return;
     copySourceRef.current = posted;
     setView({ kind: 'invoiceEditor', id: 'new' });
+  }
+
+  /** Why the open invoice cannot be edited, judged from what the screen already knows. The server
+   * checks again, including applied credits and posted stock, which are not loaded here. */
+  const editRefusal = posted
+    ? invoiceEditRefusalReason({
+        paymentCount: payments.length + (posted.paidCents > 0 ? 1 : 0),
+        writtenOffCents: posted.writtenOffCents ?? 0,
+        creditAppliedCents: 0,
+        postedStock: false,
+        foreignCurrency: posted.foreignCurrency ?? null,
+      })
+    : null;
+
+  /** Opens the saved invoice in the entry form, exactly as it was saved — lines, tax codes, the
+   * discount and the class/location tags read back from its journal — so a line can be added or
+   * taken away without re-typing the rest. */
+  async function handleStartEdit() {
+    if (posted === null || editRefusal) return;
+    setBusy(true);
+    const tags = await window.api.invoices.lineTags(posted.id);
+    setBusy(false);
+    const lineTags = tags.ok ? tags.data : [];
+    const invoice = posted;
+    setEditingInvoice(invoice);
+    setCustomerId(invoice.customerId);
+    setInvoiceNumber(invoice.invoiceNumber);
+    setInvoiceNumberManuallyEdited(true);
+    setInvoiceDate(invoice.invoiceDate);
+    setDueDate(invoice.dueDate);
+    setPaymentTerms(invoice.paymentTerms ?? termFromDates(invoice.invoiceDate, invoice.dueDate));
+    setMemo(invoice.memo ?? '');
+    setCustomerPoNumber(invoice.customerPoNumber ?? '');
+    setShippingAddress(invoice.shippingAddress ?? '');
+    setShipToMode(invoice.shippingAddress ? 'custom' : 'billing');
+    setDiscountCents(invoice.discountCents);
+    // Saved lines hold the pre-tax price and, for tax-in lines, the exact tax as a Manual figure —
+    // so reopening in tax-exclusive mode reproduces the same total to the cent.
+    setAmountsMode('exclusive');
+    setLines(invoice.lines.map((line, i) => ({
+      key: `row-${++rowKeyCounter}`,
+      tagIds: lineTags[i] ?? [],
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceCents: line.unitPriceCents,
+      revenueAccountId: line.revenueAccountId,
+      productId: line.productId,
+      taxCode: line.taxCode,
+      manualHstCents: line.manualHstCents ?? 0,
+    })));
+    fx.reset();
+    setError(null);
+    setPosted(null);
+  }
+
+  function handleCancelEdit() {
+    if (editingInvoice === null) return;
+    setPosted(editingInvoice);
+    setEditingInvoice(null);
+    setError(null);
   }
 
   async function handleReverseLastPayment() {
@@ -644,6 +718,20 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
           saveToDownloads={() => window.api.invoicePdf.saveToDownloads({ invoiceId: posted!.id })}
           sendEmail={({ to, subject, body, replyTo }) => window.api.invoicePdf.sendDirect({ invoiceId: posted!.id, to, subject, body, replyTo })}
         />
+        {/* Editable until the invoice is paid — greyed with the reason once it is not, rather than
+          * hidden, so it is plain why a paid invoice cannot be changed and what to do instead. */}
+        {posted && (
+          <button
+            type="button"
+            disabled={busy || editRefusal !== null}
+            onClick={() => void handleStartEdit()}
+            title={editRefusal ?? 'Add, remove or change lines — allowed until a payment is received'}
+            className="rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Edit invoice
+          </button>
+        )}
+        {editingInvoice && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 ring-1 ring-amber-200">Editing {editingInvoice.invoiceNumber}</span>}
         {posted && (
           <ShareMenu
             busy={pdfBusy}
@@ -1123,6 +1211,17 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
 
           {saveProblem && <p className="mt-2 text-xs font-medium text-amber-700">To save: {saveProblem}</p>}
 
+          {editingInvoice ? (
+          <div className="mt-3 flex flex-wrap justify-end gap-2">
+            <p className="mr-auto self-center text-xs text-gray-500">Saving re-posts invoice {editingInvoice.invoiceNumber}: its old journal is voided and a new one posted, so the ledger follows every line you add or remove.</p>
+            <button type="button" disabled={busy} onClick={handleCancelEdit} className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Cancel
+            </button>
+            <button type="button" disabled={busy} onClick={() => handleSave('stay')} className="rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200 disabled:opacity-50">
+              Save changes
+            </button>
+          </div>
+          ) : (
           <div className="mt-3 flex flex-wrap gap-2 justify-end">
             <button
               type="button"
@@ -1157,6 +1256,7 @@ export function InvoiceEditorPage({ id, customerId: presetCustomerId }: { id: nu
               Save &amp; Close
             </button>
           </div>
+          )}
         </>
       )}
 

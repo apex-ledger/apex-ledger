@@ -312,6 +312,8 @@
       "receivePayment": "invoices:receivePayment",
       "reverseLastPayment": "invoices:reverseLastPayment",
       "changeDate": "invoices:changeDate",
+      "update": "invoices:update",
+      "lineTags": "invoices:lineTags",
       "writeOff": "invoices:writeOff",
       "deleteWithPayments": "invoices:deleteWithPayments",
       "undoWriteOff": "invoices:undoWriteOff",

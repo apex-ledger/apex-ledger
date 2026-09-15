@@ -48,3 +48,49 @@ describe('InvoiceEditorPage save guidance', () => {
     expect(screen.getByText('Email to')).toBeInTheDocument();
   });
 });
+
+describe('editing a saved invoice', () => {
+  const saved = {
+    id: 5, customerId: 3, invoiceNumber: 'INV-2026-0002', invoiceDate: '2026-09-15', dueDate: '2026-10-15', paymentTerms: 'net30',
+    memo: null, customerPoNumber: null, shippingAddress: null, discountCents: 0, totalCents: 28_250, paidCents: 0, balanceDueCents: 28_250,
+    status: 'unpaid', writtenOffCents: 0, invoiceJournalEntryId: 40, paymentJournalEntryId: null, foreignCurrency: null, foreignAmountCents: null, exchangeRate: null,
+    lines: [{ id: 1, invoiceId: 5, lineOrder: 0, description: 'Accounting policy review', quantity: 1, unitPriceCents: 25_000, amountCents: 25_000, revenueAccountId: 9, productId: null, taxCode: 'HST', manualHstCents: null }],
+  };
+  function mockCommon() {
+    mockApi('invoices', 'list', [saved]);
+    mockApi('customers', 'list', [{ id: 3, name: 'Om Financial', email: 'om@example.com', isActive: true }]);
+    mockApi('accounts', 'list', [{ id: 9, code: '4000', name: 'Service Revenue', accountType: 'Revenue', accountSubtype: null, normalBalance: 'Credit', parentId: null, gifiCode: null, isActive: true, isSystem: false, description: null, accountNumber: null, isTransferEligible: false }]);
+    mockApi('products', 'list', []);
+    mockApi('invoices', 'lineTags', [[]]);
+  }
+
+  it('reopens an unpaid invoice in the form and saves it back as the same invoice', async () => {
+    mockCommon();
+    mockApi('invoices', 'get', saved);
+    mockApi('invoices', 'payments', []);
+    mockApi('invoices', 'update', { ...saved, totalCents: 28_250 });
+
+    render(<InvoiceEditorPage id={5} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Edit invoice' }));
+    expect(await screen.findByText('Editing INV-2026-0002')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Accounting policy review')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(window.api.invoices.update).toHaveBeenCalledWith(expect.objectContaining({ id: 5, invoiceNumber: 'INV-2026-0002', lines: [expect.objectContaining({ description: 'Accounting policy review', unitPriceCents: 25_000 })] })));
+    expect(window.api.invoices.create).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: 'Edit invoice' })).toBeInTheDocument();
+  });
+
+  it('keeps a paid invoice closed to edits and says why', async () => {
+    mockCommon();
+    mockApi('invoices', 'get', { ...saved, paidCents: 28_250, balanceDueCents: 0, status: 'paid' });
+    mockApi('invoices', 'payments', [{ id: 1, invoiceId: 5, paymentDate: '2026-09-20', amountCents: 28_250 }]);
+
+    render(<InvoiceEditorPage id={5} />);
+
+    const edit = await screen.findByRole('button', { name: 'Edit invoice' });
+    await waitFor(() => expect(edit).toBeDisabled());
+    expect(edit).toHaveAttribute('title', expect.stringContaining('payment has been received'));
+  });
+});

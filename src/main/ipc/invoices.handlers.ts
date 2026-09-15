@@ -5,7 +5,8 @@ import { depositDateRefusalReason, paymentDateRefusalReason } from '@shared/doma
 import { inactiveContactRefusalReason } from '@shared/domain/contacts/contactRules';
 import { nextDocumentNumber, resolveNewDocumentNumber } from '@shared/domain/documents/documentNumbering';
 import { assertSaleLineAccounts } from './saleLineAccounts';
-import { changeInvoiceDateSchema, makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema, writeOffInvoiceSchema } from '@shared/validation/schemas';
+import { changeInvoiceDateSchema, makeDepositSchema, newInvoiceSchema, receiveInvoicePaymentSchema, updateInvoiceSchema, writeOffInvoiceSchema } from '@shared/validation/schemas';
+import { invoiceEditRefusalReason } from '@shared/domain/sales/invoiceEditing';
 import { buildInvoiceJournalLines, computeInvoiceLineAmountCents } from '@shared/domain/ledger/buildInvoiceJournalLines';
 import type { InvoiceLine, UndepositedItem } from '@shared/domain/types';
 import { getCurrentDb } from '../companyFile';
@@ -13,7 +14,7 @@ import { getAllDeposits, getAllInvoices, getAllSalesReceipts, getInvoiceById } f
 import { mapDepositRow, mapInvoiceLineRow, mapInvoiceRow } from '../db/mappers';
 import { ensureAccountByName } from '../db/ensureAccount';
 import { ensureGstHstAccountId, ensureProvincialTaxAccountId } from '../db/buildTaxSplitLines';
-import { journalCreate, journalGet, journalPost, journalUpdateDate, journalVoid } from './journal.handlers';
+import { journalCreate, journalGet, journalPost, journalUpdateDate, journalVoid, recordRevisions } from './journal.handlers';
 import { buildSaleStockMovements } from '@shared/domain/inventory/buildSaleStockMovements';
 import { movementsCreate } from './inventory.handlers';
 import { buildInventoryJournalLines, inventoryPostingMemo } from '@shared/domain/inventory/buildInventoryJournalLines';
@@ -25,7 +26,7 @@ import { ACCOUNTS_RECEIVABLE_ARGS as AR_ACCOUNT_ARGS, UNDEPOSITED_FUNDS_ACCOUNT_
 import { localIsoDate } from '@shared/domain/dates/localDate';
 import { computeLateInterest } from '@shared/domain/sales/lateInterest';
 import { foreignOutstandingCents, settleForeignPayment } from '@shared/domain/currency/fxSettlement';
-import { tagDocumentLines } from '@shared/domain/ledger/tagDocumentLines';
+import { documentLineTags, tagDocumentLines } from '@shared/domain/ledger/tagDocumentLines';
 
 const CUSTOMER_DISCOUNT_ACCOUNT_ARGS = ['Customer Discounts', 'Expense', '5900', '9270', 'Other Expense'] as const;
 const BAD_DEBT_ACCOUNT_ARGS = ['Bad Debt Expense', 'Expense', '5180', '8590', 'Operating Expense'] as const;
@@ -74,7 +75,153 @@ export async function invoicesNextNumber(input?: unknown): Promise<string> {
 export async function invoicesCreate(input: unknown, executor?: AppDb) {
   const payload = newInvoiceSchema.parse(input);
   const db = executor ?? getCurrentDb();
+  const { journalLines, lineAmounts, totalCents } = await prepareInvoicePosting(db, payload);
 
+  const create = async (trx: AppDb) => {
+    const existingNumbers = await trx.selectFrom('invoices').select('invoiceNumber').execute();
+    const invoiceNumber = resolveNewDocumentNumber('INV', payload.invoiceNumber, existingNumbers.map((row) => row.invoiceNumber), payload.invoiceDate, 'Invoice number');
+    // Posted inside the transaction so a failure inserting the invoice or its lines rolls the GL
+    // entry back with it, instead of stranding a posted entry with no invoice.
+    const posted = await postInvoiceJournal(trx, payload, invoiceNumber, journalLines, lineAmounts);
+
+    const insertedInvoice = await trx
+      .insertInto('invoices')
+      .values({
+        customerId: payload.customerId,
+        invoiceNumber: invoiceNumber,
+        customerPoNumber: payload.customerPoNumber,
+        shippingAddress: payload.shippingAddress,
+        paymentTerms: payload.paymentTerms ?? null,
+        invoiceDate: payload.invoiceDate,
+        dueDate: payload.dueDate,
+        memo: payload.memo,
+        totalCents,
+        discountCents: payload.discountCents,
+        status: 'unpaid',
+        invoiceJournalEntryId: posted.id,
+        paymentJournalEntryId: null,
+        foreignCurrency: payload.foreignCurrency,
+        foreignAmountCents: payload.foreignAmountCents,
+        exchangeRate: payload.exchangeRate,
+      })
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    const lines = await writeInvoiceLinesAndStock(trx, insertedInvoice.id, invoiceNumber, payload, lineAmounts);
+    return mapInvoiceRow(insertedInvoice, lines);
+  };
+  return executor ? create(db) : db.transaction().execute(create);
+}
+
+/** Changes a saved invoice — customer, dates, terms, memo, discount, and adding or removing lines —
+ * for as long as nothing else in the books depends on its figures (see invoiceEditRefusalReason).
+ *
+ * The invoice keeps its row, its number and its history. Its old journal is voided and a new one
+ * posted in the same transaction, so the ledger never shows both or neither, and the void leaves the
+ * superseded figures on the adjustments trail. Voiding refuses a locked period, a filed GST/HST
+ * return and a reconciled line, which means an edit is stopped by exactly the rules that stop a
+ * delete — and the whole edit rolls back rather than half-applying. */
+export async function invoicesUpdate(input: unknown) {
+  const { id, ...fields } = updateInvoiceSchema.parse(input);
+  const payload = newInvoiceSchema.parse(fields);
+  const db = getCurrentDb();
+  const existing = await invoicesGet(id);
+
+  const [paymentRow, creditRow, stockRow] = await Promise.all([
+    db.selectFrom('invoicePayments').select((eb) => eb.fn.countAll<number>().as('n')).where('invoiceId', '=', id).executeTakeFirst(),
+    db.selectFrom('creditNoteApplications')
+      .innerJoin('creditNotes', 'creditNotes.id', 'creditNoteApplications.creditNoteId')
+      .select((eb) => eb.fn.coalesce(eb.fn.sum<number>('creditNoteApplications.amountCents'), eb.val(0)).as('cents'))
+      .where('creditNotes.kind', '=', 'customer')
+      .where('creditNoteApplications.targetId', '=', id)
+      .executeTakeFirst(),
+    db.selectFrom('inventoryMovements').select('id').where('sourceDocumentType', '=', 'invoice').where('sourceDocumentId', '=', id).executeTakeFirst(),
+  ]);
+  const refusal = invoiceEditRefusalReason({
+    paymentCount: Number(paymentRow?.n ?? 0) + (existing.paidCents > 0 ? 1 : 0),
+    writtenOffCents: existing.writtenOffCents ?? 0,
+    creditAppliedCents: Number(creditRow?.cents ?? 0),
+    postedStock: Boolean(stockRow),
+    foreignCurrency: existing.foreignCurrency ?? payload.foreignCurrency ?? null,
+  });
+  if (refusal) throw new Error(refusal);
+
+  const { journalLines, lineAmounts, totalCents } = await prepareInvoicePosting(db, payload);
+
+  return db.transaction().execute(async (trx) => {
+    let invoiceNumber = existing.invoiceNumber;
+    if (payload.invoiceNumber.trim() !== existing.invoiceNumber) {
+      const taken = await trx.selectFrom('invoices').select('id').where('invoiceNumber', '=', payload.invoiceNumber.trim()).where('id', '!=', id).executeTakeFirst();
+      if (taken) throw new Error(`Invoice number ${payload.invoiceNumber.trim()} is already used by another invoice.`);
+      invoiceNumber = payload.invoiceNumber.trim();
+    }
+
+    if (existing.invoiceJournalEntryId !== null) await journalVoid(existing.invoiceJournalEntryId, false, trx, true);
+    const posted = await postInvoiceJournal(trx, payload, invoiceNumber, journalLines, lineAmounts);
+
+    const updated = await trx
+      .updateTable('invoices')
+      .set({
+        customerId: payload.customerId,
+        invoiceNumber,
+        customerPoNumber: payload.customerPoNumber,
+        shippingAddress: payload.shippingAddress,
+        paymentTerms: payload.paymentTerms ?? null,
+        invoiceDate: payload.invoiceDate,
+        dueDate: payload.dueDate,
+        memo: payload.memo,
+        totalCents,
+        discountCents: payload.discountCents,
+        status: 'unpaid',
+        invoiceJournalEntryId: posted.id,
+      })
+      .where('id', '=', id)
+      .returningAll()
+      .executeTakeFirstOrThrow();
+
+    await trx.deleteFrom('invoiceLines').where('invoiceId', '=', id).execute();
+    const lines = await writeInvoiceLinesAndStock(trx, id, invoiceNumber, payload, lineAmounts);
+
+    const describe = (total: number, count: number) => `${(total / 100).toFixed(2)} — ${count} line${count === 1 ? '' : 's'}`;
+    await recordRevisions(trx, posted.id, [{
+      field: 'invoice',
+      label: `Invoice ${invoiceNumber} edited`,
+      kind: 'changed',
+      oldValue: describe(existing.totalCents, existing.lines.length),
+      newValue: describe(totalCents, lines.length),
+    }]);
+    return mapInvoiceRow(updated, lines);
+  });
+}
+
+/** Each line's class/location tags, in line order — read back from the invoice's journal so the
+ * edit form can show and keep them. */
+export async function invoicesLineTags(id: number): Promise<number[][]> {
+  const db = getCurrentDb();
+  const invoice = await invoicesGet(id);
+  if (invoice.invoiceJournalEntryId === null) return invoice.lines.map(() => []);
+  const journalLines = await db.selectFrom('journalEntryLines').select(['id', 'accountId', 'debitCents', 'creditCents']).where('journalEntryId', '=', invoice.invoiceJournalEntryId).orderBy('lineOrder').execute();
+  const tagRows = await db
+    .selectFrom('journalEntryLineTags')
+    .innerJoin('journalEntryLines', 'journalEntryLines.id', 'journalEntryLineTags.journalEntryLineId')
+    .select(['journalEntryLineTags.journalEntryLineId as lineId', 'journalEntryLineTags.tagId as tagId'])
+    .where('journalEntryLines.journalEntryId', '=', invoice.invoiceJournalEntryId)
+    .execute();
+  const tagsByLine = new Map<number, number[]>();
+  for (const row of tagRows) tagsByLine.set(row.lineId, [...(tagsByLine.get(row.lineId) ?? []), row.tagId]);
+  return documentLineTags(
+    journalLines.map((line) => ({ ...line, tagIds: tagsByLine.get(line.id) ?? [] })),
+    invoice.lines.map((line) => ({ accountId: line.revenueAccountId, baseCents: line.amountCents })),
+  );
+}
+
+type InvoicePayload = ReturnType<typeof newInvoiceSchema.parse>;
+
+/** Everything about an invoice's posting that can be settled before a transaction opens: the
+ * customer and line accounts are checked, control accounts are created on first use, and the
+ * journal lines and total are built. Reads the outer connection, so it must run before
+ * db.transaction() — querying it from inside a transaction deadlocks on the single connection. */
+async function prepareInvoicePosting(db: AppDb, payload: InvoicePayload) {
   const customer = await db.selectFrom('customers').select(['name', 'isActive']).where('id', '=', payload.customerId).executeTakeFirst();
   const customerRefusal = inactiveContactRefusalReason('customer', customer && { name: customer.name, isActive: Boolean(customer.isActive) });
   if (customerRefusal) throw new Error(customerRefusal);
@@ -102,134 +249,108 @@ export async function invoicesCreate(input: unknown, executor?: AppDb) {
   ), { customerId: payload.customerId });
   // AR debit (the journal's first line) is the true invoice total: base + tax across every line.
   const totalCents = journalLines[0].debitCents;
+  return { journalLines, lineAmounts, totalCents };
+}
 
-  const create = async (trx: AppDb) => {
-    const existingNumbers = await trx.selectFrom('invoices').select('invoiceNumber').execute();
-    const invoiceNumber = resolveNewDocumentNumber('INV', payload.invoiceNumber, existingNumbers.map((row) => row.invoiceNumber), payload.invoiceDate, 'Invoice number');
-    // Posted inside the transaction so a failure inserting the invoice or its lines rolls the GL
-    // entry back with it, instead of stranding a posted entry with no invoice.
-    const entry = await journalCreate(
-      {
-        entryDate: payload.invoiceDate,
-        memo: payload.memo ?? `Invoice ${invoiceNumber}`,
-        reference: invoiceNumber,
-        lines: journalLines,
-      },
-      trx,
-    );
-    const posted = await journalPost(entry.id, trx);
-    // Class / location: each document line's tags land on the journal line that carries it.
+/** Posts the invoice's journal and attaches each document line's class/location tags to the
+ * journal line that carries it. Runs inside the caller's transaction. */
+async function postInvoiceJournal(trx: AppDb, payload: InvoicePayload, invoiceNumber: string, journalLines: Awaited<ReturnType<typeof prepareInvoicePosting>>['journalLines'], lineAmounts: number[]) {
+  const entry = await journalCreate(
     {
-      const tagPairs = tagDocumentLines(posted.lines.map((l) => ({ id: l.id, accountId: l.accountId, debitCents: l.debitCents, creditCents: l.creditCents })), payload.lines.map((line, i) => ({ accountId: line.revenueAccountId, baseCents: lineAmounts[i], tagIds: line.tagIds ?? [] })));
-      if (tagPairs.length > 0) await trx.insertInto('journalEntryLineTags').values(tagPairs).execute();
-    }
+      entryDate: payload.invoiceDate,
+      memo: payload.memo ?? `Invoice ${invoiceNumber}`,
+      reference: invoiceNumber,
+      lines: journalLines,
+    },
+    trx,
+  );
+  const posted = await journalPost(entry.id, trx);
+  const tagPairs = tagDocumentLines(posted.lines.map((l) => ({ id: l.id, accountId: l.accountId, debitCents: l.debitCents, creditCents: l.creditCents })), payload.lines.map((line, i) => ({ accountId: line.revenueAccountId, baseCents: lineAmounts[i], tagIds: line.tagIds ?? [] })));
+  if (tagPairs.length > 0) await trx.insertInto('journalEntryLineTags').values(tagPairs).execute();
+  return posted;
+}
 
-    const insertedInvoice = await trx
-      .insertInto('invoices')
+/** Writes the invoice's lines and, for tracked products, takes the stock and posts its cost.
+ * Revenue/A/R and stock/COGS are one accounting event, so a stock setup or quantity error here rolls
+ * back the whole invoice instead of leaving the subledger and GL out of sync. */
+async function writeInvoiceLinesAndStock(trx: AppDb, invoiceId: number, invoiceNumber: string, payload: InvoicePayload, lineAmounts: number[]) {
+  const lines: InvoiceLine[] = [];
+  for (const [i, line] of payload.lines.entries()) {
+    const insertedLine = await trx
+      .insertInto('invoiceLines')
       .values({
-        customerId: payload.customerId,
-        invoiceNumber: invoiceNumber,
-        customerPoNumber: payload.customerPoNumber,
-        shippingAddress: payload.shippingAddress,
-        paymentTerms: payload.paymentTerms ?? null,
-        invoiceDate: payload.invoiceDate,
-        dueDate: payload.dueDate,
-        memo: payload.memo,
-        totalCents,
-        discountCents: payload.discountCents,
-        status: 'unpaid',
-        invoiceJournalEntryId: posted.id,
-        paymentJournalEntryId: null,
-        foreignCurrency: payload.foreignCurrency,
-        foreignAmountCents: payload.foreignAmountCents,
-        exchangeRate: payload.exchangeRate,
+        invoiceId,
+        lineOrder: i,
+        description: line.description,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPriceCents,
+        amountCents: lineAmounts[i],
+        revenueAccountId: line.revenueAccountId,
+        productId: line.productId ?? null,
+        taxCode: line.taxCode ?? null,
+        manualHstCents: line.taxCode === 'Manual' ? (line.manualHstCents ?? null) : null,
       })
       .returningAll()
       .executeTakeFirstOrThrow();
+    lines.push(mapInvoiceLineRow(insertedLine));
+  }
 
-    const lines: InvoiceLine[] = [];
-    for (const [i, line] of payload.lines.entries()) {
-      const insertedLine = await trx
-        .insertInto('invoiceLines')
-        .values({
-          invoiceId: insertedInvoice.id,
-          lineOrder: i,
-          description: line.description,
-          quantity: line.quantity,
-          unitPriceCents: line.unitPriceCents,
-          amountCents: lineAmounts[i],
-          revenueAccountId: line.revenueAccountId,
-          productId: line.productId ?? null,
-          taxCode: line.taxCode ?? null,
-          manualHstCents: line.taxCode === 'Manual' ? (line.manualHstCents ?? null) : null,
-        })
-        .returningAll()
-        .executeTakeFirstOrThrow();
-      lines.push(mapInvoiceLineRow(insertedLine));
+  for (const line of lines) {
+    if (line.productId === null || line.quantity <= 0) continue;
+    const product = await trx.selectFrom('products').selectAll().where('id', '=', line.productId).executeTakeFirst();
+    if (!product) throw new Error(`Product on invoice line "${line.description}" no longer exists.`);
+    if (!product.trackQuantity) continue;
+    if (product.assetAccountId === null) throw new Error(`Set an Inventory Asset account on ${product.name} before selling it.`);
+    if (product.cogsAccountId === null) throw new Error(`Set a Cost of Goods Sold account on ${product.name} before selling it.`);
+
+    const priorRows = await trx.selectFrom('inventoryMovements').selectAll().where('productId', '=', product.id).execute();
+    const prior: InventoryMovement[] = priorRows.map((r) => ({
+      id: r.id, productId: r.productId, movementDate: r.movementDate, quantityDelta: r.quantityDelta,
+      unitCostCents: r.unitCostCents, kind: r.kind as InventoryMovement['kind'], journalEntryId: r.journalEntryId, note: r.note,
+    }));
+    const before = valueProduct(product.id, prior);
+    if (line.quantity > before.quantityOnHand + 1e-9) {
+      throw new Error(`Not enough stock for ${product.name}. On hand: ${before.quantityOnHand}; invoice quantity: ${line.quantity}. Record the receipt/adjustment first.`);
     }
 
-    // Revenue/A/R and stock/COGS are one accounting event. Every tracked product line is validated
-    // and posted inside this same transaction, so a stock setup or quantity error rolls back the
-    // invoice too instead of leaving the subledger and GL out of sync.
-    for (const line of lines) {
-      if (line.productId === null || line.quantity <= 0) continue;
-      const product = await trx.selectFrom('products').selectAll().where('id', '=', line.productId).executeTakeFirst();
-      if (!product) throw new Error(`Product on invoice line "${line.description}" no longer exists.`);
-      if (!product.trackQuantity) continue;
-      if (product.assetAccountId === null) throw new Error(`Set an Inventory Asset account on ${product.name} before selling it.`);
-      if (product.cogsAccountId === null) throw new Error(`Set a Cost of Goods Sold account on ${product.name} before selling it.`);
+    const posting = buildInventoryJournalLines({
+      productId: product.id,
+      productName: product.name,
+      kind: 'sale',
+      movementDate: payload.invoiceDate,
+      quantityDelta: -Math.abs(line.quantity),
+      unitCostCents: null,
+      assetAccountId: product.assetAccountId,
+      cogsAccountId: product.cogsAccountId,
+      counterAccountId: null,
+      priorMovements: prior,
+    });
 
-      const priorRows = await trx.selectFrom('inventoryMovements').selectAll().where('productId', '=', product.id).execute();
-      const prior: InventoryMovement[] = priorRows.map((r) => ({
-        id: r.id, productId: r.productId, movementDate: r.movementDate, quantityDelta: r.quantityDelta,
-        unitCostCents: r.unitCostCents, kind: r.kind as InventoryMovement['kind'], journalEntryId: r.journalEntryId, note: r.note,
-      }));
-      const before = valueProduct(product.id, prior);
-      if (line.quantity > before.quantityOnHand + 1e-9) {
-        throw new Error(`Not enough stock for ${product.name}. On hand: ${before.quantityOnHand}; invoice quantity: ${line.quantity}. Record the receipt/adjustment first.`);
-      }
-
-      const posting = buildInventoryJournalLines({
-        productId: product.id,
-        productName: product.name,
-        kind: 'sale',
-        movementDate: payload.invoiceDate,
-        quantityDelta: -Math.abs(line.quantity),
-        unitCostCents: null,
-        assetAccountId: product.assetAccountId,
-        cogsAccountId: product.cogsAccountId,
-        counterAccountId: null,
-        priorMovements: prior,
-      });
-
-      let stockJournalEntryId: number | null = null;
-      if (posting.lines.length > 0) {
-        const stockEntry = await journalCreate({
-          entryDate: payload.invoiceDate,
-          memo: inventoryPostingMemo({ kind: 'sale', productName: product.name }),
-          reference: invoiceNumber,
-          lines: posting.lines,
-        }, trx);
-        stockJournalEntryId = (await journalPost(stockEntry.id, trx)).id;
-      }
-
-      await trx.insertInto('inventoryMovements').values({
-        productId: product.id,
-        movementDate: payload.invoiceDate,
-        quantityDelta: -Math.abs(line.quantity),
-        unitCostCents: null,
-        kind: 'sale',
-        journalEntryId: stockJournalEntryId,
-        note: `${invoiceNumber} — ${line.description}`,
-        sourceDocumentType: 'invoice',
-        sourceDocumentId: insertedInvoice.id,
-        sourceLineId: line.id,
-      }).execute();
+    let stockJournalEntryId: number | null = null;
+    if (posting.lines.length > 0) {
+      const stockEntry = await journalCreate({
+        entryDate: payload.invoiceDate,
+        memo: inventoryPostingMemo({ kind: 'sale', productName: product.name }),
+        reference: invoiceNumber,
+        lines: posting.lines,
+      }, trx);
+      stockJournalEntryId = (await journalPost(stockEntry.id, trx)).id;
     }
 
-    return mapInvoiceRow(insertedInvoice, lines);
-  };
-  return executor ? create(db) : db.transaction().execute(create);
+    await trx.insertInto('inventoryMovements').values({
+      productId: product.id,
+      movementDate: payload.invoiceDate,
+      quantityDelta: -Math.abs(line.quantity),
+      unitCostCents: null,
+      kind: 'sale',
+      journalEntryId: stockJournalEntryId,
+      note: `${invoiceNumber} — ${line.description}`,
+      sourceDocumentType: 'invoice',
+      sourceDocumentId: invoiceId,
+      sourceLineId: line.id,
+    }).execute();
+  }
+  return lines;
 }
 
 /** Takes the stock an invoice sold, and posts its cost.

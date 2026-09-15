@@ -164,7 +164,7 @@ function isTracked(entry: { source?: string | null }): boolean {
  * only journalUpdate — because a posted entry is corrected through the narrower handlers below
  * (date, tax code, manual HST) or by being voided, and a report that missed those would quietly
  * under-report the year's adjustments. */
-async function recordRevisions(
+export async function recordRevisions(
   executor: AppDb,
   journalEntryId: number,
   changes: { field: string; label: string; kind: string; oldValue: string | null; newValue: string | null; lineLabel?: string | null }[],
