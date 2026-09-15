@@ -708,9 +708,49 @@ function NavSection({
   );
 }
 
+/** While the Year-End Workspace is open, the day-to-day nav (Sales, Expenses, Banking, Payroll…)
+ * would only tempt a CPA who is there for one thing into wandering off into bookkeeping that
+ * isn't theirs to do. This swaps the whole tree for the workspace's own three sections plus a way
+ * back out — the sidebar narrows to match the page instead of the page narrowing to fit the
+ * sidebar. Leaving the workspace (via "Full menu" or any "Open" link inside it) restores the
+ * normal sidebar automatically, since it is driven by the current view kind. */
+function YearEndFocusNav() {
+  function scrollToId(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  const setView = useUiStore((s) => s.setView);
+  return (
+    <nav className="flex-1 overflow-y-auto px-2 py-2">
+      <button
+        type="button"
+        onClick={() => setView({ kind: 'dashboard' })}
+        className="mb-2 flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
+      >
+        ← Full menu
+      </button>
+      <div className="px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-500">Year-End Workspace</div>
+      {[
+        { id: 'year-end-signoff-section', label: 'Sign-off checklist' },
+        { id: 'year-end-payroll-section', label: 'Payroll & regional filings' },
+        { id: 'year-end-statements-section', label: 'Final statements' },
+      ].map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => scrollToId(item.id)}
+          className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-brand-900 hover:bg-white"
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 export function Sidebar() {
   const companyLegalName = useUiStore((s) => s.companyLegalName);
   const currentView = useUiStore((s) => s.view);
+  const yearEndFocus = currentView.kind === 'yearEndWorkspace';
   const isDemoCompany = Boolean(companyLegalName && /\b(DEMO|TEST)\b/i.test(companyLegalName));
   const setReceiptInboxPendingCount = useUiStore((s) => s.setReceiptInboxPendingCount);
   const setActionCentreCount = useUiStore((s) => s.setActionCentreCount);
@@ -789,9 +829,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      {webSeat() !== 'payroll' && <NewMenu />}
+      {!yearEndFocus && webSeat() !== 'payroll' && <NewMenu />}
 
-      {webSeat() !== 'payroll' && (
+      {!yearEndFocus && webSeat() !== 'payroll' && (
         <div className="px-2 pt-2">
           <NavButton
             item={QUICK_ENTRY_NAV_ITEM}
@@ -800,14 +840,14 @@ export function Sidebar() {
           />
         </div>
       )}
-      {(() => { const w = webContext(); return w && (w.org.isPlatform || w.user.role === 'owner'); })() && (
+      {!yearEndFocus && (() => { const w = webContext(); return w && (w.org.isPlatform || w.user.role === 'owner'); })() && (
         <div className="px-2 pt-1">
           <NavButton item={ADMIN_NAV_ITEM} forceActive={currentView.kind === 'webAdmin'} emphasized />
           {webContext()?.org.isPlatform && <NavButton item={SUBSCRIPTIONS_NAV_ITEM} forceActive={currentView.kind === 'webSubscriptions'} emphasized />}
         </div>
       )}
 
-      {editMode && (
+      {!yearEndFocus && editMode && (
         <div className="border-b border-brand-200 bg-brand-100 px-3 py-2 text-[11px] text-brand-700">
           Tap <span className="font-bold">▲▼</span> to reorder, tap a dot to color a tab, uncheck to hide it.{' '}
           <button type="button" onClick={handleReset} className="font-semibold text-brand-900 underline">
@@ -816,29 +856,33 @@ export function Sidebar() {
         </div>
       )}
 
-      <nav className="flex-1 overflow-y-auto px-2 py-2">
-        <NavSection
-          section="main"
-          items={mainNav}
-          setItems={setMainNav}
-          editMode={editMode}
-          colorOverrides={colorOverrides}
-          setColorOverrides={setColorOverrides}
-          hiddenItems={hiddenItems}
-          onToggleHidden={toggleHidden}
-        />
-        <SectionHeader label="More" />
-        <NavSection
-          section="bookkeeping"
-          items={bookkeepingNav}
-          setItems={setBookkeepingNav}
-          editMode={editMode}
-          colorOverrides={colorOverrides}
-          setColorOverrides={setColorOverrides}
-          hiddenItems={hiddenItems}
-          onToggleHidden={toggleHidden}
-        />
-      </nav>
+      {yearEndFocus ? (
+        <YearEndFocusNav />
+      ) : (
+        <nav className="flex-1 overflow-y-auto px-2 py-2">
+          <NavSection
+            section="main"
+            items={mainNav}
+            setItems={setMainNav}
+            editMode={editMode}
+            colorOverrides={colorOverrides}
+            setColorOverrides={setColorOverrides}
+            hiddenItems={hiddenItems}
+            onToggleHidden={toggleHidden}
+          />
+          <SectionHeader label="More" />
+          <NavSection
+            section="bookkeeping"
+            items={bookkeepingNav}
+            setItems={setBookkeepingNav}
+            editMode={editMode}
+            colorOverrides={colorOverrides}
+            setColorOverrides={setColorOverrides}
+            hiddenItems={hiddenItems}
+            onToggleHidden={toggleHidden}
+          />
+        </nav>
+      )}
     </aside>
   );
 }

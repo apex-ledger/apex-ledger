@@ -40,19 +40,19 @@ export function YearEndWorkspacePage() {
         </p>
       </div>
 
-      <section>
+      <section id="year-end-signoff-section">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Sign-off checklist — data entry through to the balance sheet</h2>
         <YearEndSignoffPage />
       </section>
 
       {(runs.length > 0 || employees.length > 0) && (
-        <section>
+        <section id="year-end-payroll-section">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Payroll info slips and regional filings</h2>
           <YearEndChecklistPanel runs={runs} employees={employees} scrollToId={() => setView({ kind: 'payroll' })} />
         </section>
       )}
 
-      <section>
+      <section id="year-end-statements-section">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Final statements</h2>
         <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
           {FINAL_REPORTS.map((c) => (
