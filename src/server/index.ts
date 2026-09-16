@@ -41,8 +41,12 @@ import { notifySiteQuestion, notifyTrialRequest } from './notify';
 import { IpLimiter, answerSiteQuestion, limitTurns } from './siteChat';
 import { answerFromSite } from './siteAnswers';
 import { diskSpace, folderBytes } from './storage';
+import { referralInviteMail } from './referralInvite';
+import { sendPlatformEmail } from '../main/email/sendEmail';
+import { mayOpenCompany, reachableCompanies, type CompanyReach } from './companyAccess';
+import { orgByReferralCode, activeReferralFor, createClientSubscription, endReferral, linkedClientOrgs, listReferrals, referralCreditCents, setReferralCreditCents, setUserAccess, startReferral, CLIENT_RATE_KEY } from './admin';
 import { addPayment, deletePayment, lastActivityFor, listPayments, setOrgBilling } from './admin';
-import { billingTotals, computeOrgBilling } from './billing';
+import { billingTotals, computeOrgBilling, referralCredit } from './billing';
 import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
 import { seatAllowsChannel, filterResultForSeat, SEAT_LABELS } from '@shared/domain/seatScope';
 
@@ -112,10 +116,18 @@ function persistSession(s: Session, force = false): void {
   s.persistedAt = Date.now();
 }
 
+/** The company files this person may reach: their organisation's (or only the named ones), plus,
+ * for a CPA firm's unlimited people, the businesses linked to the firm. */
+function reachFor(s: Session): CompanyReach {
+  const scope = s.org.isPlatform ? null : s.user.companyScope;
+  return { ownDir: companiesDirFor(s.org), scope, linkedDirs: s.org.isPlatform || scope ? [] : linkedClientOrgs(s.org.id).map(companiesDirFor) };
+}
+
 async function reopenPendingCompany(s: Session): Promise<void> {
   const file = s.pendingCompany;
   if (!file) return;
   s.pendingCompany = null;
+  if (!mayOpenCompany(reachFor(s), file)) return;
   try {
     await runWithCompanyContext(s.company, () => openCompany(new BrowserWindow() as never, file));
   } catch (e) {
@@ -137,7 +149,17 @@ function sessionOf(req: express.Request): Session | null {
   if (!token || !/^[A-Za-z0-9_-]{20,}$/.test(token)) return null;
   const s = sessions.get(token) ?? restoreSession(token);
   if (s && !s.org.isPlatform && signInPaused()) { endSession(s, true); return null; }
-  if (s) { s.lastSeen = Date.now(); persistSession(s); }
+  if (s) {
+    // An owner may have changed this person's seat or companies, or deactivated them, since sign-in.
+    const fresh = getUser(s.user.id);
+    const org = fresh ? getOrg(fresh.orgId) : null;
+    if (!fresh || !fresh.isActive || !org) { endSession(s, true); return null; }
+    if (fresh.seatType !== s.user.seatType) runWithAccessSession(s.id, () => applySeatAccess(fresh.seatType));
+    s.user = fresh;
+    s.org = org;
+    s.lastSeen = Date.now();
+    persistSession(s);
+  }
   return s;
 }
 
@@ -187,11 +209,11 @@ const overrides: Record<string, (s: Session, args: unknown[]) => Promise<unknown
   // The seat decides the role on the web; a screen asking for another role gets the seat's role back.
   'access:setRole': async (s) => (s.user.seatType === 'full' ? applySeatAccess('full') : getAccessRole()),
   'company:listRecent': async (s) => {
-    const dir = companiesDirFor(s.org);
-    fs.mkdirSync(dir, { recursive: true });
-    return fs.readdirSync(dir).filter((f) => f.endsWith('.company')).sort().map((f) => path.join(dir, f));
+    fs.mkdirSync(companiesDirFor(s.org), { recursive: true });
+    return reachableCompanies(reachFor(s));
   },
   'company:create': async (s, args) => {
+    if (!s.org.isPlatform && s.user.companyScope) throw new Error('Your seat opens only the companies your firm chose for you. Ask your firm to create a new company.');
     const payload = companyCreateSchema.parse(args[0]);
     const dir = companiesDirFor(s.org);
     fs.mkdirSync(dir, { recursive: true });
@@ -204,10 +226,9 @@ const overrides: Record<string, (s: Session, args: unknown[]) => Promise<unknown
   },
   'company:open': async (s, args) => {
     const requested = typeof args[0] === 'string' ? args[0] : null;
-    const dir = path.resolve(companiesDirFor(s.org));
     if (!requested) throw new Error('Choose a company from the list.');
     const target = path.resolve(requested);
-    if (!target.toLowerCase().startsWith(dir.toLowerCase())) throw new Error('That company does not belong to your organisation.');
+    if (!mayOpenCompany(reachFor(s), target)) throw new Error('That company is not one your seat can open.');
     const result = await openCompany(new BrowserWindow() as never, target);
     if (!result) throw new Error('That company could not be opened.');
     sendToSession(s, 'company:changed', { filePath: result.filePath });
@@ -254,12 +275,22 @@ function siteCors(req: express.Request, res: express.Response): void {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   }
 }
 app.options('/api/trial-request', (req, res) => { siteCors(req, res); res.status(204).end(); });
 app.options('/api/site-feedback', (req, res) => { siteCors(req, res); res.status(204).end(); });
 app.options('/api/site-chat', (req, res) => { siteCors(req, res); res.status(204).end(); });
+app.options('/api/referral/:code', (req, res) => { siteCors(req, res); res.status(204).end(); });
+// The website shows "Recommended by <firm>" for a referral link. Only the firm's display name is
+// given out, and only for a real code.
+const referralLookupLimiter = new IpLimiter(60, 10 * 60 * 1000);
+app.get('/api/referral/:code', (req, res) => {
+  siteCors(req, res);
+  if (!referralLookupLimiter.allow(req.ip ?? 'unknown')) { res.status(429).json({ ok: false, error: 'Too many requests.' }); return; }
+  const firm = orgByReferralCode(String(req.params.code ?? ''));
+  res.json(firm ? { ok: true, data: { firm: firm.name } } : { ok: false, error: 'Unknown referral link.' });
+});
 app.options('/api/site-chat/handoff', (req, res) => { siteCors(req, res); res.status(204).end(); });
 // The question-and-answer assistant on the website (see siteChat.ts). Off until APEX_ANTHROPIC_API_KEY is set.
 const chatLimiter = new IpLimiter(30, 10 * 60 * 1000);
@@ -421,24 +452,30 @@ function requirePlatform(req: express.Request, res: express.Response): Session |
 }
 const wrap = (fn: () => unknown) => { try { return { ok: true, data: fn() }; } catch (e) { return { ok: false, error: e instanceof Error ? e.message : String(e) }; } };
 // ---- the administrator's subscriptions dashboard ----
-function orgBillingRow(o: ReturnType<typeof listOrgs>[number], today: string) {
+function orgBillingRow(o: ReturnType<typeof listOrgs>[number], today: string, referrals = listReferrals(), orgsById = new Map(listOrgs().map((x) => [x.id, x]))) {
   const users = listUsers(o.id);
   const payments = listPayments(o.id);
-  const billing = computeOrgBilling(o, users.map((u) => ({ seatType: u.seatType, isActive: u.isActive })), seatRates(), payments, today);
+  const credit = referralCredit(o.id, referrals, orgsById, referralCreditCents());
+  const billing = computeOrgBilling(o, users.map((u) => ({ seatType: u.isClient ? CLIENT_RATE_KEY : u.seatType, isActive: u.isActive })), seatRates(), payments, today, credit);
+  const active = activeReferralFor(o.id);
+  const referredBy = active ? orgsById.get(active.firmOrgId)?.name ?? null : null;
+  const referredClients = referrals.filter((r) => r.firmOrgId === o.id && !r.endedOn).map((r) => ({ orgId: r.clientOrgId, name: orgsById.get(r.clientOrgId)?.name ?? '', since: r.startedOn }));
   let companies = 0;
   try { companies = fs.readdirSync(companiesDirFor(o)).filter((n) => n.endsWith('.company')).length; } catch { companies = 0; }
   const agreed = users.filter((u) => u.isActive && u.agreedAt).length;
   const storageBytes = folderBytes(companiesDirFor(o));
-  return { org: o, billing, people: users, payments, companies, storageBytes, agreedCount: agreed, activeCount: users.filter((u) => u.isActive).length, lastActivity: lastActivityFor(o.id) };
+  return { org: o, billing, people: users, payments, companies, storageBytes, referredBy, referredClients, agreedCount: agreed, activeCount: users.filter((u) => u.isActive).length, lastActivity: lastActivityFor(o.id) };
 }
 app.get('/api/admin/subscriptions', (req, res) => {
   const s = requirePlatform(req, res); if (!s) return;
   if (!s.org.isPlatform) { res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
   res.json(wrap(() => {
     const today = new Date().toISOString().slice(0, 10);
-    const rows = listOrgs().filter((o) => !o.isPlatform).map((o) => orgBillingRow(o, today));
+    const referrals = listReferrals();
+    const orgsById = new Map(listOrgs().map((x) => [x.id, x]));
+    const rows = listOrgs().filter((o) => !o.isPlatform).map((o) => orgBillingRow(o, today, referrals, orgsById));
     const storage = { usedBytes: rows.reduce((t, r) => t + r.storageBytes, 0), disk: diskSpace(DATA_DIR) };
-    return { today, rates: seatRates(), totals: billingTotals(rows.map((r) => r.billing)), storage, rows };
+    return { today, rates: seatRates(), referralCreditCents: referralCreditCents(), totals: billingTotals(rows.map((r) => r.billing)), storage, rows };
   }));
 });
 app.post('/api/admin/orgs/:id/billing', (req, res) => {
@@ -454,7 +491,7 @@ app.post('/api/admin/payments/:id/delete', (req, res) => {
   res.json(wrap(() => { deletePayment(Number(req.params.id)); return { deleted: true }; }));
 });
 app.get('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => (s.org.isPlatform ? listOrgs() : [s.org]).map((o) => ({ ...o, activeSeats: listUsers(o.id).filter((u) => u.isActive).length })))); });
-app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); return createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); })); });
+app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean; referrerOrgId?: number | null }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); const org = createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); if (b.referrerOrgId) startReferral(org.id, Number(b.referrerOrgId)); return org; })); });
 app.get('/api/admin/signin-pause', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { paused: signInPaused() } }); });
 app.post('/api/admin/signin-pause', (req, res) => {
   const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
@@ -471,18 +508,108 @@ app.post('/api/admin/orgs/:id/seats', (req, res) => { const s = requirePlatform(
 app.get('/api/admin/users', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => listUsers(s.org.isPlatform ? undefined : s.org.id))); });
 app.post('/api/admin/users', (req, res) => {
   const s = requirePlatform(req, res); if (!s) return;
-  const body = (req.body ?? {}) as { orgId?: number; email?: string; name?: string; password?: string; role?: 'owner' | 'member'; seatType?: SeatType };
+  const body = (req.body ?? {}) as { orgId?: number; email?: string; name?: string; password?: string; role?: 'owner' | 'member'; seatType?: SeatType; companyScope?: string[] | null; isClient?: boolean };
   const orgId = s.org.isPlatform ? Number(body.orgId ?? s.org.id) : s.org.id;
-  res.json(wrap(() => createUser({ orgId, email: body.email ?? '', name: body.name ?? '', password: body.password ?? '', role: body.role, seatType: body.seatType })));
+  res.json(wrap(() => createUser({ orgId, email: body.email ?? '', name: body.name ?? '', password: body.password ?? '', role: body.role, seatType: body.seatType, companyScope: Array.isArray(body.companyScope) ? body.companyScope : null, isClient: Boolean(body.isClient) })));
 });
 // Seat types and their monthly rates: the platform administrator sets the rates; an owner may
 // change the type of their own people (it changes what the firm is billed).
 app.get('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => seatRates())); });
+app.post('/api/admin/referral-credit', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setReferralCreditCents(Math.round(Number((req.body ?? {}).dollars) * 100)))); });
+app.post('/api/admin/referrals', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { clientOrgId?: number; firmOrgId?: number }; res.json(wrap(() => startReferral(Number(b.clientOrgId), Number(b.firmOrgId)))); });
 app.post('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { seatType?: SeatType; dollars?: number }; res.json(wrap(() => setSeatRate(b.seatType as SeatType, Math.round(Number(b.dollars) * 100)))); });
 app.post('/api/admin/users/:id/seat-type', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); return setUserSeatType(u.id, (req.body ?? {}).seatType as SeatType); })); });
+app.post('/api/admin/users/:id/access', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = getUser(Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); if (u.id === s.user.id) throw new Error('You cannot limit your own companies.'); const b = (req.body ?? {}) as { companyScope?: string[] | null; isClient?: boolean }; return setUserAccess(u.id, { companyScope: Array.isArray(b.companyScope) ? b.companyScope : null, isClient: Boolean(b.isClient) }); })); });
 app.post('/api/admin/users/:id/active', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); return setUserActive(u.id, Boolean((req.body ?? {}).active)); })); });
 app.post('/api/admin/users/:id/password', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => { const u = listUsers().find((x) => x.id === Number(req.params.id)); if (!u || (!s.org.isPlatform && u.orgId !== s.org.id)) throw new Error('Person not found.'); setUserPassword(u.id, String((req.body ?? {}).password ?? '')); return true; })); });
 app.post('/api/me/password', (req, res) => { const s = sessionOf(req); if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; } res.json(wrap(() => { setUserPassword(s.user.id, String((req.body ?? {}).password ?? '')); return true; })); });
+
+// ---- clients and referrals ----
+// A CPA firm owner sees the firm's referral link, the businesses paying for themselves through the
+// firm, and the monthly credit they earn. A business owner sees which firm is linked to its books
+// and can end the link. The platform administrator can do both for any organisation.
+const SITE_URL = (process.env.APEX_SITE_URL ?? 'https://apexledger.ca').replace(/\/+$/, '');
+app.get('/api/org/referral', (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  res.json(wrap(() => {
+    const org = orgForFiles(s, req);
+    const orgsById = new Map(listOrgs().map((x) => [x.id, x]));
+    const today = new Date().toISOString().slice(0, 10);
+    const referrals = listReferrals();
+    const clients = referrals.filter((r) => r.firmOrgId === org.id).map((r) => {
+      const c = orgsById.get(r.clientOrgId);
+      const billing = c ? orgBillingRow(c, today, referrals, orgsById).billing : null;
+      return { clientOrgId: r.clientOrgId, name: c?.name ?? '', since: r.startedOn, endedOn: r.endedOn, status: billing?.status ?? null, firstChargeDate: billing?.firstChargeDate ?? null };
+    });
+    const creditPerClient = referralCreditCents();
+    const earningNow = referralCredit(org.id, referrals, orgsById, creditPerClient)(today);
+    const linked = activeReferralFor(org.id);
+    return {
+      referralCode: org.referralCode,
+      referralLink: org.referralCode ? `${SITE_URL}/?ref=${org.referralCode}` : null,
+      creditPerClientCents: creditPerClient,
+      clientSeatCents: seatRates()[CLIENT_RATE_KEY],
+      businessSeatCents: seatRates().business,
+      earningNowCents: earningNow,
+      clients,
+      linkedFirm: linked ? { firmOrgId: linked.firmOrgId, name: orgsById.get(linked.firmOrgId)?.name ?? '', since: linked.startedOn } : null,
+      // Businesses that asked for a trial through the firm's link: name, date and whether it is set up yet.
+      requests: listTrialRequests().filter((t) => t.referralOrgId === org.id).map((t) => ({ id: t.id, business: t.firm, contact: t.name, requestedOn: t.createdAt.slice(0, 10), status: t.status })),
+    };
+  }));
+});
+app.post('/api/org/clients', (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  res.json(wrap(() => {
+    const firm = orgForFiles(s, req);
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const file = path.join(companiesDirFor(firm), path.basename(String(b.companyFile ?? '')));
+    if (isOpenAnywhere(file)) throw new Error('That company is open right now. Ask everyone to close it, then try again.');
+    const r = createClientSubscription({ firmOrgId: firm.id, companyFile: String(b.companyFile ?? ''), businessName: String(b.businessName ?? ''), billingEmail: String(b.billingEmail ?? ''), personName: String(b.personName ?? ''), personEmail: String(b.personEmail ?? ''), password: String(b.password ?? '') });
+    // Firm people who were limited to that company keep reaching it only through the link, which they
+    // cannot use while limited; remove the name from their list so it does not linger.
+    for (const u of listUsers(firm.id)) if (u.companyScope?.some((n) => n.toLowerCase() === path.basename(file).toLowerCase())) {
+      const rest = u.companyScope.filter((n) => n.toLowerCase() !== path.basename(file).toLowerCase());
+      if (rest.length) setUserAccess(u.id, { companyScope: rest, isClient: u.isClient }); else setUserActive(u.id, false);
+    }
+    console.log(`[referral] ${firm.name} set up ${r.org.name} paying for itself (${r.user.email})`);
+    return { org: r.org, user: { name: r.user.name, email: r.user.email } };
+  }));
+});
+const inviteCounts = new Map<number, { day: string; n: number }>();
+app.post('/api/org/referral/invite', async (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  try {
+    const firm = orgForFiles(s, req);
+    if (firm.isPlatform) throw new Error('Choose a CPA firm.');
+    const b = (req.body ?? {}) as Record<string, unknown>;
+    const to = String(b.to ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error("Enter the business's email address.");
+    const day = new Date().toISOString().slice(0, 10);
+    const count = inviteCounts.get(firm.id);
+    const sent = count && count.day === day ? count.n : 0;
+    if (sent >= 50) throw new Error('That is 50 invitations today. Send more tomorrow, or share the link yourself.');
+    const mail = referralInviteMail({ firmName: firm.name, senderName: s.user.name, businessName: String(b.businessName ?? ''), contactName: String(b.contactName ?? ''), link: `${SITE_URL}/?ref=${firm.referralCode}`, note: String(b.note ?? '').slice(0, 2000) });
+    await sendPlatformEmail(to, String(b.subject ?? '').trim().slice(0, 200) || mail.subject, mail.body, s.user.email);
+    inviteCounts.set(firm.id, { day, n: sent + 1 });
+    console.log(`[referral] ${firm.name} invited ${to}`);
+    res.json({ ok: true, data: { sent: true, to } });
+  } catch (e) {
+    res.json({ ok: false, error: e instanceof Error ? e.message : String(e) });
+  }
+});
+app.post('/api/org/referral/end', (req, res) => {
+  const s = requirePlatform(req, res); if (!s) return;
+  res.json(wrap(() => {
+    const clientOrgId = Number((req.body ?? {}).clientOrgId);
+    const current = activeReferralFor(clientOrgId);
+    if (!current) throw new Error('That business is not linked to a firm.');
+    if (!s.org.isPlatform && s.org.id !== clientOrgId && s.org.id !== current.firmOrgId) throw new Error('That link is not yours to end.');
+    const ended = endReferral(clientOrgId);
+    console.log(`[referral] link ended: business ${clientOrgId} and firm ${current.firmOrgId}, by ${s.user.email}`);
+    return ended;
+  }));
+});
 
 // ---- downloads: a file a handler "saved" through the stub dialog, streamed once to the browser ----
 /** A download belongs to the session whose request produced it; nobody else can fetch it. */
@@ -626,6 +753,11 @@ app.post('/api/:channel', async (req, res) => {
   const files = uploadedFiles(s, (req.body ?? {}).uploads);
   res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });
   if (s.pendingCompany) await reopenPendingCompany(s);
+  const current = runWithCompanyContext(s.company, () => getCurrentFilePath());
+  if (current && !mayOpenCompany(reachFor(s), current)) {
+    runWithCompanyContext(s.company, () => { try { closeCompany(); } catch { /* already closed */ } });
+    sendToSession(s, 'company:changed', { filePath: null });
+  }
   const opened: { filePath?: string } = {};
   try {
     let result = await downloadContext.run(opened, () => uploadContext.run(files, () => sessionContext.run(s, () => runWithCompanyContext(s.company, () => runWithAccessSession(s.id, async () => {

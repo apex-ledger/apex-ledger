@@ -7,17 +7,17 @@ import { useCallback, useEffect, useState } from 'react';
  * cheque or card are recorded here by hand, so the dashboard shows the true position without a
  * payment processor. Each firm opens into its people, its payments and its billing details. */
 type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
-const SEAT_LABEL: Record<string, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
+const SEAT_LABEL: Record<string, string> = { client: 'Client (firm pays)', business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
 const METHODS = [['etransfer', 'e-Transfer'], ['cheque', 'Cheque'], ['card', 'Card'], ['bank', 'Bank transfer'], ['cash', 'Cash'], ['other', 'Other']] as const;
 
 interface Org { id: number; name: string; slug: string; seats: number; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string }
 interface Person { id: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; lastSignIn: string | null }
 interface Payment { id: number; orgId: number; paidOn: string; amountCents: number; method: string; reference: string; periodFrom: string | null; periodTo: string | null; note: string }
-interface Charge { periodFrom: string; periodTo: string; listCents: number; discountCents: number; amountCents: number; discountPct: number }
-interface Billing { status: 'trial' | 'active' | 'paused' | 'cancelled'; billingStart: string; firstChargeDate: string; monthlyListCents: number; monthlyNowCents: number; seatCounts: Record<string, number>; charges: Charge[]; billedCents: number; paidCents: number; owingCents: number; nextCharge: { date: string; amountCents: number } | null; discountEndsOn: string | null }
-interface Row { org: Org; billing: Billing; people: Person[]; payments: Payment[]; companies: number; storageBytes: number; agreedCount: number; activeCount: number; lastActivity: string | null }
+interface Charge { periodFrom: string; periodTo: string; listCents: number; discountCents: number; amountCents: number; discountPct: number; creditCents?: number }
+interface Billing { status: 'trial' | 'active' | 'paused' | 'cancelled'; billingStart: string; firstChargeDate: string; monthlyListCents: number; monthlyNowCents: number; seatCounts: Record<string, number>; charges: Charge[]; billedCents: number; paidCents: number; owingCents: number; nextCharge: { date: string; amountCents: number } | null; discountEndsOn: string | null; creditNowCents?: number }
+interface Row { org: Org; billing: Billing; people: Person[]; payments: Payment[]; companies: number; storageBytes: number; referredBy?: string | null; referredClients?: { orgId: number; name: string; since: string }[]; agreedCount: number; activeCount: number; lastActivity: string | null }
 interface Totals { firms: number; trial: number; active: number; paused: number; cancelled: number; monthlyRecurringCents: number; owingCents: number; paidCents: number; billedCents: number }
-interface Dashboard { today: string; rates: Record<string, number>; totals: Totals; storage?: { usedBytes: number; disk: { totalBytes: number; freeBytes: number } | null }; rows: Row[] }
+interface Dashboard { today: string; rates: Record<string, number>; referralCreditCents?: number; totals: Totals; storage?: { usedBytes: number; disk: { totalBytes: number; freeBytes: number } | null }; rows: Row[] }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
@@ -105,7 +105,7 @@ function FirmRows({ row, open, onToggle, onChanged }: { row: Row; open: boolean;
   return (
     <>
       <tr className={`cursor-pointer border-t border-gray-100 hover:bg-brand-50/40 ${open ? 'bg-brand-50/60' : ''}`} onClick={onToggle} data-testid={`sub-row-${org.id}`}>
-        <td className="break-words px-1.5 py-2 font-medium text-gray-900">{org.name}<div className="text-xs font-normal text-gray-500">{org.billingEmail || 'no billing email'}{org.discountPct > 0 && b.discountEndsOn && b.discountEndsOn >= b.billingStart ? ` · founding ${org.discountPct}% off to ${b.discountEndsOn}` : ''}</div></td>
+        <td className="break-words px-1.5 py-2 font-medium text-gray-900">{org.name}<div className="text-xs font-normal text-gray-500">{org.billingEmail || 'no billing email'}{org.discountPct > 0 && b.discountEndsOn && b.discountEndsOn >= b.billingStart ? ` · founding ${org.discountPct}% off to ${b.discountEndsOn}` : ''}</div>{row.referredBy && <div className="text-xs font-normal text-gold-800">Client of {row.referredBy}</div>}{row.referredClients && row.referredClients.length > 0 && <div className="text-xs font-normal text-emerald-800">{row.referredClients.length} client{row.referredClients.length === 1 ? '' : 's'} paying for themselves{b.creditNowCents ? ` · ${money(b.creditNowCents)}/mo credit` : ''}</div>}</td>
         <td className="px-1.5 py-2"><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[b.status]}`}>{STATUS_LABEL[b.status]}</span>{b.status === 'trial' && <div className="text-xs text-gray-500">billing from {b.firstChargeDate}</div>}</td>
         <td className="break-words px-1.5 py-2 text-gray-700">{seats}<div className="text-gray-500">{row.activeCount} of {org.seats} seats · {row.agreedCount} signed the agreement</div></td>
         <td className="px-1.5 py-2 text-right tabular-nums">{money(b.monthlyNowCents)}{b.monthlyNowCents !== b.monthlyListCents && <div className="text-xs text-gray-500 line-through">{money(b.monthlyListCents)}</div>}{org.billingCycle === 'yearly' && <div className="text-xs text-gray-500">billed yearly</div>}</td>
@@ -170,7 +170,7 @@ function FirmDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
         <h3 className="mb-1 mt-3 text-xs font-semibold uppercase tracking-wide text-gray-600">Charges to date</h3>
         {b.charges.length === 0 ? <div className="text-xs text-gray-500">None yet: the free month runs to {b.firstChargeDate}.</div> : (
           <table className="w-full text-xs"><tbody>
-            {b.charges.map((c) => <tr key={c.periodFrom} className="border-t border-gray-200"><td className="py-1">{c.periodFrom} to {c.periodTo}</td><td className="py-1 text-right text-gray-500">{c.discountCents > 0 ? `${money(c.listCents)} less ${c.discountPct}%` : ''}</td><td className="py-1 text-right tabular-nums">{money(c.amountCents)}</td></tr>)}
+            {b.charges.map((c) => <tr key={c.periodFrom} className="border-t border-gray-200"><td className="py-1">{c.periodFrom} to {c.periodTo}</td><td className="py-1 text-right text-gray-500">{[c.discountCents > 0 ? `${money(c.listCents)} less ${c.discountPct}%` : '', c.creditCents ? `less ${money(c.creditCents)} referral credit` : ''].filter(Boolean).join(', ')}</td><td className="py-1 text-right tabular-nums">{money(c.amountCents)}</td></tr>)}
             <tr className="border-t border-gray-300 font-semibold"><td className="py-1">Billed</td><td /><td className="py-1 text-right tabular-nums">{money(b.billedCents)}</td></tr>
           </tbody></table>
         )}

@@ -12,14 +12,14 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string }
+export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string; referralCode: string }
 /** The founding-firms offer: half price for six months, for the first firms that sign up. */
 export const FOUNDING = { pct: 50, months: 6, maxFirms: 20, signUpBy: '2026-12-31' };
 export type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
 /** Lowest to highest price. */
 export const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
 export const SEAT_TYPE_LABELS: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
-export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; createdAt: string; lastSignIn: string | null }
+export interface WebUser { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; createdAt: string; lastSignIn: string | null; /** Company files (names) this person may open; null means every company of the organisation. */ companyScope: string[] | null; /** A client of the firm on a firm-paid Business seat, billed at the client seat rate. */ isClient: boolean }
 
 let db: Database.Database | null = null;
 let dataDir = '';
@@ -189,7 +189,7 @@ export function setFeedbackStatus(id: number, status: 'new' | 'done'): FeedbackN
 
 /** A trial request from the public website: who they are, which edition, how many seats. The
  * platform administrator reads these in Settings and creates the organisation from them. */
-export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; /** The name typed as signature under the Subscription Agreement on the website, and when. */ agreedName: string | null; agreedAt: string | null }
+export interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; /** The name typed as signature under the Subscription Agreement on the website, and when. */ agreedName: string | null; agreedAt: string | null; /** The CPA firm whose referral link the visitor followed, if any. */ referralOrgId: number | null; referralOrgName: string | null }
 const TRIAL_EDITIONS = ['Business', 'Payroll Unlimited', 'Payroll only', 'Bookkeeper', 'Full accountant', 'Accounting Essential', 'Ultimate Suite', 'Payroll'];
 
 export function createTrialRequest(input: Record<string, unknown>, ip: string | null): TrialRequest {
@@ -210,12 +210,13 @@ export function createTrialRequest(input: Record<string, unknown>, ip: string | 
   const agreedName = text('agreedName', 160) || null;
   const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM trial_requests WHERE ip = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(ip ?? '') as { n: number }).n);
   if (ip && recent >= 5) throw new Error('Too many requests from this address. Please email admin@apexledger.ca instead.');
-  const r = store().prepare("INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip, agreed, agreed_name, agreed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, strftime('%Y-%m-%d %H:%M:%S', 'now'))").run(firm, name, email, phone, edition, seats, message, ip, agreedName);
+  const referrer = orgByReferralCode(String(input.ref ?? ''));
+  const r = store().prepare("INSERT INTO trial_requests (firm, name, email, phone, edition, seats, message, ip, agreed, agreed_name, agreed_at, referral_org_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, strftime('%Y-%m-%d %H:%M:%S', 'now'), ?)").run(firm, name, email, phone, edition, seats, message, ip, agreedName, referrer?.id ?? null);
   return getTrialRequest(Number(r.lastInsertRowid))!;
 }
 
 function rowToTrial(r: Record<string, unknown>): TrialRequest {
-  return { id: Number(r.id), firm: String(r.firm), name: String(r.name), email: String(r.email), phone: String(r.phone), edition: String(r.edition), seats: Number(r.seats), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at), agreedName: r.agreed_name ? String(r.agreed_name) : null, agreedAt: r.agreed_at ? String(r.agreed_at) : null };
+  return { id: Number(r.id), firm: String(r.firm), name: String(r.name), email: String(r.email), phone: String(r.phone), edition: String(r.edition), seats: Number(r.seats), message: String(r.message), status: r.status === 'done' ? 'done' : 'new', createdAt: String(r.created_at), agreedName: r.agreed_name ? String(r.agreed_name) : null, agreedAt: r.agreed_at ? String(r.agreed_at) : null, referralOrgId: r.referral_org_id ? Number(r.referral_org_id) : null, referralOrgName: r.referral_org_id ? getOrg(Number(r.referral_org_id))?.name ?? null : null };
 }
 export function getTrialRequest(id: number): TrialRequest | null {
   const r = store().prepare('SELECT * FROM trial_requests WHERE id = ?').get(id) as Record<string, unknown> | undefined;
@@ -268,6 +269,25 @@ function ensureColumns(): void {
     note TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
   )`);
+  // Client access and referrals: a person may be limited to named company files; a firm-paid
+  // client seat is billed at its own rate; a business paying for itself can be linked to the CPA
+  // firm that referred it, which earns a monthly credit while the link lasts.
+  if (!cols.includes('company_scope')) store().exec('ALTER TABLE users ADD COLUMN company_scope TEXT');
+  if (!cols.includes('is_client')) store().exec('ALTER TABLE users ADD COLUMN is_client INTEGER NOT NULL DEFAULT 0');
+  if (!orgCols.includes('referral_code')) store().exec('ALTER TABLE orgs ADD COLUMN referral_code TEXT');
+  if (!trialCols.includes('referral_org_id')) store().exec('ALTER TABLE trial_requests ADD COLUMN referral_org_id INTEGER');
+  store().exec(`CREATE TABLE IF NOT EXISTS referrals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    client_org_id INTEGER NOT NULL REFERENCES orgs(id),
+    firm_org_id INTEGER NOT NULL REFERENCES orgs(id),
+    started_on TEXT NOT NULL,
+    ended_on TEXT,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+  )`);
+  store().exec(`INSERT OR IGNORE INTO seat_rates (seat_type, cents) VALUES ('${CLIENT_RATE_KEY}', 2400)`);
+  for (const o of store().prepare("SELECT id FROM orgs WHERE referral_code IS NULL OR referral_code = ''").all() as { id: number }[]) {
+    store().prepare('UPDATE orgs SET referral_code = ? WHERE id = ?').run(newReferralCode(), o.id);
+  }
   // Earlier names for the same idea, before the owner settled on Full accountant / Bookkeeper / Business.
   store().exec("UPDATE users SET seat_type = 'bookkeeper' WHERE seat_type = 'accountant'; UPDATE users SET seat_type = 'business' WHERE seat_type = 'readonly'; DELETE FROM seat_rates WHERE seat_type IN ('accountant', 'readonly')");
 }
@@ -280,7 +300,7 @@ function hash(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
 }
 
-const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null, billingEmail: String(r.billing_email ?? ''), billingStart: r.billing_start ? String(r.billing_start) : null, billingCycle: r.billing_cycle === 'yearly' ? 'yearly' : 'monthly', billingStatus: r.billing_status === 'paused' || r.billing_status === 'cancelled' ? (r.billing_status as 'paused' | 'cancelled') : 'active', billingEnd: r.billing_end ? String(r.billing_end) : null, billingNotes: String(r.billing_notes ?? '') });
+const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null, billingEmail: String(r.billing_email ?? ''), billingStart: r.billing_start ? String(r.billing_start) : null, billingCycle: r.billing_cycle === 'yearly' ? 'yearly' : 'monthly', billingStatus: r.billing_status === 'paused' || r.billing_status === 'cancelled' ? (r.billing_status as 'paused' | 'cancelled') : 'active', billingEnd: r.billing_end ? String(r.billing_end) : null, billingNotes: String(r.billing_notes ?? ''), referralCode: String(r.referral_code ?? '') });
 
 /** Founding offer on an organisation: 50% off until six months from today, or off. */
 export function setOrgFounding(id: number, on: boolean): Org {
@@ -297,7 +317,7 @@ export function setOrgFounding(id: number, on: boolean): Org {
 export function foundingFirmsCount(): number {
   return Number((store().prepare('SELECT COUNT(*) AS n FROM orgs WHERE discount_pct > 0 AND is_platform = 0').get() as { n: number }).n);
 }
-const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', agreedAt: r.agreed_at ? String(r.agreed_at) : null, agreedName: r.agreed_name ? String(r.agreed_name) : null, isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null });
+const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', agreedAt: r.agreed_at ? String(r.agreed_at) : null, agreedName: r.agreed_name ? String(r.agreed_name) : null, isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null, companyScope: parseScope(r.company_scope), isClient: Boolean(r.is_client) });
 
 export function listOrgs(): Org[] {
   return (store().prepare('SELECT * FROM orgs ORDER BY is_platform DESC, name').all() as Record<string, unknown>[]).map(mapOrg);
@@ -315,7 +335,7 @@ export function createOrg(input: { name: string; seats?: number; isPlatform?: bo
   let slug = slugify(name);
   const taken = store().prepare('SELECT 1 FROM orgs WHERE slug = ?');
   for (let i = 2; taken.get(slug); i += 1) slug = `${slugify(name)}-${i}`;
-  const r = store().prepare('INSERT INTO orgs (name, slug, seats, is_platform) VALUES (?, ?, ?, ?) RETURNING *').get(name, slug, seats, input.isPlatform ? 1 : 0) as Record<string, unknown>;
+  const r = store().prepare('INSERT INTO orgs (name, slug, seats, is_platform, referral_code) VALUES (?, ?, ?, ?, ?) RETURNING *').get(name, slug, seats, input.isPlatform ? 1 : 0, newReferralCode()) as Record<string, unknown>;
   fs.mkdirSync(companiesDirFor(mapOrg(r)), { recursive: true });
   const created = mapOrg(r);
   return input.founding ? setOrgFounding(created.id, true) : created;
@@ -349,25 +369,26 @@ export function listUsers(orgId?: number): WebUser[] {
 /** Adds a person to an organisation, refusing when every seat is taken. */
 /** A seat's type sets what the person is billed at: Business, Payroll Unlimited, Bookkeeper or Full accountant. The role inside
  * each company file is still set there; the type is the commercial label and the rate. */
-export function seatRates(): Record<SeatType, number> {
-  const out = { business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900 } as Record<SeatType, number>;
-  for (const r of store().prepare('SELECT seat_type, cents FROM seat_rates').all() as { seat_type: string; cents: number }[]) if (SEAT_TYPES.includes(r.seat_type as SeatType)) out[r.seat_type as SeatType] = Number(r.cents);
+export function seatRates(): Record<SeatType | typeof CLIENT_RATE_KEY, number> {
+  const out = { business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900, client: 2400 } as Record<SeatType | typeof CLIENT_RATE_KEY, number>;
+  for (const r of store().prepare('SELECT seat_type, cents FROM seat_rates').all() as { seat_type: string; cents: number }[]) if (SEAT_TYPES.includes(r.seat_type as SeatType) || r.seat_type === CLIENT_RATE_KEY) out[r.seat_type as SeatType] = Number(r.cents);
   return out;
 }
-export function setSeatRate(type: SeatType, cents: number): Record<SeatType, number> {
-  if (!SEAT_TYPES.includes(type)) throw new Error('Unknown seat type.');
+export function setSeatRate(type: SeatType | typeof CLIENT_RATE_KEY, cents: number): Record<SeatType | typeof CLIENT_RATE_KEY, number> {
+  if (!SEAT_TYPES.includes(type as SeatType) && type !== CLIENT_RATE_KEY) throw new Error('Unknown seat type.');
   if (!Number.isInteger(cents) || cents < 0 || cents > 100000000) throw new Error('Enter the monthly rate in dollars, 0 or more.');
   store().prepare('INSERT INTO seat_rates (seat_type, cents) VALUES (?, ?) ON CONFLICT(seat_type) DO UPDATE SET cents = excluded.cents').run(type, cents);
   return seatRates();
 }
 export function setUserSeatType(id: number, type: SeatType): WebUser {
   if (!SEAT_TYPES.includes(type)) throw new Error('Unknown seat type.');
+  if (getUser(id)?.isClient && type !== 'business') throw new Error('A client seat is always a Business seat. Change it to a staff seat first.');
   const r = store().prepare('UPDATE users SET seat_type = ? WHERE id = ? RETURNING *').get(type, id) as Record<string, unknown> | undefined;
   if (!r) throw new Error('Person not found.');
   return mapUser(r);
 }
 
-export function createUser(input: { orgId: number; email: string; name: string; password: string; role?: 'owner' | 'member'; seatType?: SeatType }): WebUser {
+export function createUser(input: { orgId: number; email: string; name: string; password: string; role?: 'owner' | 'member'; seatType?: SeatType; companyScope?: string[] | null; isClient?: boolean }): WebUser {
   const org = getOrg(input.orgId);
   if (!org) throw new Error('Organisation not found.');
   const email = input.email.trim().toLowerCase();
@@ -375,8 +396,11 @@ export function createUser(input: { orgId: number; email: string; name: string; 
   if (input.password.length < 8) throw new Error('The password needs at least 8 characters.');
   if (!org.isPlatform && countActiveUsers(org.id) >= org.seats) throw new Error(`${org.name} has all ${org.seats} seats in use. Add a seat or deactivate someone first.`);
   const salt = crypto.randomBytes(16).toString('hex');
-  const seatType = input.seatType && SEAT_TYPES.includes(input.seatType) ? input.seatType : 'full';
-  const r = store().prepare('INSERT INTO users (org_id, email, name, role, seat_type, password_hash, salt) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, email, input.name.trim() || email, input.role ?? 'member', seatType, hash(input.password, salt), salt) as Record<string, unknown>;
+  const isClient = Boolean(input.isClient);
+  const seatType = isClient ? 'business' : input.seatType && SEAT_TYPES.includes(input.seatType) ? input.seatType : 'full';
+  const scope = normaliseScope(input.companyScope, isClient);
+  if (isClient && (input.role ?? 'member') === 'owner') throw new Error('A client seat cannot be an owner of the firm.');
+  const r = store().prepare('INSERT INTO users (org_id, email, name, role, seat_type, password_hash, salt, company_scope, is_client) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *').get(org.id, email, input.name.trim() || email, input.role ?? 'member', seatType, hash(input.password, salt), salt, scope ? JSON.stringify(scope) : null, isClient ? 1 : 0) as Record<string, unknown>;
   return mapUser(r);
 }
 
@@ -491,4 +515,155 @@ export function deletePayment(id: number): void {
 export function lastActivityFor(orgId: number): string | null {
   const r = store().prepare('SELECT MAX(m) AS m FROM (SELECT MAX(u.last_sign_in) AS m FROM users u WHERE u.org_id = ? UNION ALL SELECT MAX(s.last_seen) FROM sessions s JOIN users u ON u.id = s.user_id WHERE u.org_id = ?)').get(orgId, orgId) as { m: string | null };
   return r?.m ?? null;
+}
+
+// ---- client access and referrals ----
+export const CLIENT_RATE_KEY = 'client' as const;
+export const DEFAULT_REFERRAL_CREDIT_CENTS = 1500;
+
+function parseScope(v: unknown): string[] | null {
+  if (v == null || v === '') return null;
+  try {
+    const list = JSON.parse(String(v));
+    return Array.isArray(list) ? list.map(String) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** A company list as stored: bare .company file names, no folders, no duplicates. A client seat
+ * must name at least one company, so a client can never see the whole firm by default. */
+function normaliseScope(scope: string[] | null | undefined, required: boolean): string[] | null {
+  if (scope == null) {
+    if (required) throw new Error('Choose the company this client may open.');
+    return null;
+  }
+  const names = [...new Set(scope.map((n) => path.basename(String(n)).trim()).filter((n) => n.toLowerCase().endsWith('.company')))];
+  if (names.length === 0) throw new Error('Choose at least one company file.');
+  return names;
+}
+
+/** Who may open which company files: every company (null) or the named ones; and the client flag. */
+export function setUserAccess(id: number, input: { companyScope: string[] | null; isClient: boolean }): WebUser {
+  const user = getUser(id);
+  if (!user) throw new Error('Person not found.');
+  const isClient = Boolean(input.isClient);
+  if (isClient && user.role === 'owner') throw new Error('An owner cannot be a client seat.');
+  const scope = normaliseScope(input.companyScope, isClient);
+  store().prepare('UPDATE users SET company_scope = ?, is_client = ?, seat_type = CASE WHEN ? = 1 THEN \'business\' ELSE seat_type END WHERE id = ?').run(scope ? JSON.stringify(scope) : null, isClient ? 1 : 0, isClient ? 1 : 0, id);
+  return getUser(id)!;
+}
+
+function newReferralCode(): string {
+  // Short, unambiguous, and not guessable from the firm's name.
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  for (;;) {
+    const bytes = crypto.randomBytes(8);
+    const code = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+    if (!db || !store().prepare('SELECT 1 FROM orgs WHERE referral_code = ?').get(code)) return code;
+  }
+}
+
+export function orgByReferralCode(code: string): Org | null {
+  const clean = code.trim().toUpperCase();
+  if (!/^[A-Z0-9]{6,16}$/.test(clean)) return null;
+  const r = store().prepare('SELECT * FROM orgs WHERE referral_code = ? AND is_platform = 0').get(clean) as Record<string, unknown> | undefined;
+  return r ? mapOrg(r) : null;
+}
+
+export function referralCreditCents(): number {
+  const v = Number(getSetting('referral_credit_cents'));
+  return Number.isInteger(v) && v >= 0 && getSetting('referral_credit_cents') !== null ? v : DEFAULT_REFERRAL_CREDIT_CENTS;
+}
+export function setReferralCreditCents(cents: number): number {
+  if (!Number.isInteger(cents) || cents < 0 || cents > 100000) throw new Error('Enter the monthly referral credit in dollars, 0 or more.');
+  setSetting('referral_credit_cents', String(cents));
+  return cents;
+}
+
+export interface ReferralRow { id: number; clientOrgId: number; firmOrgId: number; startedOn: string; endedOn: string | null }
+const mapReferral = (r: Record<string, unknown>): ReferralRow => ({ id: Number(r.id), clientOrgId: Number(r.client_org_id), firmOrgId: Number(r.firm_org_id), startedOn: String(r.started_on), endedOn: r.ended_on ? String(r.ended_on) : null });
+
+export function listReferrals(): ReferralRow[] {
+  return (store().prepare('SELECT * FROM referrals ORDER BY id').all() as Record<string, unknown>[]).map(mapReferral);
+}
+
+/** The firm a business is linked to today, if any. */
+export function activeReferralFor(clientOrgId: number): ReferralRow | null {
+  const r = store().prepare('SELECT * FROM referrals WHERE client_org_id = ? AND ended_on IS NULL ORDER BY id DESC LIMIT 1').get(clientOrgId) as Record<string, unknown> | undefined;
+  return r ? mapReferral(r) : null;
+}
+
+/** Businesses linked to a firm today: the firm's people may open their company files. */
+export function linkedClientOrgs(firmOrgId: number): Org[] {
+  const rows = store().prepare('SELECT o.* FROM referrals r JOIN orgs o ON o.id = r.client_org_id WHERE r.firm_org_id = ? AND r.ended_on IS NULL ORDER BY o.name').all(firmOrgId) as Record<string, unknown>[];
+  return rows.map(mapOrg);
+}
+
+/** Links a business to the CPA firm that referred it, from today. A business has one firm at a time. */
+export function startReferral(clientOrgId: number, firmOrgId: number, today = new Date().toISOString().slice(0, 10)): ReferralRow {
+  const client = getOrg(clientOrgId);
+  const firm = getOrg(firmOrgId);
+  if (!client || !firm) throw new Error('Organisation not found.');
+  if (client.isPlatform || firm.isPlatform) throw new Error('The platform organisation cannot be part of a referral.');
+  if (clientOrgId === firmOrgId) throw new Error('A firm cannot refer itself.');
+  if (activeReferralFor(firmOrgId)) throw new Error(`${firm.name} is itself a client of another firm, so it cannot take referrals.`);
+  const current = activeReferralFor(clientOrgId);
+  if (current) {
+    if (current.firmOrgId === firmOrgId) return current;
+    throw new Error(`${client.name} is already linked to ${getOrg(current.firmOrgId)?.name ?? 'another firm'}. End that link first.`);
+  }
+  const r = store().prepare('INSERT INTO referrals (client_org_id, firm_org_id, started_on) VALUES (?, ?, ?) RETURNING *').get(clientOrgId, firmOrgId, today) as Record<string, unknown>;
+  return mapReferral(r);
+}
+
+/** Ends the link: the firm loses access to the business's books and its credit stops. The business
+ * keeps its books and its subscription at the same price. */
+export function endReferral(clientOrgId: number, today = new Date().toISOString().slice(0, 10)): ReferralRow | null {
+  const current = activeReferralFor(clientOrgId);
+  if (!current) return null;
+  store().prepare('UPDATE referrals SET ended_on = ? WHERE id = ?').run(today, current.id);
+  return { ...current, endedOn: today };
+}
+
+/**
+ * A client of the firm starts paying for its own subscription: a new organisation for the business,
+ * the company file moved out of the firm's folder into the business's own, the business owner's
+ * Business seat, and the link to the firm. The caller checks that the file is not open.
+ */
+export function createClientSubscription(input: { firmOrgId: number; companyFile: string; businessName: string; billingEmail: string; personName: string; personEmail: string; password: string }): { org: Org; user: WebUser; referral: ReferralRow } {
+  const firm = getOrg(input.firmOrgId);
+  if (!firm || firm.isPlatform) throw new Error('Choose the CPA firm.');
+  const fileName = path.basename(String(input.companyFile ?? ''));
+  const source = path.join(companiesDirFor(firm), fileName);
+  if (!fileName.toLowerCase().endsWith('.company') || !fs.existsSync(source)) throw new Error('Choose one of the firm\'s company files.');
+  const email = input.personEmail.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter the business owner\'s email address.');
+  if (store().prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new Error(`${email} already has a sign-in. Use another email, or remove the existing seat first.`);
+  if (input.password.length < 8) throw new Error('The first password needs at least 8 characters.');
+  const businessName = input.businessName.trim() || fileName.replace(/\.company$/i, '');
+
+  const run = store().transaction(() => {
+    const org = createOrg({ name: businessName, seats: 1 });
+    const today = new Date().toISOString().slice(0, 10);
+    store().prepare('UPDATE orgs SET billing_email = ?, billing_start = ? WHERE id = ?').run(input.billingEmail.trim().slice(0, 200) || email, today, org.id);
+    const user = createUser({ orgId: org.id, email, name: input.personName, password: input.password, role: 'owner', seatType: 'business' });
+    const referral = startReferral(org.id, firm.id, today);
+    return { org: getOrg(org.id)!, user, referral };
+  });
+  const result = run();
+  // Move the books last, once the records exist; put them back if the move fails.
+  const target = path.join(companiesDirFor(result.org), fileName);
+  try {
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.renameSync(source, target);
+    for (const suffix of ['-wal', '-shm']) if (fs.existsSync(source + suffix)) fs.renameSync(source + suffix, target + suffix);
+    // People at the firm who were limited to this company keep their list; the file is reached through the link now.
+  } catch (e) {
+    store().prepare('DELETE FROM referrals WHERE id = ?').run(result.referral.id);
+    store().prepare('DELETE FROM users WHERE id = ?').run(result.user.id);
+    store().prepare('DELETE FROM orgs WHERE id = ?').run(result.org.id);
+    throw new Error(`The company file could not be moved: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  return result;
 }

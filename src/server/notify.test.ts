@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_NOTIFY_EMAIL, notifyConfigFromEnv, trialRequestMail } from './notify';
 
-const trial = { id: 12, firm: 'Maple & Co.', name: 'Paramjeet Janjua', email: 'pj@example.ca', phone: '', edition: 'Business', seats: 2, message: 'Moving from QuickBooks, 14 client files.', status: 'new' as const, createdAt: '2026-09-09 14:02:11', agreedName: 'Paramjeet Janjua', agreedAt: '2026-09-09 14:02:11' };
+const trial = { id: 12, firm: 'Maple & Co.', name: 'Paramjeet Janjua', email: 'pj@example.ca', phone: '', edition: 'Business', seats: 2, message: 'Moving from QuickBooks, 14 client files.', status: 'new' as const, createdAt: '2026-09-09 14:02:11', agreedName: 'Paramjeet Janjua', agreedAt: '2026-09-09 14:02:11' , referralOrgId: null, referralOrgName: null };
 
 describe('website notices', () => {
   it('stays off until a mail host and a from address are set', () => {

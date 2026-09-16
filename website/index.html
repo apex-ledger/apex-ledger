@@ -298,6 +298,7 @@ footer>a:not(.brand):hover{color:var(--green)}
 .plan.featured li svg{color:#a86f00}
 /* brighter hero backdrop: mint into warm gold behind the screenshot */
 .hero{background:linear-gradient(var(--paper) calc(100% - 160px),transparent calc(100% - 160px)),linear-gradient(115deg,#c9f2da 0%,#e9fbef 45%,#ffeeb8 100%)}
+.referral-bar{padding:10px 20px;text-align:center;font-size:15px;font-weight:600;color:#fff;background:var(--green)}
 /* offer bar, above the navigation */
 .offer-bar{padding:10px 20px;text-align:center;font-size:14px;color:#123d27;background:linear-gradient(90deg,#b9f0cf,#fff1c2)}
 .offer-bar b{color:#0b4a2e}
@@ -355,6 +356,7 @@ footer>a:not(.brand):hover{color:var(--green)}
 </svg>
 
 <main id="top">
+<div class="referral-bar" id="referral-bar" hidden></div>
 <div class="offer-bar"><b>Founding firms pay half price for six months.</b> Sign up before 31 December 2026.<a href="#plans">See pricing</a></div>
 <header class="nav">
   <a class="brand" href="#top"><img class="app-mark" src="/apexledger-mark.svg" alt="" width="42" height="42"><span class="wordmark"><span class="wm-apex">apex</span><span class="gold-wordmark">ledger</span><b>.</b></span></a>
@@ -631,6 +633,7 @@ footer>a:not(.brand):hover{color:var(--green)}
     <label class="full">Anything we should know? Moving from QuickBooks or Sage, how many client files, when you want to start. <textarea name="message" maxlength="2000" rows="2"></textarea></label>
     <p class="full agree-note">Before your request is sent you will be shown the <a href="/terms.html" target="_blank">Terms of Service</a> and the <a href="/agreement.html" target="_blank">Subscription Agreement</a>, filled in with your firm and name, to read and sign. Your organisation is responsible for the accuracy of the data it enters and for checking the output.</p><input type="hidden" name="agreed" value="">
     <label class="hp" aria-hidden="true">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+    <input type="hidden" name="ref">
     <div class="actions"><button class="button" type="submit">Request my trial <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></button><span class="status" id="trial-status">We create your organisation and email your sign-ins the same business day. No card needed.</span></div>
   </form>
   <dialog class="agree-dlg" id="agree-dlg" aria-labelledby="agree-title">
@@ -724,7 +727,7 @@ if(!d.firm||!d.name||!d.email){st.className='status err';st.textContent='Please 
 st.className='status';st.textContent='Read and accept the Terms of Service and the Subscription Agreement to send your request.';openAgreements(d);});
 function send(d){submitBtn.disabled=true;st.className='status';st.textContent='Sending…';
 fetch('https://online.apexledger.ca/api/trial-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json()}).then(function(r){
-if(r.ok){st.className='status ok';st.textContent='Thank you, '+d.name.split(' ')[0]+'. Your request is in; watch '+d.email+' for your sign-ins.';f.reset();f.querySelector('[name=agreed]').value='';submitBtn.disabled=false;}
+if(r.ok){st.className='status ok';st.textContent='Thank you, '+d.name.split(' ')[0]+'. Your request is in; watch '+d.email+' for your sign-ins.';f.reset();f.querySelector('[name=agreed]').value='';try{var rc=localStorage.getItem('apex_ref');if(rc)f.querySelector('[name=ref]').value=rc}catch(e){}submitBtn.disabled=false;}
 else{st.className='status err';st.textContent=r.error||'Something went wrong. Email admin@apexledger.ca and we will set you up.';submitBtn.disabled=false;}
 }).catch(function(){st.className='status err';st.textContent='Could not reach the server. Email admin@apexledger.ca and we will set you up.';submitBtn.disabled=false;});}})();
 (function(){var tabs=document.querySelectorAll('.flow-tabs [role=tab]');function show(t){tabs.forEach(function(b){var on=b===t;b.setAttribute('aria-selected',on?'true':'false');document.getElementById(b.getAttribute('aria-controls')).hidden=!on;});}
@@ -737,6 +740,17 @@ function set(mode){btns.forEach(function(b){b.setAttribute('aria-pressed',b.data
 prices.forEach(function(p){if(mode==='monthly'){p.el.innerHTML=p.html;return}var month=Math.round(p.cents*0.8);
 p.el.innerHTML=money(month)+' <small class="per">per seat / month</small><small>Billed yearly: '+money(month*12)+' per seat. CAD, plus HST.</small>'});}
 btns.forEach(function(b){b.addEventListener('click',function(){set(b.dataset.billing)})});})();
+(function(){
+// A CPA firm's referral link (?ref=CODE): remember it for this visitor, send it with the trial
+// request, and say which firm recommended us.
+var code=null;try{code=new URLSearchParams(location.search).get('ref');if(code){localStorage.setItem('apex_ref',code)}else{code=localStorage.getItem('apex_ref')}}catch(e){}
+if(!code||!/^[A-Za-z0-9]{6,16}$/.test(code))return;
+var input=document.querySelector('#trial [name=ref]');if(input)input.value=code;
+fetch('https://online.apexledger.ca/api/referral/'+encodeURIComponent(code)).then(function(r){return r.json()}).then(function(r){
+var bar=document.getElementById('referral-bar');if(!r.ok||!bar)return;
+bar.textContent='Recommended by '+r.data.firm+'. Start your trial below and your books connect to them.';bar.hidden=false;
+var edition=document.querySelector('#trial [name=edition]');if(edition)edition.value='Business';
+}).catch(function(){});})();
 </script>
 <script src="/chat.js" defer></script>
 </body>

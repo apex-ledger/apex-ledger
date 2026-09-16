@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { WebReferralsSection } from './WebReferralsSection';
 
 /** Settings → Organisation & seats, on the web only.
  *
@@ -6,16 +7,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * them, and reset a password. The platform administrator sees every organisation, creates new
  * ones, and changes seat counts. Everyone can change their own password. The desktop app has no
  * organisations, so this section does not appear there. */
-interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null }
+interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null; referralCode?: string }
 interface Founding { pct: number; months: number; maxFirms: number; signUpBy: string; used: number }
 type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
 const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
 const SEAT_LABEL: Record<SeatType, string> = { business: 'Business', payroll: 'Payroll Unlimited', bookkeeper: 'Bookkeeper', full: 'Full accountant' };
 const SEAT_HINT: Record<SeatType, string> = { business: 'A business keeping its own books: invoices, bills, bank import, HST and reports', payroll: 'Payroll Unlimited: payroll only, no limit on employees: pay runs, stubs, PD7A, ROE, T4s', bookkeeper: 'A bookkeeper: daily books, bank import, invoices, bills, HST and payroll; no accountant tools', full: 'An accountant: everything, including year end, GIFI, T2 working papers, CRM and payroll' };
-interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; lastSignIn: string | null }
+interface Person { id: number; orgId: number; email: string; name: string; role: 'owner' | 'member'; seatType: SeatType; isActive: boolean; agreedAt: string | null; agreedName: string | null; lastSignIn: string | null; companyScope: string[] | null; isClient: boolean }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 interface CompanyFile { name: string; bytes: number; modified: string; open: boolean }
-interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; agreedName?: string | null; agreedAt?: string | null }
+interface TrialRequest { id: number; firm: string; name: string; email: string; phone: string; edition: string; seats: number; message: string; status: 'new' | 'done'; createdAt: string; agreedName?: string | null; agreedAt?: string | null; referralOrgId?: number | null; referralOrgName?: string | null }
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
   try {
@@ -36,15 +37,20 @@ export function WebOrganisationSection() {
   const [people, setPeople] = useState<Person[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner', seatType: 'full' as SeatType });
+  const [newPerson, setNewPerson] = useState({ orgId: 0, name: '', email: '', password: '', role: 'member' as 'member' | 'owner', seatType: 'full' as SeatType, isClient: false, companyScope: [] as string[] });
+  const [orgFiles, setOrgFiles] = useState<Record<number, string[]>>({});
+  const [editingAccess, setEditingAccess] = useState<{ id: number; isClient: boolean; limited: boolean; companyScope: string[] } | null>(null);
+  const [clientRate, setClientRate] = useState(2400);
+  const [referralCredit, setReferralCredit] = useState(1500);
+  const [extraDraft, setExtraDraft] = useState({ client: '', referral: '' });
   const [rates, setRates] = useState<Record<SeatType, number>>({ business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900 });
   const [rateDraft, setRateDraft] = useState<Record<SeatType, string>>({ business: '', payroll: '', bookkeeper: '', full: '' });
   const money = (cents: number) => `$${(cents / 100).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (rates[p.seatType] ?? 0), 0);
+  const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (p.isClient ? clientRate : rates[p.seatType] ?? 0), 0);
   const today = new Date().toISOString().slice(0, 10);
   const discountActive = (o: Org) => o.discountPct > 0 && !!o.discountUntil && o.discountUntil >= today;
   const billingLine = (o: Org) => { const full = monthlyFor(o.id); if (!o.activeSeats) return ''; if (!discountActive(o)) return ` · ${money(full)} a month`; return ` · ${money(Math.round(full * (100 - o.discountPct) / 100))} a month (founding ${o.discountPct}% off until ${o.discountUntil}, then ${money(full)})`; };
-  const [newOrg, setNewOrg] = useState({ name: '', seats: 2, founding: true });
+  const [newOrg, setNewOrg] = useState({ name: '', seats: 2, founding: true, referrerOrgId: null as number | null });
   const [founding, setFounding] = useState<Founding | null>(null);
   const [myPassword, setMyPassword] = useState('');
   const [trials, setTrials] = useState<TrialRequest[]>([]);
@@ -62,6 +68,12 @@ export function WebOrganisationSection() {
     if (r.ok) setFiles(r.data); else setError(r.error);
   }, [canManage]);
   useEffect(() => { void reloadFiles(filesOrg); }, [filesOrg, reloadFiles]);
+  const loadOrgFiles = useCallback(async (orgId: number) => {
+    if (!canManage || !orgId) return;
+    const r = await call<CompanyFile[]>(`/api/org/companies?org=${orgId}`);
+    if (r.ok) setOrgFiles((m) => ({ ...m, [orgId]: r.data.map((f) => f.name) }));
+  }, [canManage]);
+  useEffect(() => { if (newPerson.orgId) void loadOrgFiles(newPerson.orgId); }, [newPerson.orgId, loadOrgFiles]);
 
   const reload = useCallback(async () => {
     if (!canManage) return;
@@ -69,7 +81,8 @@ export function WebOrganisationSection() {
     if (o.ok) setOrgs(o.data); else setError(o.error);
     if (p.ok) setPeople(p.data); else setError(p.error);
     if (ctx?.org.isPlatform) { const t = await call<TrialRequest[]>('/api/admin/trial-requests'); if (t.ok) setTrials(t.data); }
-    const r = await call<Record<SeatType, number>>('/api/admin/seat-rates'); if (r.ok) setRates(r.data);
+    const r = await call<Record<SeatType | 'client', number>>('/api/admin/seat-rates'); if (r.ok) { setRates(r.data); if (typeof r.data.client === 'number') setClientRate(r.data.client); }
+    if (ctx?.org.isPlatform) { const sub = await call<{ referralCreditCents: number }>('/api/admin/subscriptions'); if (sub.ok) setReferralCredit(sub.data.referralCreditCents); }
     const f = await call<Founding>('/api/admin/founding'); if (f.ok) setFounding(f.data);
   }, [canManage, ctx?.org.isPlatform]);
   useEffect(() => { void reload(); }, [reload]);
@@ -80,10 +93,12 @@ export function WebOrganisationSection() {
 
   async function addPerson() {
     setError(null); setNotice(null);
-    const r = await call<Person>('/api/admin/users', newPerson);
+    const r = await call<Person>('/api/admin/users', { ...newPerson, companyScope: newPerson.isClient || newPerson.companyScope.length ? newPerson.companyScope : null, role: newPerson.isClient ? 'member' : newPerson.role });
     if (!r.ok) { setError(r.error); return; }
-    setNotice(`${r.data.name} added. Give them the password you typed; they can change it after signing in.`);
-    setNewPerson((n) => ({ ...n, name: '', email: '', password: '' }));
+    setNotice(r.data.isClient
+      ? `${r.data.name} can now sign in and open only ${(r.data.companyScope ?? []).map((n) => n.replace(/\.company$/i, '')).join(', ')}. Give them the password you typed.`
+      : `${r.data.name} added. Give them the password you typed; they can change it after signing in.`);
+    setNewPerson((n) => ({ ...n, name: '', email: '', password: '', isClient: false, companyScope: [] }));
     void reload();
   }
   async function setFoundingOn(o: Org, on: boolean) {
@@ -102,6 +117,41 @@ export function WebOrganisationSection() {
     const r = await call<Record<SeatType, number>>('/api/admin/seat-rates', { seatType: type, dollars });
     if (!r.ok) setError(r.error); else { setRates(r.data); setRateDraft((d) => ({ ...d, [type]: '' })); setNotice(`${SEAT_LABEL[type]} seat is now ${money(r.data[type])} a month.`); }
   }
+  async function saveAccess() {
+    if (!editingAccess) return;
+    setError(null);
+    const companyScope = editingAccess.isClient || editingAccess.limited ? editingAccess.companyScope : null;
+    const r = await call<Person>(`/api/admin/users/${editingAccess.id}/access`, { companyScope, isClient: editingAccess.isClient });
+    if (!r.ok) { setError(r.error); return; }
+    setNotice(r.data.companyScope ? `${r.data.name} can open ${r.data.companyScope.map((n) => n.replace(/\.company$/i, '')).join(', ')}.` : `${r.data.name} can open every company.`);
+    setEditingAccess(null);
+    void reload();
+  }
+  async function saveExtraRate(which: 'client' | 'referral') {
+    const dollars = Number(extraDraft[which]);
+    if (extraDraft[which] === '' || !Number.isFinite(dollars)) return;
+    const r = which === 'client'
+      ? await call<Record<string, number>>('/api/admin/seat-rates', { seatType: 'client', dollars })
+      : await call<number>('/api/admin/referral-credit', { dollars });
+    if (!r.ok) { setError(r.error); return; }
+    if (which === 'client') { setClientRate((r.data as Record<string, number>).client); setNotice(`Client seats are now ${money((r.data as Record<string, number>).client)} a month.`); }
+    else { setReferralCredit(r.data as number); setNotice(`Firms now earn ${money(r.data as number)} a month for each client paying for itself.`); }
+    setExtraDraft((d) => ({ ...d, [which]: '' }));
+  }
+  function companyChecklist(orgId: number, chosen: string[], onChange: (next: string[]) => void) {
+    const names = orgFiles[orgId] ?? [];
+    if (names.length === 0) return <span className="text-xs text-gray-500">No company files in this organisation yet.</span>;
+    return (
+      <span className="flex flex-wrap gap-x-3 gap-y-1">
+        {names.map((n) => (
+          <label key={n} className="flex items-center gap-1 text-xs text-gray-700">
+            <input type="checkbox" checked={chosen.includes(n)} onChange={(e) => onChange(e.target.checked ? [...chosen, n] : chosen.filter((x) => x !== n))} />
+            {n.replace(/\.company$/i, '')}
+          </label>
+        ))}
+      </span>
+    );
+  }
   async function setActive(p: Person, active: boolean) {
     setError(null);
     const r = await call<Person>(`/api/admin/users/${p.id}/active`, { active });
@@ -118,7 +168,7 @@ export function WebOrganisationSection() {
     const r = await call<Org>('/api/admin/orgs', newOrg);
     if (!r.ok) { setError(r.error); return; }
     setNotice(`${r.data.name} created with ${r.data.seats} seats${r.data.discountUntil ? `, founding offer until ${r.data.discountUntil}` : ''}.`);
-    setNewOrg({ name: '', seats: 2, founding: true });
+    setNewOrg({ name: '', seats: 2, founding: true, referrerOrgId: null });
     void reload();
   }
   async function setSeats(o: Org, seats: number) {
@@ -145,9 +195,9 @@ export function WebOrganisationSection() {
     if (!r.ok) setError(r.error); else void reload();
   }
   function fillFromTrial(t: TrialRequest) {
-    setNewOrg({ name: t.firm, seats: t.seats, founding: true });
+    setNewOrg({ name: t.firm, seats: t.seats, founding: !t.referralOrgId, referrerOrgId: t.referralOrgId ?? null });
     setNewPerson((n) => ({ ...n, name: t.name, email: t.email }));
-    setNotice(`${t.firm} is filled in below: create the organisation, then add ${t.name} to it with a first password and email it to ${t.email}.`);
+    setNotice(`${t.firm} is filled in below: create the organisation, then add ${t.name} to it with a first password and email it to ${t.email}.${t.referralOrgName ? ` It came through ${t.referralOrgName}'s referral link, so it will be linked to them.` : ''}`);
   }
 
   async function changeMyPassword() {
@@ -203,15 +253,30 @@ export function WebOrganisationSection() {
                     <li key={p.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
                       <span className={`min-w-[8rem] ${p.isActive ? 'text-gray-900' : 'text-gray-400 line-through'}`}>{p.name}</span>
                       <span className="text-xs text-gray-500">{p.email} · {p.role}{p.lastSignIn ? ` · last sign-in ${p.lastSignIn.slice(0, 16)}` : ''}{!o.isPlatform ? (p.agreedAt ? ` · agreed ${p.agreedAt.slice(0, 10)} signed ${p.agreedName ?? p.name}` : ' · agreement not yet accepted') : ''}</span>
-                      {!o.isPlatform && (
-                        <select value={p.seatType} onChange={(e) => void setSeatType(p, e.target.value as SeatType)} title={SEAT_HINT[p.seatType]} className="rounded border border-gray-300 bg-brand-50 px-1 py-0.5 text-[11px] text-brand-800">
-                          {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} · {money(rates[t])}/mo</option>)}
-                        </select>
-                      )}
+                      {!o.isPlatform && (p.isClient
+                        ? <span className="rounded border border-gold-300 bg-gold-50 px-1 py-0.5 text-[11px] text-gold-800" title="A client of the firm on a Business seat the firm pays for">Client seat · {money(clientRate)}/mo</span>
+                        : (
+                          <select value={p.seatType} onChange={(e) => void setSeatType(p, e.target.value as SeatType)} title={SEAT_HINT[p.seatType]} className="rounded border border-gray-300 bg-brand-50 px-1 py-0.5 text-[11px] text-brand-800">
+                            {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} · {money(rates[t])}/mo</option>)}
+                          </select>
+                        ))}
+                      {!o.isPlatform && <span className="text-[11px] text-gray-500">{p.companyScope ? `Opens: ${p.companyScope.map((n) => n.replace(/\.company$/i, '')).join(', ')}` : 'Opens: every company'}</span>}
                       <span className="ml-auto flex gap-2 text-xs">
+                        {!o.isPlatform && p.email !== ctx.user.email && p.role !== 'owner' && <button type="button" onClick={() => { void loadOrgFiles(o.id); setEditingAccess({ id: p.id, isClient: p.isClient, limited: !!p.companyScope, companyScope: p.companyScope ?? [] }); }} className="text-brand-700 hover:underline">Companies</button>}
                         <button type="button" onClick={() => void resetPassword(p)} className="text-brand-700 hover:underline">Reset password</button>
                         {p.email !== ctx.user.email && <button type="button" onClick={() => void setActive(p, !p.isActive)} className="text-gray-600 hover:underline">{p.isActive ? 'Deactivate' : 'Reactivate'}</button>}
                       </span>
+                      {editingAccess?.id === p.id && (
+                        <div className="mt-1 w-full rounded border border-brand-200 bg-white p-2 text-xs">
+                          <label className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={editingAccess.isClient} onChange={(e) => setEditingAccess({ ...editingAccess, isClient: e.target.checked, limited: e.target.checked || editingAccess.limited })} /> Client of the firm (Business seat, {money(clientRate)}/mo, firm pays)</label>
+                          {!editingAccess.isClient && <label className="inline-flex items-center gap-1"><input type="checkbox" checked={editingAccess.limited} onChange={(e) => setEditingAccess({ ...editingAccess, limited: e.target.checked })} /> Only some companies</label>}
+                          {(editingAccess.isClient || editingAccess.limited) && <div className="mt-1">{companyChecklist(o.id, editingAccess.companyScope, (next) => setEditingAccess({ ...editingAccess, companyScope: next }))}</div>}
+                          <div className="mt-2 flex gap-2">
+                            <button type="button" onClick={() => void saveAccess()} disabled={(editingAccess.isClient || editingAccess.limited) && editingAccess.companyScope.length === 0} className="rounded-full bg-brand-700 px-3 py-0.5 font-medium text-white hover:bg-brand-800 disabled:opacity-50">Save</button>
+                            <button type="button" onClick={() => setEditingAccess(null)} className="text-gray-600 hover:underline">Cancel</button>
+                          </div>
+                        </div>
+                      )}
                     </li>
                   ))}
                   {people.filter((p) => p.orgId === o.id).length === 0 && <li className="py-1 text-xs text-gray-400">No one yet.</li>}
@@ -231,15 +296,26 @@ export function WebOrganisationSection() {
               <input value={newPerson.name} onChange={(e) => setNewPerson({ ...newPerson, name: e.target.value })} placeholder="Name" className="w-40 rounded border border-gray-300 px-2 py-1" />
               <input type="email" value={newPerson.email} onChange={(e) => setNewPerson({ ...newPerson, email: e.target.value })} placeholder="Email" className="w-56 rounded border border-gray-300 px-2 py-1" />
               <input type="password" autoComplete="new-password" value={newPerson.password} onChange={(e) => setNewPerson({ ...newPerson, password: e.target.value })} placeholder="First password, 8+" className="w-44 rounded border border-gray-300 px-2 py-1" />
-              <select value={newPerson.role} onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value as 'member' | 'owner' })} className="rounded border border-gray-300 px-2 py-1">
-                <option value="member">Member</option>
-                <option value="owner">Owner</option>
-              </select>
-              <select value={newPerson.seatType} onChange={(e) => setNewPerson({ ...newPerson, seatType: e.target.value as SeatType })} title={SEAT_HINT[newPerson.seatType]} className="rounded border border-gray-300 px-2 py-1">
-                {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} seat · {money(rates[t])}/mo</option>)}
-              </select>
-              <button type="button" onClick={() => void addPerson()} disabled={!newPerson.email || newPerson.password.length < 8} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Add {orgName(newPerson.orgId) ? `to ${orgName(newPerson.orgId)}` : ''}</button>
+              {!newPerson.isClient && (
+                <>
+                  <select value={newPerson.role} onChange={(e) => setNewPerson({ ...newPerson, role: e.target.value as 'member' | 'owner' })} className="rounded border border-gray-300 px-2 py-1">
+                    <option value="member">Member</option>
+                    <option value="owner">Owner</option>
+                  </select>
+                  <select value={newPerson.seatType} onChange={(e) => setNewPerson({ ...newPerson, seatType: e.target.value as SeatType })} title={SEAT_HINT[newPerson.seatType]} className="rounded border border-gray-300 px-2 py-1">
+                    {SEAT_TYPES.map((t) => <option key={t} value={t}>{SEAT_LABEL[t]} seat · {money(rates[t])}/mo</option>)}
+                  </select>
+                </>
+              )}
+              <label className="flex items-center gap-1 text-xs text-gray-700" title="A business client who signs in to their own books only"><input type="checkbox" checked={newPerson.isClient} onChange={(e) => setNewPerson({ ...newPerson, isClient: e.target.checked })} /> Client of the firm ({money(clientRate)}/mo, firm pays)</label>
+              <button type="button" onClick={() => void addPerson()} disabled={!newPerson.email || newPerson.password.length < 8 || (newPerson.isClient && newPerson.companyScope.length === 0)} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Add {orgName(newPerson.orgId) ? `to ${orgName(newPerson.orgId)}` : ''}</button>
             </div>
+            {newPerson.isClient && (
+              <div className="mt-2 text-xs text-gray-700">
+                <div className="mb-1">Their company (they will see only what you tick):</div>
+                {companyChecklist(newPerson.orgId, newPerson.companyScope, (next) => setNewPerson({ ...newPerson, companyScope: next }))}
+              </div>
+            )}
             <p className="mt-1 text-[11px] text-gray-500">Adding someone uses a seat. When every seat is taken the button says so; an owner can deactivate someone to free a seat, or the platform administrator can add seats. The seat type sets the monthly rate, lowest to highest: Business for a company keeping its own books, Payroll Unlimited for payroll alone with no limit on employees, Bookkeeper for the daily books and payroll, Full accountant for everything. The exact screens each person may use are set inside each company under Access &amp; Permissions.</p>
           </div>
 
@@ -256,9 +332,28 @@ export function WebOrganisationSection() {
                   </label>
                 ))}
               </div>
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+                <label className="flex items-center gap-2 text-xs text-gray-700" title="A firm's client on a Business seat the firm pays for">
+                  <span className="min-w-[5.5rem] font-medium">Client seat</span>
+                  <span className="text-gray-500">{money(clientRate)}</span>
+                  <input type="number" min={0} step={1} placeholder="new" value={extraDraft.client} onChange={(e) => setExtraDraft((d) => ({ ...d, client: e.target.value }))} className="w-20 rounded border border-gray-300 px-1 py-0.5" />
+                  <button type="button" onClick={() => void saveExtraRate('client')} disabled={extraDraft.client === ''} className="rounded-full bg-brand-700 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-brand-800 disabled:opacity-50">Set</button>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-gray-700" title="Taken off a firm's bill each month for every client paying for its own subscription">
+                  <span className="min-w-[5.5rem] font-medium">Referral credit</span>
+                  <span className="text-gray-500">{money(referralCredit)}</span>
+                  <input type="number" min={0} step={1} placeholder="new" value={extraDraft.referral} onChange={(e) => setExtraDraft((d) => ({ ...d, referral: e.target.value }))} className="w-20 rounded border border-gray-300 px-1 py-0.5" />
+                  <button type="button" onClick={() => void saveExtraRate('referral')} disabled={extraDraft.referral === ''} className="rounded-full bg-brand-700 px-2 py-0.5 text-[11px] font-medium text-white hover:bg-brand-800 disabled:opacity-50">Set</button>
+                </label>
+              </div>
               <p className="mt-1 text-[11px] text-gray-500">Each firm's card shows its monthly total from these rates and its active seats. Changing a rate changes every firm's total from now on.</p>
             </div>
           )}
+
+          {(() => {
+            const target = orgs.find((o) => o.id === filesOrg);
+            return target && !target.isPlatform ? <WebReferralsSection key={target.id} orgId={target.id} files={files} onChanged={() => { void reload(); void reloadFiles(filesOrg); }} /> : null;
+          })()}
 
           <div className="mt-3 rounded border border-gray-200 bg-gray-50 p-3" data-testid="web-agreements">
             <div className="text-xs font-semibold uppercase tracking-wide text-gray-600">Agreements</div>
@@ -321,6 +416,7 @@ export function WebOrganisationSection() {
                       <span className="text-xs text-gray-500">{t.name} · <a href={`mailto:${t.email}`} className="text-brand-700 hover:underline">{t.email}</a>{t.phone ? ` · ${t.phone}` : ''}</span>
                       <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-800">{t.edition} · {t.seats} seat{t.seats === 1 ? '' : 's'}</span>
                       <span className="text-xs text-gray-400">{t.createdAt.slice(0, 16)}</span>
+                      {t.referralOrgName && <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[11px] text-gold-800">Referred by {t.referralOrgName}</span>}
                       {t.agreedName && <a className="text-xs text-brand-700 hover:underline" target="_blank" rel="noreferrer" title={`Subscription Agreement signed ${t.agreedName} at ${t.agreedAt ?? t.createdAt}`} href={`https://apexledger.ca/agreement.html?firm=${encodeURIComponent(t.firm)}&name=${encodeURIComponent(t.name)}&email=${encodeURIComponent(t.email)}&seat=${encodeURIComponent(t.edition)}&seats=${t.seats}&signed=${encodeURIComponent(t.agreedName)}&date=${encodeURIComponent((t.agreedAt ?? t.createdAt).slice(0, 10))}&where=site`}>Signed {t.agreedName}</a>}
                       <span className="ml-auto flex gap-2 text-xs">
                         {t.status === 'new' && <button type="button" onClick={() => fillFromTrial(t)} className="text-brand-700 hover:underline">Create organisation</button>}
@@ -341,6 +437,7 @@ export function WebOrganisationSection() {
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
                 <input value={newOrg.name} onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })} placeholder="Firm or business name" className="w-64 rounded border border-gray-300 px-2 py-1" />
                 <label className="flex items-center gap-1 text-xs text-gray-600">Seats <input type="number" min={1} value={newOrg.seats} onChange={(e) => setNewOrg({ ...newOrg, seats: Number(e.target.value) })} className="w-16 rounded border border-gray-300 px-1 py-0.5" /></label>
+                {newOrg.referrerOrgId && <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[11px] text-gold-800">Linked to {orgName(newOrg.referrerOrgId)} (referral) <button type="button" onClick={() => setNewOrg({ ...newOrg, referrerOrgId: null })} className="ml-1 text-gray-500 hover:underline">remove</button></span>}
                 <label className="flex items-center gap-1 text-xs text-gray-600" title="Half price for six months, for the first firms"><input type="checkbox" checked={newOrg.founding} onChange={(e) => setNewOrg({ ...newOrg, founding: e.target.checked })} /> Founding firm{founding ? ` (${founding.used} of ${founding.maxFirms} used, sign up by ${founding.signUpBy})` : ''}</label>
                 <button type="button" onClick={() => void addOrg()} disabled={!newOrg.name.trim()} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Create</button>
               </div>

@@ -41,6 +41,7 @@ export function trialRequestMail(t: TrialRequest): { subject: string; body: stri
     `Phone:     ${t.phone || '-'}`,
     `Seat type: ${t.edition}`,
     `Seats:     ${t.seats}`,
+    `Referred:  ${t.referralOrgName ? `by ${t.referralOrgName} (their referral link; link the business to them when you set it up)` : '-'}`,
     `Received:  ${t.createdAt} (server time)`,
     `Signed:    ${t.agreedName ? `${t.agreedName}, typed as signature under the Subscription Agreement at ${t.agreedAt ?? t.createdAt}` : 'accepted without a typed signature'}`,
     '',

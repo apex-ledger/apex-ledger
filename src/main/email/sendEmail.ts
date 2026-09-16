@@ -45,3 +45,10 @@ export async function sendPlatformEmailWithAttachment(pdfPath: string, toEmail: 
   if (!smtp) throw new Error('Direct email is not set up on this server yet — the APEX_SMTP_* environment variables are missing.');
   await sendSmtp(smtp, { to: toEmail, subject, body, attachmentPath: pdfPath, replyTo: replyTo || undefined });
 }
+
+/** A plain message through the platform relay, with no attachment: invitations and notices. */
+export async function sendPlatformEmail(toEmail: string, subject: string, body: string, replyTo?: string): Promise<void> {
+  const smtp = platformSmtpConfigFromEnv(process.env);
+  if (!smtp) throw new Error('Direct email is not set up on this server yet — the APEX_SMTP_* environment variables are missing.');
+  await sendSmtp(smtp, { to: toEmail, subject, body, replyTo: replyTo || undefined });
+}

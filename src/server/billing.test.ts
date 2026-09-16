@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMonths, billingTotals, computeOrgBilling, monthlyListCents, type BillingOrg, type Payment } from './billing';
+import { addMonths, billingTotals, computeOrgBilling, monthlyListCents, referralCredit, type BillingOrg, type Payment } from './billing';
 
 const RATES = { business: 3900, payroll: 4500, bookkeeper: 5900, full: 7900 };
 const org = (over: Partial<BillingOrg> = {}): BillingOrg => ({ id: 1, name: 'Maple CPA', createdAt: '2026-09-01 10:00:00', discountPct: 0, discountUntil: null, billingStart: null, billingCycle: 'monthly', billingStatus: 'active', billingEnd: null, ...over });
@@ -75,5 +75,44 @@ describe('billingTotals', () => {
     const b = computeOrgBilling(org({ id: 2 }), SEATS, RATES, [], '2026-09-20');
     const t = billingTotals([a, b]);
     expect(t).toMatchObject({ firms: 2, active: 1, trial: 1, monthlyRecurringCents: 39400, billedCents: 39400, paidCents: 19700, owingCents: 19700 });
+  });
+});
+
+describe('referral credit for a CPA firm', () => {
+  const firm = org({ id: 10, name: 'Maple CPA', billingStart: '2026-09-01' });
+  const lakeshore = org({ id: 20, name: 'Lakeshore Plumbing', billingStart: '2026-10-01' });
+  const bakery = org({ id: 21, name: 'Corner Bakery', billingStart: '2026-10-01' });
+  const clients = new Map([[20, lakeshore], [21, bakery]]);
+
+  it('takes $15 off the firm bill for each linked client once that client is billed', () => {
+    const credit = referralCredit(10, [{ clientOrgId: 20, firmOrgId: 10, startedOn: '2026-10-01', endedOn: null }, { clientOrgId: 21, firmOrgId: 10, startedOn: '2026-10-01', endedOn: null }], clients, 1500);
+    // Clients are in their free month in October, so no credit; both are billed from November.
+    expect(credit('2026-10-01')).toBe(0);
+    expect(credit('2026-11-01')).toBe(3000);
+    const r = computeOrgBilling(firm, [{ seatType: 'full', isActive: true }], RATES, [], '2026-11-15', credit);
+    expect(r.charges.map((c) => [c.periodFrom, c.creditCents, c.amountCents])).toEqual([['2026-10-01', 0, 7900], ['2026-11-01', 3000, 4900]]);
+    expect(r.creditNowCents).toBe(3000);
+    expect(r.monthlyNowCents).toBe(4900);
+  });
+
+  it('stops the credit when the client leaves the firm, and when the client stops paying', () => {
+    const left = referralCredit(10, [{ clientOrgId: 20, firmOrgId: 10, startedOn: '2026-10-01', endedOn: '2027-01-15' }], clients, 1500);
+    expect(left('2026-12-01')).toBe(1500);
+    expect(left('2027-02-01')).toBe(0);
+    const cancelled = new Map([[20, org({ id: 20, billingStart: '2026-10-01', billingStatus: 'cancelled', billingEnd: '2027-01-01' })]]);
+    const stopped = referralCredit(10, [{ clientOrgId: 20, firmOrgId: 10, startedOn: '2026-10-01', endedOn: null }], cancelled, 1500);
+    expect(stopped('2026-12-01')).toBe(1500);
+    expect(stopped('2027-01-01')).toBe(0);
+  });
+
+  it('never credits another firm for a client it did not refer', () => {
+    const credit = referralCredit(99, [{ clientOrgId: 20, firmOrgId: 10, startedOn: '2026-10-01', endedOn: null }], clients, 1500);
+    expect(credit('2026-12-01')).toBe(0);
+  });
+
+  it('leaves a credit balance when the credits are more than the firm bill', () => {
+    const many = [20, 21].map((id) => ({ clientOrgId: id, firmOrgId: 10, startedOn: '2026-10-01', endedOn: null }));
+    const r = computeOrgBilling(firm, [], RATES, [], '2026-11-15', referralCredit(10, many, clients, 1500));
+    expect(r.owingCents).toBe(-3000);
   });
 });
