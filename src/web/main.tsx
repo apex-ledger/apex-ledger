@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { buildWebApi, webSession, webSignIn } from './api';
 import '../renderer/index.css';
+import { installZeroFriendlyNumbers } from '../renderer/utils/zeroFriendlyNumbers';
+
+// Number boxes starting at 0: typing replaces the zero instead of adding to it.
+installZeroFriendlyNumbers();
 
 /** The sign-in background: the wordmark repeated at 45 degrees in a very light tint. */
 const SIGN_IN_WATERMARK = 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill-opacity=%220.22%22%3E%3Ctspan fill=%22%237fd9a5%22%3Eapex%3C/tspan%3E%3Ctspan fill=%22%23f2ca72%22%3Eledger.%3C/tspan%3E%3C/text%3E%3C/svg%3E';
