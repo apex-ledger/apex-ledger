@@ -257,6 +257,9 @@ app.use((_req, res, next) => {
 // For a monitor or load balancer: no sign-in, no details beyond "up" and the version.
 // Changes on every deploy (the bundle's own timestamp), so a browser still running the previous bundle can offer a reload.
 const BUILD_ID = (() => { try { return String(Math.round(fs.statSync(path.join(STATIC_DIR, 'index.html')).mtimeMs)); } catch { return String(Date.now()); } })();
+// The application is behind a sign-in and has nothing for a search engine; apexledger.ca is the site to index.
+app.get('/robots.txt', (_req, res) => { res.type('text/plain').send('User-agent: *\nDisallow: /\n'); });
+app.use((_req, res, next) => { res.setHeader('X-Robots-Tag', 'noindex, nofollow'); next(); });
 app.get('/api/health', (_req, res) => { res.setHeader('Cache-Control', 'no-store'); res.json({ ok: true, data: { status: 'ok', version: process.env.APEX_VERSION ?? null, build: BUILD_ID, uptimeSeconds: Math.round(process.uptime()) } }); });
 app.use(express.json({ limit: '50mb' }));
 // A body that is not JSON (or too large) gets a JSON answer, not Express's HTML stack trace.
