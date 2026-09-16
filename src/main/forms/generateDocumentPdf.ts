@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage } from 'pdf-lib';
 import type { CompanyInfo, Contact, TaxCode } from '@shared/domain/types';
 import { suggestTaxCents } from '@shared/domain/ledger/computeTaxSplit';
-import { drawCompanyLogo, wrapText, CONTENT_WIDTH, HEADER_HEIGHT, MARGIN, PAGE_HEIGHT, PAGE_WIDTH } from './pdfStyle';
+import { drawDocumentHeading, embedCompanyLogo, wrapText, CONTENT_WIDTH, HEADER_HEIGHT, MARGIN, PAGE_HEIGHT, PAGE_WIDTH } from './pdfStyle';
 
 // Black and white, like the invoice: these go to printers, faxes and photocopiers.
 const BLACK = rgb(0, 0, 0);
@@ -67,17 +67,13 @@ export async function generateDocumentPdf(doc: PrintableDocument, company: Compa
   let page!: PDFPage;
   let y!: number;
   let pageNumber = 0;
-  const logoPromises: Promise<number>[] = [];
+  const logo = await embedCompanyLogo(pdfDoc, company.logoDataUrl);
 
   function newPage() {
     pageNumber += 1;
     page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     if (pageNumber === 1) {
-      page.drawText(doc.title, { x: MARGIN, y: PAGE_HEIGHT - 44, size: 22, font: boldFont, color: BLACK });
-      page.drawText(company.legalName, { x: MARGIN, y: PAGE_HEIGHT - 62, size: 10, font, color: TEXT_DARK });
-      logoPromises.push(drawCompanyLogo(pdfDoc, page, company.logoDataUrl, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 10, HEADER_HEIGHT - 20, 180));
-      page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, thickness: 1.5, color: BLACK });
-      y = PAGE_HEIGHT - HEADER_HEIGHT - 22;
+      y = drawDocumentHeading(page, { title: doc.title, legalName: company.legalName, logo, font, boldFont, titleColor: BLACK, nameColor: TEXT_DARK, ruleColor: BLACK });
     } else {
       page.drawText(reference, { x: MARGIN, y: PAGE_HEIGHT - 26, size: 10, font: boldFont, color: BLACK });
       page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - 34 }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - 34 }, thickness: 0.75, color: BLACK });
@@ -210,6 +206,5 @@ export async function generateDocumentPdf(doc: PrintableDocument, company: Compa
   y -= 12;
   page.drawText(doc.footer, { x: MARGIN, y, size: 8, font, color: TEXT_MUTED });
 
-  await Promise.all(logoPromises);
   return pdfDoc.save();
 }

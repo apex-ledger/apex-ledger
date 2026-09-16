@@ -1,4 +1,4 @@
-import { rgb, type PDFFont, PDFDocument, PDFPage } from 'pdf-lib';
+import { rgb, type PDFFont, type PDFImage, type RGB, PDFDocument, PDFPage } from 'pdf-lib';
 
 // Same brand palette as generateFormPdf.ts / generateInvoicePdf.ts (pdf-lib needs plain 0–1 rgb()
 // values, not Tailwind hex tokens) — pulled out here since a third+ PDF generator needing it would
@@ -40,6 +40,55 @@ export async function drawCompanyLogo(doc: PDFDocument, page: PDFPage, logoDataU
     return 0;
   }
 }
+
+/** The company logo read into the document once, ready to draw — or null for no logo or an
+ * unreadable image. A bad logo must never stop a PDF. */
+export async function embedCompanyLogo(doc: PDFDocument, logoDataUrl: string | null | undefined): Promise<PDFImage | null> {
+  if (!logoDataUrl) return null;
+  try {
+    const match = /^data:image\/(png|jpeg);base64,(.+)$/.exec(logoDataUrl);
+    if (!match) return null;
+    const bytes = Buffer.from(match[2], 'base64');
+    return match[1] === 'png' ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The first-page heading of a sales document (invoice, receipt, estimate…), returning the y at which
+ * the company's address lines begin.
+ *
+ * With a logo, it sits top-left where a letterhead puts it, the company name directly under it and
+ * the address under that, all in one column; the document title moves to the top-right. Without a
+ * logo the title stays top-left above the company name, as it always has.
+ */
+export function drawDocumentHeading(
+  page: PDFPage,
+  opts: { title: string; legalName: string; logo: PDFImage | null; font: PDFFont; boldFont: PDFFont; titleColor: RGB; nameColor: RGB; ruleColor: RGB },
+): number {
+  const { title, legalName, logo, font, boldFont, titleColor, nameColor, ruleColor } = opts;
+  let ruleY = PAGE_HEIGHT - HEADER_HEIGHT;
+  if (logo) {
+    const top = PAGE_HEIGHT - 30;
+    const scale = Math.min(LOGO_MAX_HEIGHT / logo.height, LOGO_MAX_WIDTH / logo.width, 1);
+    const width = logo.width * scale;
+    const height = logo.height * scale;
+    page.drawImage(logo, { x: MARGIN, y: top - height, width, height });
+    page.drawText(title, { x: PAGE_WIDTH - MARGIN - boldFont.widthOfTextAtSize(title, 22), y: top - 22, size: 22, font: boldFont, color: titleColor });
+    const nameY = Math.min(top - height - 16, PAGE_HEIGHT - 62);
+    page.drawText(legalName, { x: MARGIN, y: nameY, size: 10, font: boldFont, color: nameColor });
+    ruleY = nameY - 8;
+  } else {
+    page.drawText(title, { x: MARGIN, y: PAGE_HEIGHT - 44, size: 22, font: boldFont, color: titleColor });
+    page.drawText(legalName, { x: MARGIN, y: PAGE_HEIGHT - 62, size: 10, font, color: nameColor });
+  }
+  page.drawLine({ start: { x: MARGIN, y: ruleY }, end: { x: PAGE_WIDTH - MARGIN, y: ruleY }, thickness: 1.5, color: ruleColor });
+  return ruleY - 22;
+}
+
+const LOGO_MAX_HEIGHT = 60;
+const LOGO_MAX_WIDTH = 200;
 
 export function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = text.split(/\s+/);

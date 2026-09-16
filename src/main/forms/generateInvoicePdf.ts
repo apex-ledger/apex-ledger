@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from 'pdf-lib';
-import { drawCompanyLogo } from './pdfStyle';
+import { drawDocumentHeading, embedCompanyLogo } from './pdfStyle';
 import type { CompanyInfo, Contact, Invoice } from '@shared/domain/types';
 import { suggestTaxCents } from '@shared/domain/ledger/computeTaxSplit';
 
@@ -66,19 +66,14 @@ export async function generateInvoicePdf(invoice: Invoice, customer: Contact, co
   let page!: PDFPage;
   let y!: number;
   let pageNumber = 0;
-  const logoPromises: Promise<number>[] = [];
+  const logo = await embedCompanyLogo(pdfDoc, company.logoDataUrl);
 
   function newPage() {
     pageNumber += 1;
     page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: BRAND_50 });
     if (pageNumber === 1) {
-      
-      page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - HEADER_HEIGHT }, thickness: 1.5, color: BRAND_900 });
-      page.drawText('INVOICE', { x: MARGIN, y: PAGE_HEIGHT - 44, size: 22, font: boldFont, color: BRAND_900 });
-      page.drawText(company.legalName, { x: MARGIN, y: PAGE_HEIGHT - 62, size: 10, font, color: TEXT_DARK });
-      logoPromises.push(drawCompanyLogo(pdfDoc, page, company.logoDataUrl, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 10, HEADER_HEIGHT - 20, 180));
-      y = PAGE_HEIGHT - HEADER_HEIGHT - 22;
+      y = drawDocumentHeading(page, { title: 'INVOICE', legalName: company.legalName, logo, font, boldFont, titleColor: BRAND_900, nameColor: TEXT_DARK, ruleColor: BRAND_900 });
     } else {
       page.drawLine({ start: { x: MARGIN, y: PAGE_HEIGHT - 34 }, end: { x: PAGE_WIDTH - MARGIN, y: PAGE_HEIGHT - 34 }, thickness: 0.75, color: BRAND_900 });
       page.drawText(`Invoice ${invoice.invoiceNumber}`, { x: MARGIN, y: PAGE_HEIGHT - 26, size: 10, font: boldFont, color: BRAND_700 });
@@ -247,6 +242,5 @@ export async function generateInvoicePdf(invoice: Invoice, customer: Contact, co
     page.drawText('HST shown is an estimate for reference only; see your records for the exact filed amount.', { x: MARGIN, y, size: 7, font, color: TEXT_MUTED });
   }
 
-  await Promise.all(logoPromises);
   return pdfDoc.save();
 }
