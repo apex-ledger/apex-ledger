@@ -14,219 +14,316 @@
 <meta name="geo.placename" content="Mississauga, Ontario">
 <meta property="og:url" content="https://apexledger.ca/">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#081613">
+<meta name="theme-color" content="#ffffff">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"ApexLedger","applicationCategory":"BusinessApplication","operatingSystem":"Web browser","url":"https://apexledger.ca/","description":"Canadian web accounting for accountants and bookkeepers: client books, bank reconciliation, GST/HST, payroll for every province, GIFI and T2 working papers, client CRM and a year-end sign-off. Hosted in Canada.","offers":[{"@type":"Offer","name":"Business seat","price":"39","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Payroll Unlimited seat","price":"45","priceCurrency":"CAD","description":"Per seat per month, no limit on employees"},{"@type":"Offer","name":"Bookkeeper seat","price":"59","priceCurrency":"CAD","description":"Per seat per month after a free month"},{"@type":"Offer","name":"Full accountant seat","price":"79","priceCurrency":"CAD","description":"Per seat per month after a free month"}],"areaServed":[{"@type":"Country","name":"Canada"},{"@type":"City","name":"Toronto"},{"@type":"City","name":"Mississauga"},{"@type":"City","name":"Brampton"},{"@type":"City","name":"Vaughan"},{"@type":"City","name":"Markham"},{"@type":"City","name":"Richmond Hill"},{"@type":"City","name":"Oakville"},{"@type":"City","name":"Burlington"},{"@type":"City","name":"Hamilton"},{"@type":"City","name":"Ottawa"},{"@type":"City","name":"London"},{"@type":"City","name":"Kitchener-Waterloo"},{"@type":"City","name":"Windsor"},{"@type":"City","name":"Barrie"},{"@type":"City","name":"Oshawa"},{"@type":"City","name":"Montreal"},{"@type":"City","name":"Laval"},{"@type":"City","name":"Quebec City"},{"@type":"City","name":"Gatineau"},{"@type":"City","name":"Vancouver"},{"@type":"City","name":"Surrey"},{"@type":"City","name":"Burnaby"},{"@type":"City","name":"Richmond"},{"@type":"City","name":"Victoria"},{"@type":"City","name":"Kelowna"},{"@type":"City","name":"Calgary"},{"@type":"City","name":"Edmonton"},{"@type":"City","name":"Red Deer"},{"@type":"City","name":"Winnipeg"},{"@type":"City","name":"Saskatoon"},{"@type":"City","name":"Regina"},{"@type":"City","name":"Halifax"},{"@type":"City","name":"Moncton"},{"@type":"City","name":"St. John's"},{"@type":"City","name":"Charlottetown"}],"provider":{"@type":"Organization","name":"ApexLedger","url":"https://apexledger.ca/","email":"admin@apexledger.ca","address":{"@type":"PostalAddress","addressLocality":"Mississauga","addressRegion":"ON","addressCountry":"CA"}}}
 </script>
 <style>
-:root{--bg:#081613;--fg:#f9f6ec;--gold:#f2ca72;--card:#102a22;--border:#355244;--muted:#a4b6b4}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:100px}html,body{overflow-x:hidden}
-body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 "Segoe UI",Arial,Helvetica,sans-serif;position:relative}
-body:before{content:'';position:fixed;inset:0;z-index:-1;background:radial-gradient(900px 600px at 10% 0%,#3aa06244,transparent 60%),radial-gradient(800px 500px at 90% 15%,#e6b64d44,transparent 60%),radial-gradient(700px 500px at 25% 60%,#e0b14a1f,transparent 60%),radial-gradient(900px 600px at 70% 45%,#2f8a5522,transparent 60%),radial-gradient(1000px 700px at 50% 100%,#2f8a5544,transparent 65%),linear-gradient(180deg,#0a1c17,#081613 40%,#0a1f19)}
-.glow{position:absolute;border-radius:100%;filter:blur(70px);opacity:.6;pointer-events:none;animation:drift 14s ease-in-out infinite}
-@keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-25px)}}
-a{color:inherit;text-decoration:none}button,a{-webkit-tap-highlight-color:transparent}a:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:6px}
-svg{flex-shrink:0}h1,h2,h3,h4,p{margin:0}em{font-style:normal;color:var(--gold)}
-.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.nav{border-bottom:0;height:100px;margin:auto;padding:0 max(4%,calc((100% - 1720px)/2));display:flex;align-items:center;justify-content:space-between;background:#081613eb;position:relative;z-index:3}
-.brand{display:flex;align-items:center;font-weight:750;letter-spacing:-1.4px;font-size:28px}.brand b{color:var(--gold)}
-.app-mark{width:42px;height:42px;margin-right:12px;filter:drop-shadow(0 0 10px #efc66575)}
-.wordmark{display:inline-flex;align-items:baseline}.wm-apex{color:#1f5a3a}.brand>b,.wordmark>b{color:#d8a943}
-.gold-wordmark{background:linear-gradient(110deg,#d8a943 12%,#fff0bd 32%,#e4b753 48%,#fff1bd 63%,#d4a145 83%);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gold-sweep 9s ease-in-out infinite;filter:drop-shadow(0 0 9px #eec56c35)}.gold-wordmark b{color:var(--gold)}
-.nav nav{display:flex;gap:30px;font-size:15px;font-weight:700;color:#c6d0d0}.nav a:hover{color:#ffe0a0}.nav a.button:hover{color:#142018}
-.button{display:inline-flex;align-items:center;justify-content:center;gap:22px;color:#142018;padding:16px 22px;border-radius:7px;font-size:15px;font-weight:700;transition:transform .2s,box-shadow .2s;background:linear-gradient(115deg,#d9aa4e 0%,#ffe7a3 42%,#ebc165 73%,#d6a340 100%);box-shadow:0 5px 25px #e1b24f25,inset 0 1px 0 #fff5d8b3;border:1px solid #f7d38a;cursor:pointer}
-.button:hover{box-shadow:0 8px 38px #e9ba5755;transform:translateY(-3px)}.button.small{padding:11px 17px;font-size:14px;gap:10px}
-.button.outline{background:transparent;border:1px solid #bc9b57;color:#ffe2a1;box-shadow:none}.button.outline:hover{background:#d5af4920}
-.hero{position:relative;margin:auto;padding:36px max(4%,calc((100% - 1720px)/2)) 52px;display:grid;grid-template-columns:1.03fr 1fr;gap:52px;align-items:start;overflow:hidden;background:radial-gradient(ellipse at 80% 45%,#3fae6a44,transparent 55%),radial-gradient(ellipse at 5% 12%,#e6b84f44,transparent 48%),radial-gradient(ellipse at 50% 100%,#d9a94333,transparent 50%)}
-.hero .glow.a{width:520px;height:520px;left:-140px;top:-120px;background:#3aa06a;opacity:.4}.hero .glow.b{width:520px;height:520px;right:-120px;bottom:-180px;background:#f0c65a;opacity:.38}
-.eyebrow{font-size:12px;font-weight:700;letter-spacing:1.8px;color:#b8c7c7;display:flex;align-items:center;gap:10px}.eyebrow i{width:7px;height:7px;border-radius:100%;background:var(--gold);box-shadow:0 0 15px #f2ca7280}.hero .eyebrow{letter-spacing:1.3px}
-h1{font-size:clamp(48px,5.3vw,78px);line-height:1.06;letter-spacing:-4px;margin:26px 0}h1 em{white-space:nowrap}
-h1 em,.closing h2 em,.canada h2 em{background:linear-gradient(110deg,#d6a94b,#fff0b9,#e4b753,#ffe4a0);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gold-sweep 12s ease-in-out infinite;filter:drop-shadow(0 0 22px #e0b65125)}
-.hero p{color:#b4c2c3;font-size:18px;line-height:1.7}.actions{display:flex;align-items:center;gap:26px;margin-top:32px}.text-link{font-size:14px}.text-link:hover{color:#ffe0a0}
-.hero-note{display:flex;align-items:center;flex-wrap:wrap;gap:10px;color:#9badad;font-size:16px;font-weight:700;letter-spacing:-.2px;margin-top:26px}.hero-note svg{color:var(--gold);width:20px;height:20px}.hero-note span{margin:0 5px}
-.stage{position:relative;padding-top:24px;padding-bottom:20px;transform:rotate(-2deg);animation:product-float 7s ease-in-out infinite}.stage:before{content:'';position:absolute;inset:5% -15%;background:radial-gradient(ellipse,#a3fa4920,transparent 65%);z-index:-1}
-.orbit{display:flex;align-items:center;gap:8px;color:var(--gold);font-size:11px;letter-spacing:1.5px;margin:0 0 15px 20px}.orbit svg{width:14px;height:14px}
-.dashboard{background:#f7faf8;color:#183033;display:flex;border:6px solid #476c53;border-radius:15px;box-shadow:0 30px 80px #0007,0 0 45px #d8ad3e18;overflow:hidden}
-.dashboard aside{width:51px;background:#e9efeb;display:flex;align-items:center;flex-direction:column;gap:29px;padding-top:25px;color:#647975}.dashboard aside svg{width:18px;height:18px}.dashboard aside svg:first-child{color:#2d6241;margin-bottom:20px}.dashboard aside span{margin-top:auto;margin-bottom:20px;font-size:11px;background:#d3dfd5;padding:5px;border-radius:100%}
-.dash-content{flex:1;padding:21px;min-width:0}.dash-top{font-size:12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #dce4df;padding-bottom:15px}.dash-top small{font-size:8px;letter-spacing:.8px;color:#66786e}
-.dash-content h3{font-size:22px;margin-top:20px;letter-spacing:-.6px}.dash-content h3 span{color:#60973c}.dash-content>p{font-size:11px;color:#77847a}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.metrics>div{border:1px solid #dce5de;border-radius:7px;padding:12px;background:white}.metrics span{display:block;font-size:11px;color:#6d7c71}.metrics strong{display:block;font-size:23px;letter-spacing:-1px}.metrics strong small{font-size:9px;font-weight:400;letter-spacing:0}.metrics em{font-size:10px;color:#508135}
-.chart-title{font-size:12px;display:flex;justify-content:space-between;font-weight:600}.chart-title small{color:#7a877d;font-size:9px;font-weight:400}
-.chart{height:140px;display:flex;gap:18px;align-items:end;border-bottom:1px solid #d4ded6;background:repeating-linear-gradient(to top,transparent 0px,transparent 34px,#e4eae5 35px);margin:15px 0 37px;padding:0 9px}.bars{height:100%;flex:1;display:flex;align-items:end;gap:4px;position:relative}.bars>div{width:50%;background:#75a957;border-radius:3px 3px 0 0}.bars>div:nth-child(2){background:#d4e9be}.bars span{position:absolute;bottom:-23px;font-size:10px;color:#77867b;left:8px}
-.transaction{display:flex;align-items:center;gap:10px;font-size:10px;border-top:1px solid #e3e9e3;margin-top:10px;padding-top:10px}.transaction svg{background:#e5eedf;padding:3px;width:27px;height:27px;color:#6b934f;border-radius:5px}.transaction small{display:block;color:#89958a;font-size:9px}.transaction b{margin-left:auto;font-size:11px}
-.float{position:absolute;bottom:0;left:-26px;display:flex;align-items:center;gap:11px;padding:15px 19px;background:#fff;color:#21362a;box-shadow:0 12px 35px #0004;border-radius:9px;font-size:13px;font-weight:600;transform:rotate(2deg)}.float>span{display:grid;place-items:center;width:37px;height:37px;background:var(--gold);border-radius:100%}.float small{display:block;font-weight:400;color:#7e8e81;font-size:11px}.float b{font-size:27px;color:#679c48;margin-left:15px}
-.strip{padding:9px 4%;border-top:1px solid #52673d;border-bottom:1px solid #52673d;display:flex;justify-content:center;gap:34px;align-items:center;background:linear-gradient(100deg,#102c22,#163b2d,#102b22)}.strip>span{font-size:11px;letter-spacing:1.6px;color:#819694}.strip>div,.strip>a{display:flex;align-items:center;gap:8px;color:#d1dcd9;font-size:15px;font-weight:600;text-decoration:none}.strip>a:hover{color:#f2ca72}.strip>span{margin-right:8px}.strip svg{width:20px;height:20px;color:var(--gold)}
-.section{margin:auto;padding:40px max(4%,calc((100% - 1720px)/2))}.intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:26px;gap:40px}
-h2{font-size:clamp(34px,3.2vw,46px);line-height:1.13;letter-spacing:-2px;margin-top:10px}.intro>p{max-width:370px;font-size:16px;color:#9fb2b1}
-.features{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.features article{background:linear-gradient(160deg,#16302a,#0f2420);padding:22px;border:1px solid #2f4a45;border-radius:10px;box-shadow:0 10px 30px #0004,inset 0 1px 0 #ffffff0d;transition:transform .25s,box-shadow .25s,border-color .25s}.features article:hover,.plan:hover{transform:translateY(-5px);border-color:#c4a15a;box-shadow:0 14px 38px #0004,0 0 22px #e8bd5015}
-.feature-icon{color:var(--gold);margin-bottom:14px;filter:drop-shadow(0 0 7px #f2ca7255)}.number{font-size:10px;letter-spacing:1.4px;color:#91a8a5;margin:15px 0}.features h3{font-size:23px;letter-spacing:-.7px}.features p{font-size:15px;color:var(--muted);line-height:1.7;margin:10px 0 18px}
-.mini{display:flex;gap:8px;justify-content:space-between;border-top:1px solid #2d4143;padding-top:18px;font-size:10px;color:#b6c8c1}.mini span:last-child{color:var(--gold)}
-.crm-section{border-top:1px solid #304340;background:radial-gradient(ellipse at top right,#43a06a66,transparent 65%),radial-gradient(ellipse at 10% 90%,#e6b84f3a,transparent 50%)}
-.crm-highlight{display:flex;align-items:center;gap:22px;padding:20px 24px;background:linear-gradient(105deg,#25432c,#112c22);border:1px solid #638f4966;border-radius:10px;margin-bottom:18px;box-shadow:0 0 35px #dab0480c}.crm-highlight>svg{color:var(--gold);width:30px;height:30px;filter:drop-shadow(0 0 7px #f2ca7255)}.crm-highlight strong{font-size:23px;letter-spacing:-.6px}.crm-highlight p{color:#aec2b5;margin-top:6px;font-size:15px}.crm-highlight .button{margin-left:auto;white-space:nowrap}
-.crm-extra{display:flex;align-items:start;gap:15px;margin-top:25px;padding-top:25px;border-top:1px solid #304340;color:#adc1b4;font-size:15px}.crm-extra svg{color:var(--gold);width:21px;height:21px}.crm-extra strong{color:#eef5ef}
-.product-depth{border-top:1px solid #293d38}.capability-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0 36px}.capability-grid article{padding:18px 0;border-top:1px solid #304340;transition:border-color .25s}.capability-grid article:hover{border-color:#e3bf71}.capability-grid article>span{color:var(--gold);font-size:12px}.capability-grid h3{font-size:23px;letter-spacing:-.6px;margin:12px 0}.capability-grid p{color:var(--muted);font-size:15px;line-height:1.8}
-.desktop-note{padding:20px 26px;background:linear-gradient(110deg,#183d2d,#152e22);border:1px solid #556842;border-radius:10px;margin-top:18px;display:flex;align-items:center;gap:30px;justify-content:space-between}.desktop-note strong{font-size:22px}.desktop-note p{font-size:15px;color:#a8beb0;max-width:720px;margin-top:6px}.desktop-note a{white-space:nowrap;color:var(--gold)}
-.workflow-section{border-top:1px solid #425b3b;background:radial-gradient(ellipse at 20% 30%,#2f8a5533,transparent 60%)}
-.flow-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%;padding:7px;background:#10291f;border:1px solid #456044;border-radius:12px;gap:6px}
-.flow-tabs button{background:none;border:0;font:inherit;padding:15px 20px;min-height:54px;color:#c0d0c2;font-size:15px;cursor:pointer;border-radius:8px;white-space:normal;transition:background .2s,color .2s}.flow-tabs button:hover{color:#ffe0a0}.flow-tabs button[aria-selected=true]{background:linear-gradient(115deg,#dbb159,#ffe6a3);color:#14261b;box-shadow:0 3px 15px #dfb45833;font-weight:600}
-.flow-panel{margin-top:14px;padding:26px;border:1px solid #567049;border-radius:14px;background:radial-gradient(ellipse at top right,#37644255,transparent 60%),#10281f;box-shadow:0 15px 40px #0002}.flow-panel[hidden]{display:none}
-.module-edition{display:inline-block;color:var(--gold);border:1px solid #8b784633;background:#e5bc5d0c;padding:7px 12px;border-radius:5px;font-size:13px;margin-bottom:20px}
-.flow-heading h3{font-size:32px;line-height:1.2;letter-spacing:-1px}.flow-heading>p{font-size:16px;color:#b7cbbd;margin-top:12px}
-.module-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 32px;margin:22px 0}.module-features article{display:flex;gap:14px;border-top:1px solid #456044;padding-top:14px}.module-features article>svg{color:var(--gold);margin-top:5px;width:19px;height:19px}.module-features h4{font-size:20px;margin:0 0 8px;line-height:1.35}.module-features p,.flow-bottom>p{font-size:15px;line-height:1.8;color:#b7cbbd}.module-features article:last-child:nth-child(odd){grid-column:1/-1}
-.flow-bottom{border-top:1px solid #3f5b42;padding-top:24px;display:flex;justify-content:space-between;gap:22px;align-items:center}.flow-bottom>a{color:var(--gold);display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:14px}.flow-bottom>a svg{width:17px;height:17px}
-.canada{border-top:1px solid #425b3b;background:radial-gradient(ellipse at 15% 20%,#3d9a6655,transparent 55%),radial-gradient(ellipse at 90% 80%,#e0b34a3a,transparent 50%)}
-.sec-link{margin:18px 0 0;font-size:15px}.sec-link a{color:#8a6412;font-weight:600}.sec-link a:hover{text-decoration:underline}
-.canada-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.canada-grid article{background:#0f2620;border:1px solid #2f4a3f;border-radius:10px;padding:26px;transition:border-color .25s}.canada-grid article:hover{border-color:#c4a15a}.canada-grid svg{color:var(--gold);width:26px;height:26px;margin-bottom:16px;filter:drop-shadow(0 0 7px #f2ca7255)}.canada-grid h3{font-size:20px;letter-spacing:-.5px}.canada-grid p{font-size:15px;color:var(--muted);line-height:1.75;margin-top:10px}
-.plans{max-width:none;padding-top:48px;background:radial-gradient(ellipse at center top,#24543b 0%,#102a21 40%,#0b1c17 80%),radial-gradient(ellipse at 90% 30%,#e0b34a33,transparent 45%);color:#f8f3df;text-align:center;border-block:1px solid #705d32}.plans .eyebrow{justify-content:center;color:#e3be73}.plans>p{color:#b7c8b9;margin-top:18px}
-.plan-grid{max-width:none;margin:40px auto 0;display:grid;grid-template-columns:repeat(3,1fr);gap:22px;text-align:left;align-items:start}.plan-grid-4{max-width:1180px;grid-template-columns:repeat(4,1fr);gap:16px}.plan-grid-4 .plan{padding:24px}.plan-grid-4 .plan h3{font-size:24px}.plan-grid-4 .price{font-size:30px}
-.plan{padding:32px;background:linear-gradient(155deg,#16392c,#0d251d);color:#fff7e1;border:1px solid #466148;border-radius:12px;position:relative;box-shadow:0 15px 35px #0003;transition:transform .25s,box-shadow .25s,border-color .25s}.plan.featured{background:linear-gradient(145deg,#234e35,#102f23);border-color:#e2b65c;box-shadow:0 0 40px #e6ba4d38}
-.ribbon{position:absolute;top:-27px;left:-1px;right:-1px;height:36px;border-radius:10px 10px 0 0;background:linear-gradient(100deg,#d3a244,#ffe8ae,#dfb655);color:#24301d;text-align:center;padding:6px;font-size:10px;letter-spacing:1.2px;font-weight:700}
-.plan>svg{color:#efc96e;width:28px;height:28px}.plan .number{color:#d9bd80;font-size:9px}.plan h3{font-size:27px;letter-spacing:-1px}.plan>p{font-size:15px;line-height:1.65;color:#b8cbbd;min-height:52px;margin-top:10px}
-.price{font-size:34px;font-weight:700;letter-spacing:-1px;margin:25px 0 20px;line-height:1.1}.price .per{display:inline;font-size:14px;font-weight:500;letter-spacing:0;color:#d9bd80;margin-left:4px}.price small{display:block;font-size:12px;color:#b6c6b8;font-weight:400;margin-top:5px}.plan .button{width:100%;justify-content:space-between}
-.plan ul{border-top:1px solid #496147;margin:26px 0 0;padding:24px 0 0;list-style:none}.plan li{display:flex;align-items:center;gap:10px;margin:13px 0;font-size:13px}.plan li svg{color:#efc96e;width:16px;height:16px}.plan li.hi{color:var(--gold);font-weight:600}
-.plans .plan-note{font-size:12px;margin-top:22px}.founding{max-width:760px;margin:18px auto 0;padding:12px 18px;border:1px solid #c9a24a;border-radius:10px;background:#f2ca7214;color:#f8f3df;font-size:14px}.founding b{color:#ffe2a1}.price small b{color:#ffe2a1}
-.closing{text-align:center;padding-top:56px;padding-bottom:56px}.closing .eyebrow{justify-content:center}
-.details{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;margin:32px 0;text-align:left}.details>div{border-top:1px solid #334642;padding-top:25px;scroll-margin-top:40px}.details>div:target{border-color:var(--gold)}.details span{color:var(--gold);font-size:13px}.details h3{font-size:22px;margin:10px 0}.details p{color:#a9bab5;font-size:15px;line-height:1.8}
-.trial-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;padding:24px;border-radius:14px;background:linear-gradient(160deg,#16392c,#0d251d);border:1px solid #466148;box-shadow:0 15px 35px #0003;margin-bottom:18px}.trial-form h3{grid-column:1/-1;font-size:24px;letter-spacing:-.6px}.trial-form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b7cbbd}.trial-form input,.trial-form select,.trial-form textarea{font:inherit;color:#f9f6ec;background:#0a1f18;border:1px solid #3d5c4a;border-radius:8px;padding:11px 12px}.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus{outline:2px solid #f2ca72;outline-offset:1px;border-color:#f2ca72}.trial-form textarea{min-height:88px;resize:vertical}.trial-form .full{grid-column:1/-1}.trial-form .agree{flex-direction:row;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}.trial-form .agree input{margin-top:3px;width:16px;height:16px}.trial-form .agree a{color:#ffe2a1}.trial-form .actions{grid-column:1/-1;margin-top:6px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}.trial-form .status{font-size:14px;color:#b7cbbd}.trial-form .status.ok{color:#9be3b3}.trial-form .status.err{color:#ffb4a8}.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}.trial-form .agree-note{font-size:13px;line-height:1.5;color:#b7cbbd}.trial-form .agree-note a{color:#ffe2a1}
-.agree-dlg{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;border-radius:0;background:linear-gradient(160deg,#16392c,#0d251d);color:var(--fg);overflow:hidden}.agree-dlg::backdrop{background:#04100c}.agree-dlg .agree-body{box-sizing:border-box;height:100%;display:flex;flex-direction:column;padding:22px 4% 22px}.agree-dlg .agree-step{flex:1;display:flex;flex-direction:column;min-height:0}.agree-dlg .agree-step[hidden]{display:none}.agree-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px}.agree-head h3{font-size:22px;letter-spacing:-.5px;margin-top:4px}.agree-head .eyebrow{margin:0}.agree-x{margin-left:auto;background:none;border:1px solid #3d5c4a;color:#b7cbbd;border-radius:8px;width:36px;height:36px;font-size:22px;line-height:1;cursor:pointer}.agree-x:hover{color:var(--fg);border-color:#f2ca72}.agree-lead{font-size:14px;color:#b7cbbd;margin-bottom:10px}.agree-lead a{color:#ffe2a1}.agree-dlg iframe{display:block;width:100%;flex:1;min-height:0;border:1px solid #3d5c4a;border-radius:8px;background:#fff}.agree-dlg #agree-terms{background:#081613}.agree-sign{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b7cbbd;margin-top:14px}.agree-sign input{font:italic 20px Georgia,"Times New Roman",serif;color:#f9f6ec;background:#0a1f18;border:1px solid #3d5c4a;border-radius:8px;padding:10px 12px;max-width:420px}.agree-sign input:focus{outline:2px solid #f2ca72;outline-offset:1px;border-color:#f2ca72}.agree-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px}.agree-actions .button[disabled]{opacity:.45;cursor:not-allowed;transform:none}.agree-cancel{background:none;border:0;color:#b7cbbd;font:inherit;font-size:14px;cursor:pointer;padding:0}.agree-cancel:hover{color:#ffe0a0;text-decoration:underline}
-@media(max-width:760px){.agree-dlg .agree-body{padding:14px}.agree-head h3{font-size:19px}.agree-actions{gap:14px}}
-.fb-overlay{position:fixed;inset:0;z-index:50;background:#00000088;display:flex;align-items:center;justify-content:center;padding:20px}.fb-overlay[hidden]{display:none}.fb{width:520px;max-width:100%;background:linear-gradient(160deg,#16392c,#0d251d);border:1px solid #466148;border-radius:14px;padding:24px;box-shadow:0 30px 80px #000a}.fb h3{font-size:22px;letter-spacing:-.5px}.fb p{color:#b7cbbd;font-size:14px;margin-top:6px}.fb label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:#b7cbbd;margin-top:12px}.fb input,.fb textarea{font:inherit;color:#f9f6ec;background:#0a1f18;border:1px solid #3d5c4a;border-radius:8px;padding:10px 12px}.fb textarea{min-height:110px;resize:vertical}.fb .row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.fb .actions{display:flex;justify-content:flex-end;align-items:center;gap:14px;margin-top:16px;flex-wrap:wrap}.fb .status{margin-right:auto;font-size:13px;color:#b7cbbd}.fb .status.ok{color:#9be3b3}.fb .status.err{color:#ffb4a8}.fb .cancel{background:none;border:1px solid #bc9b57;color:#ffe2a1;padding:11px 16px;border-radius:7px;font:inherit;font-size:14px;cursor:pointer}@media(max-width:760px){.fb .row{grid-template-columns:1fr}}
-.contact.section{padding:36px 4% 30px}.contact .intro{display:block;text-align:center;max-width:720px;margin:0 auto 16px}.contact .intro h2{margin-bottom:8px}.contact .intro p{margin:0 auto}.contact .trial-form{max-width:760px;margin:0 auto 14px;gap:9px 14px;padding:20px 24px}.contact .trial-form h3{font-size:21px;margin:0 0 2px}.contact .trial-form textarea{min-height:56px}.contact .trial-form .agree-note{font-size:12px;line-height:1.5;margin:0}.contact .contact-grid{max-width:760px;margin:0 auto;gap:12px}.contact .contact-grid article{padding:14px 16px}.contact .contact-grid h3{font-size:17px;margin:6px 0 4px}.contact .contact-grid p{font-size:13px}.contact{border-top:1px solid #293d38;background:radial-gradient(ellipse at 50% 0%,#3d9a6644,transparent 60%),radial-gradient(ellipse at 10% 100%,#e0b34a33,transparent 50%)}.contact-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}.contact-grid article{background:#122226;border:1px solid #263d40;border-radius:10px;padding:26px}.contact-grid span{color:var(--gold);font-size:12px;letter-spacing:1.4px}.contact-grid h3{font-size:22px;margin:10px 0 6px}.contact-grid p,.contact-grid a{color:var(--muted);font-size:15px}.contact-grid a:hover{color:#ffe0a0}
-.cities{margin:auto;padding:16px max(4%,calc((100% - 1720px)/2)) 4px;border-top:1px solid #1f322c;color:#6f8a80;font-size:12px;line-height:1.9}.cities h2{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#8aa598;margin:0 0 6px;font-weight:600}.cities p{margin:0}.cities b{color:#93aca0;font-weight:600}.cities a{color:#6f8a80}.cities a:hover{color:#ffe0a0}
-.explore{max-width:1440px;margin:auto;padding:18px 5% 8px;border-top:1px solid #293d38}.explore h2{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#8aa598;margin:0 0 8px;font-weight:600}.explore-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 24px;font-size:13px}.explore-grid a{color:#93aca0;text-decoration:none;line-height:1.9}.explore-grid a:hover{color:#ffe0a0}@media(max-width:760px){.explore-grid{grid-template-columns:1fr}}
-footer{border-top:1px solid #293d38;margin:auto;padding:18px max(4%,calc((100% - 1720px)/2));display:flex;align-items:center;justify-content:space-between;gap:25px;flex-wrap:wrap}footer>span,footer>a:not(.brand){font-size:12px;color:#82978f}footer>a:not(.brand):hover{color:#ffe0a0}footer .brand{font-size:24px}
-.highlights{margin:auto;padding:36px max(4%,calc((100% - 1720px)/2)) 10px;background:radial-gradient(ellipse at 50% 0%,#e0b34a26,transparent 55%)}.highlights .eyebrow{justify-content:center;color:#e3be73}.highlights h2{text-align:center}
-.hl-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:26px}.hl{position:relative;overflow:hidden;padding:28px 26px;border-radius:14px;background:linear-gradient(160deg,#1a4030,#0f2a21);border:1px solid #547a4f;box-shadow:0 18px 40px #0005,0 0 22px #e8bd501c,inset 0 1px 0 #ffffff14;transition:transform .25s,border-color .25s,box-shadow .25s}.hl:hover{transform:translateY(-6px);border-color:#e3bf71;box-shadow:0 22px 50px #0006,0 0 30px #e8bd5022}
-.hl:before{content:'';position:absolute;width:220px;height:220px;right:-90px;top:-90px;border-radius:100%;background:radial-gradient(circle,#f2ca7244,transparent 65%)}.hl svg{width:30px;height:30px;color:var(--gold);filter:drop-shadow(0 0 9px #f2ca7266)}.hl .number{margin:16px 0 8px}.hl h3{font-size:22px;letter-spacing:-.6px;line-height:1.2}.hl p{color:#b7cbbd;font-size:15px;line-height:1.75;margin-top:12px}.hl b{color:#ffe2a1;font-weight:600}
-.shots{border-top:1px solid #425b3b;background:radial-gradient(ellipse at 50% 0%,#3fa06855,transparent 60%),radial-gradient(ellipse at 85% 90%,#e0b34a2e,transparent 50%)}.shot-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.shot{position:relative}.shot figure{margin:0;border:6px solid #476c53;border-radius:16px;overflow:hidden;background:#0d1f19;box-shadow:0 30px 80px #0008,0 0 45px #d8ad3e22;transition:transform .3s,box-shadow .3s}.shot:hover figure{transform:translateY(-6px);box-shadow:0 36px 90px #000a,0 0 60px #d8ad3e33}.shot img{display:block;width:100%;height:auto}.shot figcaption{padding:16px 20px;border-top:1px solid #2f4a3f;font-size:14px;color:#c6d6cb;display:flex;justify-content:space-between;gap:14px;align-items:center}.shot figcaption b{color:#fff;font-size:16px;letter-spacing:-.3px}.shot figcaption span{color:var(--gold);font-size:12px;letter-spacing:1.2px;white-space:nowrap}
-.shot-wide{grid-column:1/-1}
-@keyframes gold-sweep{0%,100%{background-position:0% center}50%{background-position:100% center}}@keyframes product-float{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-9px) rotate(-1deg)}}
-@media(min-width:1500px){.hero{padding-top:40px;padding-bottom:44px}}
-@media(max-width:1050px){.plan-grid-4{grid-template-columns:1fr 1fr}.hl-grid{grid-template-columns:1fr 1fr}.nav nav{gap:14px;font-size:13px;white-space:nowrap}.nav nav a:nth-child(3),.nav nav a:nth-child(6){display:none}.hero{gap:25px}.hero h1{font-size:55px;letter-spacing:-3px}.actions{gap:15px;flex-wrap:wrap}.metrics strong{font-size:20px}.dash-content{padding:15px}.dash-top small{font-size:7px}.features article,.plan{padding:23px}.plan h3{font-size:23px}.strip>span{display:none}.nav nav{gap:18px}}
-@media(max-width:760px){.plan-grid-4{grid-template-columns:1fr}.trial-form{grid-template-columns:1fr;padding:18px}.hl-grid,.shot-grid{grid-template-columns:1fr}.highlights{padding-top:50px}.nav{height:80px}.nav nav{display:none}.brand{font-size:24px}.app-mark{width:32px;height:32px}.nav .small{font-size:12px;padding:9px 12px;gap:7px}.hero{grid-template-columns:1fr;padding-top:34px;padding-bottom:38px;gap:22px}.hero h1{font-size:clamp(45px,10vw,66px);letter-spacing:-2.8px}.eyebrow{font-size:9px;letter-spacing:1.2px}.hero .eyebrow{font-size:9px;letter-spacing:.7px}.hero p{font-size:16px}.hero-note{font-size:13px}.stage{max-width:550px;width:94%;margin:auto;animation:none}.dash-content{padding:20px}.dash-top small{font-size:8px}.float{left:-8px}.strip{gap:22px;flex-wrap:wrap;justify-content:center}.strip>div,.strip>a{font-size:13px;gap:6px}.strip svg{width:16px;height:16px}.section{padding:38px 20px}.intro{display:block}.intro>p{margin-top:22px;max-width:none}.features,.plan-grid,.details,.capability-grid,.canada-grid,.contact-grid{grid-template-columns:1fr}.features{gap:16px}.features article{padding:26px}.plan-grid{gap:46px;margin-top:38px}.plan{padding:30px}.plan>p{min-height:0}.plan h3{font-size:28px}.plan li{font-size:14px}.details{gap:30px}.closing h2{font-size:39px}footer>span:nth-child(2){display:none}.chart{gap:14px}.dashboard aside{width:40px}.float small{font-size:10px}.desktop-note{display:block;padding:24px}.desktop-note a{display:inline-block;margin-top:18px}.crm-highlight{flex-wrap:wrap;padding:23px}.crm-highlight .button{margin-left:0}.crm-highlight strong{font-size:21px}.flow-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.flow-tabs button{padding:12px 8px;font-size:13px}.flow-panel{padding:24px}.flow-heading h3{font-size:27px}.module-features{grid-template-columns:1fr;gap:20px}.module-features h4{font-size:19px}.flow-bottom{align-items:start;flex-direction:column}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* ApexLedger site, 2026-09 redesign.
+   Quiet, precise and native-feeling: white paper, evergreen ink from the mark, gold kept for the star
+   and the founding offer. System typefaces (SF on Apple, Segoe UI on Windows): the page looks at home
+   on the accountant's own machine and makes no request to a font service. One loud moment, the hero;
+   everything after it is disciplined lists and plain columns. */
+:root{
+  --paper:#ffffff;--wash:#eefaf3;--ink:#12211a;--text:#34443b;--muted:#5f6f66;
+  --green:#0f7a45;--green-hover:#0b6538;--gold:#e5a412;--line:#d5ebde;--night:#0b4a2e;
+  --radius:14px;--wrap:1160px;
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI",system-ui,Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px;-webkit-text-size-adjust:100%}
+html,body{overflow-x:hidden}
+body{margin:0;background:var(--paper);color:var(--text);font:17px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,p{margin:0}
+h1,h2,h3,h4{color:var(--ink);font-family:var(--display);font-weight:650;letter-spacing:-.022em}
+a{color:inherit;text-decoration:none}
+em{font-style:normal;color:var(--muted)}
+b,strong{color:var(--ink);font-weight:600}
+svg{flex-shrink:0}
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--green);outline-offset:3px;border-radius:6px}
+img{max-width:100%}
 
-/* ---- Light theme: pale mint page, white cards, dark text, gold kept for buttons and accents.
-   Overrides the dark rules above; remove this block to return to the dark look. ---- */
-:root{--bg:#f1faf4;--fg:#0d1f15;--gold:#b48a24;--card:#ffffff;--border:#cfe6d7;--muted:#22392c;--gold-text:#8a6412;--line:#d3e8da}
-body{background:var(--bg) repeating-linear-gradient(to bottom,transparent 0 47px,#cde9d8 47px 48px);color:var(--fg)}
-body:before{background:radial-gradient(900px 600px at 10% 0%,#7fd9a52e,transparent 60%),radial-gradient(800px 500px at 90% 15%,#f0cf7a2a,transparent 60%),radial-gradient(900px 600px at 70% 100%,#7fd9a522,transparent 60%)}
-em{color:var(--gold-text)}
-.nav{background:#f1faf4eb;border-bottom-color:var(--line)}
-.nav nav{color:#0d1f15}.nav a:hover{color:#7a5a12}
-.brand b,.gold-wordmark b{color:var(--gold-text)}
-.button{color:#142018}
-.button.outline{border-color:#b48a24;color:#7a5a12}.button.outline:hover{background:#d5af4926}
-.hero{background:radial-gradient(ellipse at 80% 45%,#7fd9a53a,transparent 55%),radial-gradient(ellipse at 5% 12%,#f0cf7a3a,transparent 48%),radial-gradient(ellipse at 50% 100%,#f0cf7a22,transparent 50%)}
-.hero .glow.a{opacity:.22}.hero .glow.b{opacity:.2}
-.eyebrow{color:#2f7a55}
-h1 em,.closing h2 em,.canada h2 em{background:linear-gradient(110deg,#9a7420,#d9a93a,#b8862a,#e0b54a);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent}
-.hero p{color:#15291d}.hero-note{color:#4d6657}.hero-note svg{color:#2f7a55}
-.text-link:hover{color:#7a5a12}
-.strip{border-color:var(--line);background:linear-gradient(100deg,#e3f3e9,#eef8f1,#e3f3e9)}
-.strip>span{color:#2f4a3b}.strip>div,.strip>a{color:#0d1f15}.strip>a:hover{color:#8a6412}.strip svg{color:#2f7a55}
-.intro>p{color:var(--muted)}
-.features article{background:linear-gradient(160deg,#ffffff,#f4fbf6);border-color:var(--border);box-shadow:0 10px 30px #1a3a2a14,inset 0 1px 0 #fff}
-.features article:hover,.plan:hover{border-color:#b48a24;box-shadow:0 14px 38px #1a3a2a1a}
-.feature-icon{color:#2f7a55;filter:none}
-.number{color:#2f4a3b}.features p{color:var(--muted)}
-.mini{border-top-color:var(--line);color:#4d6657}.mini span:last-child{color:var(--gold-text)}
-.crm-section{border-top-color:var(--line);background:radial-gradient(ellipse at top right,#7fd9a53a,transparent 65%),radial-gradient(ellipse at 10% 90%,#f0cf7a2a,transparent 50%)}
-.crm-highlight{background:linear-gradient(105deg,#ffffff,#eef8f1);border-color:var(--border);box-shadow:0 10px 30px #1a3a2a12}
-.crm-highlight>svg{color:#2f7a55;filter:none}.crm-highlight p{color:var(--muted)}
-.crm-extra{border-top-color:var(--line);color:var(--muted)}.crm-extra svg{color:#2f7a55}.crm-extra strong{color:var(--fg)}
-.capability-grid article{border-top-color:var(--line)}.capability-grid article:hover{border-color:#b48a24}
-.capability-grid article>span{color:var(--gold-text)}.capability-grid p{color:var(--muted)}
-.desktop-note{background:linear-gradient(110deg,#ffffff,#eef8f1);border-color:var(--border)}
-.desktop-note p{color:var(--muted)}.desktop-note a{color:var(--gold-text)}
-.workflow-section{border-top-color:var(--line);background:radial-gradient(ellipse at 20% 30%,#7fd9a52a,transparent 60%)}
-.flow-tabs{background:#e3f3e9;border-color:var(--border)}
-.flow-tabs button{color:#0d1f15}.flow-tabs button:hover{color:#7a5a12}
-.flow-tabs button[aria-selected=true]{color:#14261b;box-shadow:0 3px 15px #b48a2433}
-.flow-panel{border-color:var(--border);background:radial-gradient(ellipse at top right,#e3f3e9,transparent 60%),#ffffff;box-shadow:0 15px 40px #1a3a2a12}
-.module-edition{color:var(--gold-text);border-color:#b48a2455;background:#f2ca7218}
-.flow-heading>p,.module-features p,.flow-bottom>p{color:var(--muted)}
-.module-features article>svg{color:#2f7a55}.flow-bottom>a{color:var(--gold-text)}
-.canada{border-top-color:var(--line);background:radial-gradient(ellipse at 15% 20%,#7fd9a53a,transparent 55%),radial-gradient(ellipse at 90% 80%,#f0cf7a2a,transparent 50%)}
-.canada-grid article{background:#ffffff;border-color:var(--border)}.canada-grid article:hover{border-color:#b48a24}
-.canada-grid svg{color:#2f7a55;filter:none}.canada-grid p{color:var(--muted)}
-.plans{background:radial-gradient(ellipse at center top,#d9f0e2 0%,#e9f6ee 40%,#f1faf4 80%),radial-gradient(ellipse at 90% 30%,#f0cf7a26,transparent 45%);color:var(--fg);border-color:var(--border)}
-.plans .eyebrow{color:var(--gold-text)}.plans>p{color:var(--muted)}
-.plan{background:linear-gradient(155deg,#ffffff,#f4fbf6);color:var(--fg);border-color:var(--border);box-shadow:0 15px 35px #1a3a2a14}
-.plan.featured{background:linear-gradient(145deg,#fffdf5,#fff6dc);border-color:#d9b25a;box-shadow:0 0 40px #e6ba4d33}
-.plan>svg{color:#b48a24}.plan .number{color:var(--gold-text)}.plan>p{color:var(--muted)}
-.price .per,.price small{color:var(--muted)}.price small b,.founding b{color:var(--gold-text)}
-.plan li svg{color:#2f7a55}.plan li.hi{color:var(--gold-text)}
-.founding{background:#fff6dc;border-color:#d9b25a;color:#2a2108}
-.details>div{border-top-color:var(--line)}.details span{color:var(--gold-text)}.details p{color:var(--muted)}
-.trial-form{background:linear-gradient(160deg,#ffffff,#f4fbf6);border-color:var(--border);box-shadow:0 15px 35px #1a3a2a14}
-.trial-form label,.trial-form .status,.trial-form .agree-note{color:#22392c}
-.trial-form input,.trial-form select,.trial-form textarea{color:var(--fg);background:#ffffff;border-color:#b9d7c4}
-.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus{outline-color:#b48a24;border-color:#b48a24}
-.trial-form .agree a,.trial-form .agree-note a{color:var(--gold-text);text-decoration:underline}
-.trial-form .status.ok{color:#1e7a45}.trial-form .status.err{color:#b3261e}
-.agree-dlg{background:var(--bg);color:var(--fg)}.agree-dlg::backdrop{background:#0d2418cc}
-.agree-x{border-color:#b9d7c4;color:#22392c}.agree-x:hover{color:var(--fg);border-color:#b48a24}
-.agree-lead,.agree-sign,.agree-cancel{color:#22392c}.agree-lead a{color:var(--gold-text);text-decoration:underline}
-.agree-dlg iframe{border-color:#b9d7c4}.agree-dlg #agree-terms{background:#ffffff}
-.agree-sign input{color:var(--fg);background:#ffffff;border-color:#b9d7c4}.agree-sign input:focus{outline-color:#b48a24;border-color:#b48a24}
-.agree-cancel:hover{color:#7a5a12}
-.fb-overlay{background:#0d241888}
-.fb{background:#ffffff;border-color:var(--border);box-shadow:0 30px 80px #0d241833}
-.fb p,.fb label,.fb .status{color:#22392c}.fb input,.fb textarea{color:var(--fg);background:#ffffff;border-color:#b9d7c4}
-.fb .status.ok{color:#1e7a45}.fb .status.err{color:#b3261e}.fb .cancel{border-color:#b48a24;color:#7a5a12}
-.contact{border-top-color:var(--line);background:radial-gradient(ellipse at 50% 0%,#7fd9a53a,transparent 60%),radial-gradient(ellipse at 10% 100%,#f0cf7a26,transparent 50%)}
-.contact-grid article{background:#ffffff;border-color:var(--border)}
-.contact-grid span{color:var(--gold-text)}.contact-grid p,.contact-grid a{color:var(--muted)}.contact-grid a:hover{color:#7a5a12}
-.cities{border-top-color:var(--line);color:#2f4a3b}.cities h2{color:#2f4a3b}.cities b{color:#22392c}.cities a{color:#2f4a3b}.cities a:hover{color:#7a5a12}
-footer{border-top-color:var(--line)}footer>span,footer>a:not(.brand){color:#2f4a3b}footer>a:not(.brand):hover{color:#7a5a12}
-.highlights{background:radial-gradient(ellipse at 50% 0%,#f0cf7a22,transparent 55%)}.highlights .eyebrow{color:var(--gold-text)}
-.hl{background:linear-gradient(160deg,#ffffff,#f4fbf6);border-color:var(--border);box-shadow:0 18px 40px #1a3a2a14,inset 0 1px 0 #fff}
-.hl:hover{border-color:#b48a24;box-shadow:0 22px 50px #1a3a2a1c}
-.hl:before{background:radial-gradient(circle,#f2ca7233,transparent 65%)}
-.hl svg{color:#2f7a55;filter:none}.hl p{color:var(--muted)}.hl b{color:var(--gold-text)}
-.gold-wordmark{background-image:linear-gradient(110deg,#8a6412 12%,#d4ab3f 32%,#a07a1e 48%,#d9b24a 63%,#8a6412 83%);filter:none}.gold-wordmark b{color:#8a6412}
-.explore{border-top:1px solid #cfe3d6}.explore h2{color:#7a5a12}.explore-grid a{color:#2f4a3b}.explore-grid a:hover{color:#8a6412}
-.faq{max-width:920px;margin:auto;padding:36px 4% 8px}.faq h2{font-size:28px;letter-spacing:-1px;margin:0 0 12px;color:#0f3a26}.faq details{background:#fff;border:1px solid #cfe3d6;border-radius:10px;padding:12px 18px;margin:8px 0}.faq summary{cursor:pointer;font-weight:600;color:#0f3a26;font-size:16px}.faq p{margin:8px 0 2px;color:#2a3f33;font-size:15px}
+/* layout */
+.section,.hero,.highlights,.strip,.cities,.explore,.faq,footer,.nav{padding-inline:max(20px,calc((100% - var(--wrap))/2))}
+.section{padding-block:96px;border-top:1px solid var(--line)}
+.eyebrow{font-size:15px;font-weight:600;color:var(--green);margin-bottom:10px;letter-spacing:0}
+h2{font-size:clamp(32px,4.2vw,48px);line-height:1.08}
+.intro{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:48px;align-items:end;margin-bottom:48px}
+.intro>p{font-size:19px;color:var(--muted);max-width:520px}
 
-/* gold text reads bold */.agree-lead a,.agree-sign input:focus,.brand b,.button.outline,.canada-grid svg,.capability-grid article>span,.contact-grid span,.crm-extra svg,.crm-highlight>svg,.desktop-note a,.details span,.details>div:target,.explore h2,.fb .cancel,.feature-icon,.flow-bottom>a,.founding b,.gold-wordmark b,.hero-note svg,.highlights .eyebrow,.hl b,.hl svg,.mini span:last-child,.module-edition,.module-features article>svg,.orbit,.plan .number,.plan li svg,.plan li.hi,.plan>svg,.plans .eyebrow,.price .per,.price small b,.sec-link a,.shot figcaption span,.strip svg,.trial-form .agree a,.trial-form .agree-note a,.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus,em{font-weight:700}
+/* navigation */
+.nav{position:sticky;top:0;z-index:20;height:64px;display:flex;align-items:center;justify-content:space-between;gap:24px;background:rgba(255,255,255,.82);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font:650 22px/1 var(--display);letter-spacing:-.03em;color:var(--ink)}
+.app-mark{width:32px;height:32px;margin:0}
+.wm-apex,.gold-wordmark{color:var(--ink)}.brand b{color:var(--gold)}
+.nav nav{display:flex;gap:26px;font-size:14px;color:var(--text)}
+.nav nav a:hover{color:var(--green)}
 
-/* rounded buttons */.button,.cta,.actions button,.actions a,.fb .send,.fb .cancel,.agree-actions button,.agree-cancel,.agree-x,.flow-tabs button,.button.outline,.ribbon,.module-edition{border-radius:999px}
+.nav-actions{display:flex;gap:10px;align-items:center}
+.hero-note i{font-style:normal}
+/* buttons */
+.button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:999px;border:1px solid var(--green);background:var(--green);color:#fff;font:600 16px/1.2 var(--sans);cursor:pointer;transition:background-color .15s}
+.button:hover{background:var(--green-hover);border-color:var(--green-hover)}
+.button .ic{display:none}
+.button.small{padding:8px 16px;font-size:14px;white-space:nowrap}
+.button.outline{background:transparent;color:var(--green)}
+.button.outline:hover{background:#dcf5e6}
+.button[disabled]{opacity:.45;cursor:not-allowed}
+.text-link{color:var(--green);font-weight:600}
+.text-link:hover{text-decoration:underline}
 
-/* hero: entry to balance sheet */
-.flow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:16px}
-.flow3>div{position:relative;background:#fff;border:1px solid #dce5de;border-radius:10px;padding:9px 10px 9px 34px;min-width:0}
-.flow3 i{position:absolute;left:9px;top:9px;width:19px;height:19px;border-radius:999px;background:linear-gradient(115deg,#d9aa4e,#ffe7a3 42%,#ebc165 73%,#d6a340);color:#142018;font:700 11px/19px "Segoe UI",Arial,sans-serif;text-align:center;font-style:normal}
-.flow3 b{display:block;font-size:12px;color:#183033}.flow3 small{display:block;font-size:9.5px;line-height:1.35;color:#6d7c71;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.flow3>div:not(:last-child):after{content:'›';position:absolute;right:-9px;top:50%;transform:translateY(-55%);color:#b48a24;font-weight:700;font-size:16px}
-.metrics3{grid-template-columns:1fr 1fr 1fr;margin:12px 0}.metrics3 strong{font-size:18px}.metrics3 em.ok{color:#2f9e5f;font-weight:700}
-.charts2{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:start}
-.donut{--c1:#2f9e5f;--c2:#e0b34a;--c3:#2f7fb5;--c4:#e0763a;width:112px;height:112px;margin:12px auto 8px;border-radius:50%;background:conic-gradient(var(--c1) 0 38%,var(--c2) 38% 60%,var(--c3) 60% 87%,var(--c4) 87% 100%);display:grid;place-items:center;box-shadow:0 8px 20px #1a3a2a1f}
-.donut span{width:64px;height:64px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700;font-size:13px;color:#183033}
-.legend{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:3px 6px;font-size:9.5px;color:#4b5b50}.legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
-.chart-c{height:118px;margin:12px 0 30px}
-.chart-c .bars>div:first-child{background:linear-gradient(180deg,#2f9e5f,#7fcf9c)!important;border-radius:4px 4px 0 0}
-.chart-c .bars>div:nth-child(2){background:linear-gradient(180deg,#e0b34a,#f4dd9a)!important;border-radius:4px 4px 0 0}
-@media(max-width:760px){.charts2{grid-template-columns:1fr}.flow3 small{white-space:normal}}
-.hero-note{color:#1f5a3a}.hero-note span{color:#b48a24}
-.hero p b{color:#1f5a3a;font-size:1.06em}
+/* hero: the one loud moment */
+.hero{padding-top:64px;padding-bottom:0;text-align:center;background:linear-gradient(var(--paper) calc(100% - 160px),var(--wash) calc(100% - 160px))}
+.hero-copy{max-width:1080px;margin:0 auto}
+.hero .eyebrow{font-size:17px}
+.hero h1{font-size:clamp(42px,5.6vw,78px);line-height:1.04;letter-spacing:-.035em;margin:10px 0 24px;text-wrap:balance}
+.hero h1 em{color:var(--green)}
+.hero p{font-size:clamp(18px,1.6vw,21px);color:var(--muted);max-width:700px;margin:0 auto}
+.hero p b{color:var(--ink)}
+.actions{display:flex;align-items:center;justify-content:center;gap:26px;margin-top:34px;flex-wrap:wrap}
+.hero .actions .button{padding:14px 28px;font-size:17px}
+.hero-note{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 18px;margin-top:26px;font-size:14px;color:var(--muted)}
+.hero-note span{display:none}
+.hero-note svg{display:none}
+.hero-shot{margin:52px auto 0;max-width:1120px}
+.hero-shot figure{margin:0;border-radius:18px 18px 0 0;overflow:hidden;border:1px solid var(--line);border-bottom:0;background:var(--paper);box-shadow:0 1px 2px rgba(18,33,26,.06),0 30px 80px -20px rgba(18,33,26,.28)}
+.hero-shot img{display:block;width:100%;height:auto}
 
-/* watermark in the empty side space, bigger small text, tighter spacing (2026-09-12) */
-body:before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background:url("data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill-opacity=%220.22%22%3E%3Ctspan fill=%22%231f5a3a%22%3Eapex%3C/tspan%3E%3Ctspan fill=%22%23b8860b%22%3Eledger.%3C/tspan%3E%3C/text%3E%3C/svg%3E") 0 0/420px 420px}
+/* product strip */
+.strip{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:10px 34px;padding-block:22px;background:var(--wash);border-top:1px solid var(--line);font-size:15px}
+.strip>span{color:var(--muted)}
+.strip>a{display:flex;align-items:center;gap:8px;color:var(--ink);font-weight:500}
+.strip>a svg{color:var(--green);width:19px;height:19px}
+.strip>a:hover{color:var(--green)}
 
-.nav,.hero>div,.section>*,.highlights>*,.cities>*,footer>*{position:relative;z-index:2}
-.eyebrow,.plans .eyebrow,.highlights .eyebrow{font-size:14px}
-.plan li{font-size:15px;margin:8px 0}.plan .number,.number{font-size:13px;letter-spacing:1.2px;line-height:1.35}.ribbon{font-size:13px}.module-edition{font-size:13px}.price small{font-size:14px}.plans .plan-note{font-size:14px}.details span{font-size:15px}
-.plan ul{margin:16px 0 0;padding:14px 0 0}.price{margin:16px 0 12px}.plan-grid-4 .plan{padding:20px}.plan-grid{margin-top:22px}
-.trial-form label,.trial-form .agree,.trial-form .agree-note,.contact .trial-form .agree-note,.agree-sign,.fb label,.fb .status,.contact .contact-grid p{font-size:14px}
-.contact-grid span,.capability-grid article>span,.shot figcaption span,.strip>span{font-size:13px}
-.mini{font-size:14px}.hl p,.plan>p,.faq p,.explore-grid{font-size:16px}.faq summary{font-size:17px}
-.cities,.cities h2,.explore h2,footer>span,footer>a:not(.brand){font-size:14px}
-.section{padding-top:30px;padding-bottom:30px}.hero{padding-bottom:28px}.highlights{padding-top:26px}.intro{margin-bottom:14px}
-.contact.section{padding:26px 4% 22px}.contact .intro{margin-bottom:10px}.faq details{padding:10px 16px;margin:6px 0}
+/* highlights: four plain columns, no cards */
+.highlights{padding-block:96px}
+.highlights h2{max-width:720px}
+.hl-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px;margin-top:52px}
+.hl svg{width:28px;height:28px;color:var(--green)}
+.hl h3{font-size:21px;line-height:1.25;margin:18px 0 10px}
+.hl p{font-size:16px;color:var(--muted)}
+.hl p b{color:var(--text);font-weight:600}
 
-/* wide screens: the content uses the width instead of leaving side gaps */.plan-grid-4{max-width:1500px}.faq{max-width:1180px}.explore{max-width:1720px}.hl-grid,.feature-grid,.capability-grid,.canada-grid,.shots,.explore-grid{max-width:none}@media(min-width:1500px){.hero{padding-top:22px}}.hero{padding-top:22px}
-/* bigger logo */.nav .brand{font-size:38px;letter-spacing:-1.8px}.nav .app-mark{width:56px;height:56px;margin-right:14px}@media(max-width:760px){.nav .brand{font-size:28px}.nav .app-mark{width:40px;height:40px}}
+/* solutions */
+.features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
+.features article{padding-top:22px;border-top:2px solid var(--ink)}
+.feature-icon{display:none}
+.features h3{font-size:23px;line-height:1.2;margin-bottom:12px}
+.features p{color:var(--muted);font-size:16px}
+.mini{display:flex;justify-content:space-between;gap:12px;margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.mini span:last-child{color:var(--green);font-weight:600}
+
+/* screens */
+.shots{background:var(--wash)}
+.shot-grid{display:grid;gap:28px}
+.shot figure{margin:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);background:var(--paper);box-shadow:0 24px 60px -24px rgba(18,33,26,.25)}
+.shot img{display:block;width:100%;height:auto}
+.shot figcaption{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:16px 22px;border-top:1px solid var(--line);font-size:15px;color:var(--muted)}
+.shot figcaption b{font-size:16px}
+.shot figcaption span{color:var(--green);font-size:14px;font-weight:600;white-space:nowrap}
+
+/* CRM and accountant tools: definition lists in three columns */
+.crm-highlight{display:flex;align-items:center;gap:22px;padding:26px 30px;margin-bottom:44px;background:var(--wash);border-radius:var(--radius)}
+.crm-highlight>svg{color:var(--green);width:30px;height:30px}
+.crm-highlight strong{display:block;font-size:21px;font-family:var(--display);letter-spacing:-.015em}
+.crm-highlight p{color:var(--muted);font-size:16px}
+.crm-highlight .button{margin-left:auto;white-space:nowrap}
+.capability-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 44px}
+.capability-grid article{padding:24px 0 30px;border-top:1px solid var(--line)}
+.capability-grid h3{font-size:20px;margin-bottom:8px}
+.capability-grid p{font-size:16px;color:var(--muted)}
+.crm-extra{display:flex;gap:14px;align-items:flex-start;margin-top:16px;font-size:16px;color:var(--muted)}
+.crm-extra svg{color:var(--green)}
+.desktop-note{display:flex;align-items:center;justify-content:space-between;gap:30px;margin-top:36px;padding:28px 30px;border-radius:var(--radius);background:var(--wash)}
+.desktop-note strong{font-size:21px;font-family:var(--display)}
+.desktop-note p{font-size:16px;color:var(--muted);max-width:720px;margin-top:6px}
+.desktop-note a{color:var(--green);font-weight:600;white-space:nowrap}
+
+/* modules: a segmented control */
+.workflow-section{background:var(--wash)}
+.flow-tabs{display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:5px;margin:0 auto;width:fit-content;max-width:100%;background:#d9f2e3;border-radius:999px}
+.flow-tabs button{border:0;background:none;font:500 15px/1.2 var(--sans);color:var(--text);padding:10px 18px;border-radius:999px;cursor:pointer}
+.flow-tabs button:hover{color:var(--ink)}
+.flow-tabs button[aria-selected=true]{background:var(--paper);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(18,33,26,.14)}
+.flow-panel{margin-top:28px;padding:44px;background:var(--paper);border-radius:20px}
+.flow-panel[hidden]{display:none}
+.module-edition{display:inline-block;font-size:14px;font-weight:600;color:var(--green);margin-bottom:10px}
+.flow-heading h3{font-size:clamp(26px,3vw,34px);line-height:1.15}
+.flow-heading>p{font-size:18px;color:var(--muted);margin-top:10px;max-width:720px}
+.module-features{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 48px;margin:34px 0}
+.module-features article{display:flex;gap:14px}
+.module-features article>svg{color:var(--green);width:20px;height:20px;margin-top:4px}
+.module-features h4{font-size:18px;margin-bottom:4px}
+.module-features p{font-size:16px;color:var(--muted)}
+.flow-bottom{display:flex;justify-content:space-between;align-items:center;gap:22px;padding-top:24px;border-top:1px solid var(--line)}
+.flow-bottom>p{font-size:16px;color:var(--muted)}
+.flow-bottom>a{color:var(--green);font-weight:600;white-space:nowrap}
+.flow-bottom>a svg{display:none}
+
+/* Canada: the one dark band, because this is the promise about trust */
+.canada{background:var(--night);color:#d9efe2;border-top:0}
+.canada h2,.canada h3,.canada b,.canada strong{color:#fff}
+.canada .eyebrow,.canada h2 em{color:#7ef0ae}
+.canada .intro>p{color:#cfe9da}
+.canada-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:44px}
+.canada-grid article{padding-top:22px;border-top:1px solid #1f6a45}
+.canada-grid svg{color:#7ef0ae;width:26px;height:26px;margin-bottom:14px}
+.canada-grid h3{font-size:20px;margin-bottom:8px}
+.canada-grid p{font-size:16px;color:#cfe9da}
+.sec-link{margin-top:44px;font-size:16px}
+.sec-link a{color:#7ef0ae;font-weight:600}
+.sec-link a:hover{text-decoration:underline}
+
+/* pricing */
+.plans{text-align:center}
+.plans h2{max-width:820px;margin:0 auto}
+.plans>p{font-size:19px;color:var(--muted);max-width:640px;margin:16px auto 0}
+.founding{display:inline-block;margin:26px auto 0;padding:10px 18px;border-radius:999px;background:#fff1c7;color:#6b4a00;font-size:15px}
+.founding b{color:#6b4a00}
+.plan-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:48px;text-align:left;align-items:stretch}
+.plan{position:relative;display:flex;flex-direction:column;padding:30px 26px;border-radius:20px;background:var(--wash)}
+.plan.featured{background:var(--paper);box-shadow:inset 0 0 0 2px var(--green)}
+.plan>svg{display:none}
+.ribbon{position:absolute;top:-13px;left:26px;padding:4px 12px;border-radius:999px;background:var(--green);color:#fff;font-size:13px;font-weight:600}
+.plan .number{font-size:14px;color:var(--muted);margin-bottom:6px}
+.plan h3{font-size:25px}
+.plan>p{font-size:15px;color:var(--muted);margin-top:8px;min-height:48px}
+.price{margin:22px 0 20px;font:650 44px/1 var(--display);letter-spacing:-.03em;color:var(--ink);font-variant-numeric:tabular-nums}
+.price .per{display:inline;font:500 15px var(--sans);letter-spacing:0;color:var(--muted);margin-left:4px}
+.price small{display:block;font:400 14px/1.5 var(--sans);letter-spacing:0;color:var(--muted);margin-top:12px}
+.price small b{color:#7a5a12}
+.plan .button{width:100%}
+.plan ul{list-style:none;margin:22px 0 0;padding:20px 0 0;border-top:1px solid var(--line)}
+.plan li{display:flex;gap:10px;align-items:flex-start;margin:9px 0;font-size:15px;line-height:1.45}
+.plan li svg{width:17px;height:17px;color:var(--green);margin-top:2px}
+.plan li.hi{font-weight:600;color:var(--ink)}
+.plans .plan-note{font-size:15px;color:var(--muted);max-width:820px;margin:34px auto 0}
+
+/* seats recap */
+.closing{text-align:center;background:var(--wash)}
+.closing h2 em{color:var(--green)}
+.details{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:36px;margin:48px 0;text-align:left}
+.details>div{padding-top:20px;border-top:2px solid var(--ink);scroll-margin-top:90px}
+.details>div:target{border-color:var(--green)}
+.details h3{font-size:20px;margin-bottom:8px}
+.details p{font-size:16px;color:var(--muted)}
+
+/* contact and trial */
+.contact .intro{grid-template-columns:1fr;text-align:center;justify-items:center;margin-bottom:40px}
+.contact .intro>p{margin:0 auto}
+.trial-form{display:grid;grid-template-columns:1fr 1fr;gap:16px 20px;max-width:780px;margin:0 auto;padding:40px;border-radius:20px;background:var(--wash)}
+.trial-form h3{grid-column:1/-1;font-size:24px}
+.trial-form label{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500;color:var(--ink)}
+.trial-form .full{grid-column:1/-1}
+.trial-form input,.trial-form select,.trial-form textarea,.fb input,.fb textarea{font:16px var(--sans);color:var(--ink);background:var(--paper);border:1px solid #bfe0cc;border-radius:10px;padding:11px 13px}
+.trial-form input:focus,.trial-form select:focus,.trial-form textarea:focus,.fb input:focus,.fb textarea:focus{outline:2px solid var(--green);outline-offset:0;border-color:var(--green)}
+.trial-form textarea{min-height:88px;resize:vertical}
+.trial-form .agree-note{font-size:14px;line-height:1.5;color:var(--muted)}
+.trial-form .agree-note a{color:var(--green);text-decoration:underline}
+.trial-form .actions{grid-column:1/-1;justify-content:flex-start;margin-top:4px;gap:18px}
+.trial-form .status{font-size:14px;color:var(--muted)}
+.status.ok{color:#1e7a45!important}.status.err{color:#b3261e!important}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;max-width:780px;margin:28px auto 0;text-align:center}
+.contact-grid span{font-size:14px;color:var(--muted)}
+.contact-grid h3{font-size:17px;margin:4px 0}
+.contact-grid p,.contact-grid a{font-size:14px;color:var(--muted)}
+.contact-grid a:hover{color:var(--green)}
+
+/* agreement dialog */
+.agree-dlg{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--paper);color:var(--text);overflow:hidden}
+.agree-dlg::backdrop{background:rgba(15,31,24,.6)}
+.agree-dlg .agree-body{height:100%;display:flex;flex-direction:column;padding:22px max(20px,4%)}
+.agree-head{display:flex;align-items:flex-start;gap:16px;margin-bottom:14px}
+.agree-head .eyebrow{margin:0}
+.agree-head h3{font-size:22px;margin-top:2px}
+.agree-x{margin-left:auto;width:38px;height:38px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--text);font-size:22px;line-height:1;cursor:pointer}
+.agree-x:hover{border-color:var(--green);color:var(--ink)}
+.agree-dlg .agree-step{flex:1;display:flex;flex-direction:column;min-height:0}
+.agree-dlg .agree-step[hidden]{display:none}
+.agree-lead{font-size:15px;color:var(--muted);margin-bottom:10px}
+.agree-lead a{color:var(--green);text-decoration:underline}
+.agree-dlg iframe{display:block;width:100%;flex:1;min-height:0;border:1px solid var(--line);border-radius:12px;background:#fff}
+.agree-sign{display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--text);margin-top:14px}
+.agree-sign input{font:italic 20px Georgia,"Times New Roman",serif;color:var(--ink);background:var(--paper);border:1px solid #bfe0cc;border-radius:10px;padding:10px 12px;max-width:420px}
+.agree-sign input:focus{outline:2px solid var(--green);border-color:var(--green)}
+.agree-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:16px}
+.agree-cancel{background:none;border:0;padding:0;font:inherit;font-size:15px;color:var(--muted);cursor:pointer}
+.agree-cancel:hover{color:var(--ink);text-decoration:underline}
+
+/* feedback */
+.fb-overlay{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(15,31,24,.5)}
+.fb-overlay[hidden]{display:none}
+.fb{width:520px;max-width:100%;padding:28px;border-radius:20px;background:var(--paper);box-shadow:0 30px 80px rgba(15,31,24,.3)}
+.fb h3{font-size:22px}
+.fb p{font-size:15px;color:var(--muted);margin-top:6px}
+.fb .row{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.fb label{display:flex;flex-direction:column;gap:6px;margin-top:12px;font-size:14px;font-weight:500;color:var(--ink)}
+.fb textarea{min-height:110px;resize:vertical}
+.fb .actions{justify-content:flex-end;gap:14px;margin-top:18px}
+.fb .status{margin-right:auto;font-size:14px;color:var(--muted)}
+.fb .cancel{padding:8px 16px;border-radius:999px;border:1px solid var(--line);background:none;font:inherit;font-size:14px;color:var(--text);cursor:pointer}
+
+/* FAQ, cities, explore, footer */
+.faq{padding-block:96px;border-top:1px solid var(--line)}
+.faq h2{margin-bottom:28px}
+.faq details{border-bottom:1px solid var(--line);padding:18px 0}
+.faq summary{cursor:pointer;font-size:18px;font-weight:600;color:var(--ink);list-style-position:outside}
+.faq summary:hover{color:var(--green)}
+.faq details p{font-size:16px;color:var(--muted);margin-top:10px;max-width:820px}
+.cities{padding-block:40px;background:var(--wash);font-size:14px;line-height:1.8;color:var(--muted)}
+.cities h2{font-size:16px;letter-spacing:0;margin-bottom:8px}
+.cities b{color:var(--text)}
+.cities a:hover{color:var(--green)}
+.explore{padding-block:40px;background:var(--wash);border-top:1px solid var(--line)}
+.explore h2{font-size:16px;letter-spacing:0;margin-bottom:12px}
+.explore-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px 32px;font-size:14px}
+.explore-grid a{color:var(--text);line-height:1.7}
+.explore-grid a:hover{color:var(--green)}
+footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px 24px;padding-block:26px;border-top:1px solid var(--line);background:var(--wash);font-size:14px;color:var(--muted)}
+footer .brand{font-size:19px;gap:0}
+footer>a:not(.brand):hover{color:var(--green)}
+
+/* brighter hero backdrop: mint into warm gold behind the screenshot */
+.hero{background:linear-gradient(var(--paper) calc(100% - 160px),transparent calc(100% - 160px)),linear-gradient(115deg,#c9f2da 0%,#e9fbef 45%,#ffeeb8 100%)}
+/* offer bar, above the navigation */
+.offer-bar{padding:10px 20px;text-align:center;font-size:14px;color:#123d27;background:linear-gradient(90deg,#b9f0cf,#fff1c2)}
+.offer-bar b{color:#0b4a2e}
+.offer-bar a{color:#0b4a2e;font-weight:600;text-decoration:underline;margin-left:6px}
+/* monthly or yearly prices */
+.billing-toggle{display:inline-flex;gap:4px;padding:4px;margin:26px auto 0;border-radius:999px;background:#d9f2e3}
+.billing-toggle button{border:0;background:none;padding:9px 18px;border-radius:999px;font:500 15px/1.2 var(--sans);color:var(--text);cursor:pointer}
+.billing-toggle button[aria-pressed=true]{background:var(--paper);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(18,33,26,.14)}
+.billing-toggle .save{color:var(--green);font-weight:600}
+.plans .founding{display:block;width:fit-content;max-width:100%}
+@media (max-width:1000px){
+  .nav nav{display:none}
+  .intro{grid-template-columns:1fr;gap:16px;align-items:start}
+  .hl-grid,.plan-grid,.details{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .features,.capability-grid,.canada-grid,.explore-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .flow-panel{padding:30px}
+  .plan-grid{row-gap:28px}
+}
+@media (max-width:680px){
+  body{font-size:16px}
+  .section,.highlights,.faq{padding-block:64px}
+  .hero{padding-top:56px}
+  .hero-shot{margin-top:44px}
+  .hl-grid,.plan-grid,.details,.features,.capability-grid,.canada-grid,.explore-grid,.module-features,.contact-grid,.trial-form,.fb .row{grid-template-columns:1fr}
+  .trial-form{padding:24px}
+  .flow-tabs{border-radius:18px;justify-content:flex-start}
+  .flow-panel{padding:22px}
+  .flow-bottom,.desktop-note,.crm-highlight{flex-direction:column;align-items:flex-start}
+  .crm-highlight .button{margin-left:0}
+  .shot figcaption{flex-direction:column;align-items:flex-start}
+  .nav .brand{font-size:19px}
+  .nav .button.small{padding:7px 12px;font-size:13px}
+  .nav-actions{gap:6px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 </style>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Where is my data stored?", "acceptedAnswer": {"@type": "Answer", "text": "In Canadian data centres, with backups copied to a second Canadian location (Qu\u00e9bec City). Nothing is stored or processed outside Canada."}}, {"@type": "Question", "name": "Is there a limit on the number of companies or employees?", "acceptedAnswer": {"@type": "Answer", "text": "No. Every seat keeps as many client companies as you have, and payroll runs for any number of employees. Only people (seats) are counted."}}, {"@type": "Question", "name": "What does a seat cost?", "acceptedAnswer": {"@type": "Answer", "text": "Per person per month in Canadian dollars plus HST: Business $39, Payroll Unlimited $45, Bookkeeper $59, Full accountant $79. The first month is free, yearly billing is 20% less, and founding firms pay half price for six months."}}, {"@type": "Question", "name": "Can I move from QuickBooks Online or Xero?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Export the chart of accounts and the transactions as Excel and import them directly; QuickBooks Desktop IIF files import too. Customers, vendors, balances and history come across."}}, {"@type": "Question", "name": "Can it read PDF bank statements?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Select one statement or a whole year of them; the transactions are read into the review table and the statement's opening and closing balances are checked. OFX, QFX, QBO and CSV downloads work as well."}}, {"@type": "Question", "name": "Does it do Canadian payroll?", "acceptedAnswer": {"@type": "Answer", "text": "Yes, for every province: CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT, pay stubs, direct deposit, PD7A, ROE, T4, T4A, T5018 and T5."}}, {"@type": "Question", "name": "Can one firm see another firm's clients?", "acceptedAnswer": {"@type": "Answer", "text": "No. Each firm's companies sit in their own folder on the server and every request is resolved from the sign-in, never from anything the browser sends. Before every update goes live, we check that a person signed in to one firm cannot reach any other firm's files."}}, {"@type": "Question", "name": "How safe is my data?", "acceptedAnswer": {"@type": "Answer", "text": "Every connection is encrypted (HTTPS only), and the disks holding company data and backups are encrypted at rest with 256-bit AES. Only the web port is open to the internet. Every person has their own sign-in, each seat reaches only its part of the application, and every change is recorded with a name in the Activity Log. The server is monitored for threats and scanned for viruses every night."}}, {"@type": "Question", "name": "Is my data backed up?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every company file is backed up every night and kept for 30 days, with a second copy in another Canadian location. You can also download a complete copy of any company file yourself at any time."}}, {"@type": "Question", "name": "Who at ApexLedger can see my books?", "acceptedAnswer": {"@type": "Answer", "text": "Nobody, unless you ask us for help with a specific file. Every such access is logged, and the Subscription Agreement says so in writing."}}, {"@type": "Question", "name": "Do you sell or share my data?", "acceptedAnswer": {"@type": "Answer", "text": "Never. Your books belong to you. We do not sell, rent or share your information with anyone, and we handle personal information under PIPEDA. When you leave, you download your files and we delete ours."}}, {"@type": "Question", "name": "Do I need to install anything?", "acceptedAnswer": {"@type": "Answer", "text": "No. It runs in the browser on any computer. Updates arrive on the server and nobody is signed out by them."}}, {"@type": "Question", "name": "How do I cancel?", "acceptedAnswer": {"@type": "Answer", "text": "At the end of any month, from your Administration page or by email. You can download every company file at any time, before or after."}}]}</script>
 </head>
@@ -249,88 +346,248 @@ body:before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
 </svg>
 
 <main id="top">
+<div class="offer-bar"><b>Founding firms pay half price for six months.</b> Sign up before 31 December 2026.<a href="#plans">See pricing</a></div>
 <header class="nav">
   <a class="brand" href="#top"><img class="app-mark" src="/apexledger-mark.svg" alt="" width="42" height="42"><span class="wordmark"><span class="wm-apex">apex</span><span class="gold-wordmark">ledger</span><b>.</b></span></a>
-  <nav aria-label="Main navigation"><a href="#solutions">Solutions</a><a href="#crm">Client CRM</a><a href="#screens">Screens</a><a href="#workflows">Modules</a><a href="/security.html">Security</a><a href="#plans">Compare plans</a><a href="#contact">Contact</a><a href="#feedback" data-feedback>Feedback</a></nav>
-  <a class="button small" href="https://online.apexledger.ca">Sign in <svg class="ic"><use href="#i-arrow"/></svg></a>
+  <nav aria-label="Main navigation"><a href="#solutions">Features</a><a href="#workflows">Modules</a><a href="#crm">Client CRM</a><a href="/security.html">Security</a><a href="#plans">Pricing</a><a href="#contact">Contact</a></nav>
+  <span class="nav-actions"><a class="button small outline" href="https://online.apexledger.ca">Sign in</a><a class="button small" href="#contact">Start a trial</a></span>
 </header>
 
 <section class="hero">
-  <i class="glow a"></i><i class="glow b"></i>
-  <div>
-    <div class="eyebrow"><i></i> CANADIAN WEB APPLICATION FOR ACCOUNTANTS AND BOOKKEEPERS</div>
-    <h1>Your clients.<br>Your practice.<br><em>Your next level.</em></h1>
+  <div class="hero-copy">
+    <div class="eyebrow">Canadian web accounting for accountants and bookkeepers</div>
+    <h1>Your clients. Your practice.<br><em>Your next level.</em></h1>
     <p><b>Less time keying, more time advising.</b> Bank and card statements import straight from PDF, receipts read themselves, and categories learn from you, so the hours go into your clients, not data entry.<br>Client books, Canadian payroll and practice tools, together in your browser. No limit on the number of companies. Your data stays in Canada.</p>
-    <div class="actions"><a href="#contact" class="button">Start a one-month trial <svg class="ic" style="width:19px;height:19px"><use href="#i-arrow"/></svg></a><a href="#workflows" class="text-link">See what's inside ↗</a></div>
-    <div class="hero-note"><svg class="ic"><use href="#i-check"/></svg> Less data entry: statements straight from PDF <span>•</span> More productive hours <span>•</span> Direct Excel import <span>•</span> No limit on the number of companies <span>•</span> One-month trial <span>•</span> Hosted in Canada</div>
+    <div class="actions"><a href="#contact" class="button">Start a one-month trial <svg class="ic" style="width:19px;height:19px"><use href="#i-arrow"/></svg></a><a href="#workflows" class="text-link">See what's inside</a></div>
+    <div class="hero-note"><i>Less data entry: statements straight from PDF</i><i>More productive hours</i><i>Direct Excel import</i><i>No limit on the number of companies</i><i>One-month trial</i><i>Hosted in Canada</i></div>
   </div>
-  <div class="stage">
-    <div class="orbit"><svg class="ic"><use href="#i-zap"/></svg> YOUR CLIENT WORK, IN SYNC</div>
-    <div class="dashboard">
-      <aside><svg class="ic"><use href="#i-layers"/></svg><svg class="ic"><use href="#i-wallet"/></svg><svg class="ic"><use href="#i-users"/></svg><svg class="ic"><use href="#i-receipt"/></svg><svg class="ic"><use href="#i-bell"/></svg><span>AL</span></aside>
-      <div class="dash-content">
-        <div class="dash-top">From entry to balance sheet <small>WORKFLOW ILLUSTRATION</small></div>
-        <div class="flow3">
-          <div><i>1</i><b>Entry</b><small>Fuel, Petro-Canada · $89.00 · HST 13%</small></div>
-          <div><i>2</i><b>Ledger</b><small>Vehicle $78.76 · HST recoverable $10.24 · Visa</small></div>
-          <div><i>3</i><b>Balance sheet</b><small>Updated the moment it posts</small></div>
-        </div>
-        <div class="metrics metrics3"><div><span>Assets</span><strong>$184,320</strong><em>Cash, receivables, equipment</em></div><div><span>Liabilities</span><strong>$61,905</strong><em>Payables, GST/HST, card</em></div><div><span>Equity</span><strong>$122,415</strong><em class="ok">✓ Balanced to the cent</em></div></div>
-        <div class="charts2">
-          <div class="donut-wrap">
-            <div class="chart-title">Assets by type</div>
-            <div class="donut" role="img" aria-label="Assets by type: cash 38%, receivables 22%, equipment 27%, inventory 13%"><span>$184k</span></div>
-            <ul class="legend"><li><i style="background:#2f9e5f"></i>Cash 38%</li><li><i style="background:#e0b34a"></i>Receivables 22%</li><li><i style="background:#2f7fb5"></i>Equipment 27%</li><li><i style="background:#e0763a"></i>Inventory 13%</li></ul>
-          </div>
-          <div class="bars-wrap">
-            <div class="chart-title">Income vs expenses <small>6 months</small></div>
-            <div class="chart chart-c" aria-label="Illustrative income and expense chart">
-              <div class="bars"><div style="height:42%"></div><div style="height:27%"></div><span>Apr</span></div>
-              <div class="bars"><div style="height:56%"></div><div style="height:36%"></div><span>May</span></div>
-              <div class="bars"><div style="height:48%"></div><div style="height:31%"></div><span>Jun</span></div>
-              <div class="bars"><div style="height:72%"></div><div style="height:47%"></div><span>Jul</span></div>
-              <div class="bars"><div style="height:62%"></div><div style="height:40%"></div><span>Aug</span></div>
-              <div class="bars"><div style="height:88%"></div><div style="height:57%"></div><span>Sep</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="transaction"><svg class="ic"><use href="#i-receipt"/></svg><div>Invoice #1042 paid<small>Lakeshore Plumbing · Today · Receivables ↓ Cash ↑</small></div><b>+$2,400.00</b></div>
-        <div class="transaction"><svg class="ic"><use href="#i-zap"/></svg><div>Fuel, Petro-Canada<small>Auto-categorised · Vehicle · HST 13% · Visa</small></div><b>−$89.00</b></div>
-      </div>
-    </div>
-    <div class="float"><span><svg class="ic" style="width:20px;height:20px;color:#142018"><use href="#i-check"/></svg></span><div>One less thing to do.<small>12 transactions auto-categorised</small></div><b>✦</b></div>
+  <div class="hero-shot"><figure><picture><source srcset="/img/dashboard.webp" type="image/webp"><img fetchpriority="high" src="/img/dashboard.jpg" width="1920" height="1200" alt="ApexLedger dashboard showing eight bank and card accounts, cash balance, receivables, payables, net income, GST/HST payable and a cash-flow chart"></picture></figure></div>
+</section>
+
+<div class="strip"><span>One connected practice</span><a href="/accounting-software-for-accountants.html"><svg class="ic"><use href="#i-receipt"/></svg>Accounting</a><a href="/client-crm-for-accountants.html"><svg class="ic"><use href="#i-users"/></svg>CRM</a><a href="/payroll-software-canada.html"><svg class="ic"><use href="#i-wallet"/></svg>Payroll</a><a href="/year-end-sign-off.html"><svg class="ic"><use href="#i-shield"/></svg>Year-end sign-off</a><a href="/automation.html"><svg class="ic"><use href="#i-zap"/></svg>Automation</a></div>
+
+<section class="highlights" id="highlights">
+  <div class="eyebrow">Highlights</div>
+  <h2>Four things you will notice<br><em>on day one.</em></h2>
+  <div class="hl-grid">
+    <article class="hl"><svg class="ic"><use href="#i-receipt"/></svg><h3>Bank statement PDF import</h3><p>Drop in the PDF statements from the bank or credit card, <b>a whole year at once</b>. ApexLedger reads the transaction table, checks the opening and closing balance on the statement, and takes you straight to categorise and reconcile. No CSV, no retyping.</p></article>
+    <article class="hl"><svg class="ic"><use href="#i-layers"/></svg><h3>Direct Excel import</h3><p>Bring a client over from <b>QuickBooks Online, QuickBooks Desktop or Xero</b>: the chart of accounts and the transactions come straight from the Excel export, no conversion first. Bank CSV files from Excel import the same way.</p></article>
+    <article class="hl"><svg class="ic"><use href="#i-infinity"/></svg><h3>No limit on the number of companies</h3><p>Every seat keeps <b>as many client companies as you have</b>. A seat is one person; companies are never counted, never charged and never capped.</p></article>
+    <article class="hl"><svg class="ic"><use href="#i-shield"/></svg><h3>Year-End Sign-off</h3><p>A CPA-style final report with <b>a light on every check</b>: reconciliations, HST, payroll, GIFI, unmapped accounts and open exceptions, with a decision line to sign before the file goes to the accountant.</p></article>
   </div>
 </section>
 
-<div class="strip"><span>ONE CONNECTED PRACTICE</span><a href="/accounting-software-for-accountants.html"><svg class="ic"><use href="#i-receipt"/></svg>Accounting</a><a href="/client-crm-for-accountants.html"><svg class="ic"><use href="#i-users"/></svg>CRM</a><a href="/payroll-software-canada.html"><svg class="ic"><use href="#i-wallet"/></svg>Payroll</a><a href="/year-end-sign-off.html"><svg class="ic"><use href="#i-shield"/></svg>Year-end sign-off</a><a href="/automation.html"><svg class="ic"><use href="#i-zap"/></svg>Automation</a></div>
+<section id="solutions" class="section">
+  <div class="intro"><div><div class="eyebrow">Less admin, more client focus</div><h2>Connected client work.<br>A clearer working day.</h2></div><p>Bring client accounting, relationships and follow-ups together. Keep the details organised so your team can focus on the work that needs its attention.</p></div>
+  <div class="features">
+    <article><svg class="ic feature-icon"><use href="#i-zap"/></svg><h3>Import. Categorise. Reconcile.</h3><p>Import OFX, QFX, QBO and CSV bank downloads, apply categorisation rules, match payments and reconcile every bank and card to the cent. Type a sentence in Quick Entry and it comes back as a posting to confirm.</p><div class="mini"><span>"expense 85.50 fuel on Visa with HST"</span><span>Posted</span></div></article>
+    <article><svg class="ic feature-icon"><use href="#i-users"/></svg><h3>Keep client context close.</h3><p>Connect client information and financial activity with the built-in CRM. Open a client's books from their record and keep the context you need for the next conversation.</p><div class="mini"><span>Client → Invoice → Payment → Deposit</span><span>↗</span></div></article>
+    <article><svg class="ic feature-icon"><use href="#i-bell"/></svg><h3>Stay ahead of every deadline.</h3><p>The Action Centre warns before HST filings, PD7A remittances, T4 season and client deadlines are due, so nothing is found late and the work is already in view.</p><div class="mini"><span>PD7A due 15 Oct</span><span>Reminder set</span></div></article>
+  </div>
+</section>
+
+<section class="section shots" id="screens">
+  <div class="intro"><div><div class="eyebrow">The application</div><h2>The application,<br><em>as your team sees it.</em></h2></div><p>Real screens from a client file in the browser: the Dashboard with every bank and card at a glance, and the Client CRM with each client's filing deadlines already computed.</p></div>
+  <div class="shot-grid">
+        <div class="shot shot-wide"><figure><picture><source srcset="/img/crm.webp" type="image/webp"><img src="/img/crm.jpg" width="1920" height="1200" alt="ApexLedger Client Management (CRM) showing upcoming GST/HST, T2 and fiscal year-end deadlines for several clients, colour-coded by urgency" loading="lazy"></picture><figcaption><div><b>Client Management (CRM)</b> · GST/HST, T2 and year-end deadlines for every client, colour-coded, with Mark Informed after each follow-up.</div><span>CLIENT CRM</span></figcaption></figure></div>
+  </div>
+</section>
+
+<section class="section crm-section" id="crm">
+  <div class="intro"><div><div class="eyebrow">Client CRM</div><h2>Know the client.<br><em>Stay ahead of the work.</em></h2></div><p>More than a contact list. Bring client details, outstanding documents, deadlines and follow-ups into one place.</p></div>
+  <div class="crm-highlight"><svg class="ic"><use href="#i-users"/></svg><div><strong>From the client record straight to the books.</strong><p>Link a company file to a client and open their bookkeeping from the Client Hub.</p></div><a href="#plans" class="button">See pricing <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a></div>
+  <div class="capability-grid">
+    <article><h3>Complete client profiles</h3><p>Keep contact information, personal and family details, T1/T2 return type, fiscal year-end and GST/HST filing frequency together.</p></article>
+    <article><h3>Deadlines you can prioritise</h3><p>See colour-coded due dates and overdue work. Filter the next 7 or 15 days, and mark clients as informed after a follow-up.</p></article>
+    <article><h3>Missing documents &amp; return status</h3><p>Track outstanding documents with client checklists. Record whether a return is completed or filed so the next step stays clear.</p></article>
+    <article><h3>Appointments &amp; reminders</h3><p>Schedule client appointments and create dated reminders with notes. Track completed follow-ups alongside upcoming work.</p></article>
+    <article><h3>Communication within reach</h3><p>Open WhatsApp, email or a phone link from client details. Keep notes and dated comments for context before your next conversation.</p></article>
+    <article><h3>Engagement letters &amp; exports</h3><p>Generate engagement letters, search client records, open linked companies and export the client list to a spreadsheet.</p></article>
+  </div>
+  <div class="crm-extra"><svg class="ic"><use href="#i-bell"/></svg><p><strong>Also support your insurance clients.</strong> Track product types and policy expiry dates, with renewal, thank-you and birthday message templates.</p></div>
+</section>
+
+<section class="section product-depth" id="accountant-tools">
+  <div class="intro"><div><div class="eyebrow">For accountants</div><h2>Built beyond<br>everyday bookkeeping.</h2></div><p>Follow the work from source transactions through reconciliation, reporting and year-end preparation.</p></div>
+  <div class="capability-grid">
+    <article><h3>Accounting &amp; control</h3><p>Chart of accounts, journal entries, general ledger, trial balance, period locks, approvals and month-end close. Posted entries are voided, never deleted.</p></article>
+    <article><h3>Canadian tax preparation</h3><p>HST, GST-only, exempt and meals codes on every line; the return built from them; filed periods locked. PST, RST and QST by province, quick method, GIFI mapping and T2 schedules 100, 101 and 125.</p></article>
+    <article><h3>Review &amp; audit</h3><p>Auditor Centre, audit exceptions, Activity Log, reclassify, workpapers, CPA review package, continuity schedules and a Year-End Sign-off with a light on every check.</p></article>
+    <article><h3>Sales, purchases &amp; stock</h3><p>Estimates, sales orders, invoices, sales receipts, credit notes, statements, vendor bills, purchase orders with receiving and invoice matching, inventory at moving-average cost.</p></article>
+    <article><h3>Reports that drill down</h3><p>Trial balance, P&amp;L on accrual or cash basis, balance sheet, cash flow, ageing, sales by customer, expenses by vendor. Every name on every report opens the record behind it.</p></article>
+    <article><h3>Payroll through year-end</h3><p>CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT. Pay stubs, PD7A, ROE, T4, T4A, T5018, T5 and direct deposit files.</p></article>
+  </div>
+  <div class="desktop-note"><div><strong>Your browser. Your client work.</strong><p>A web application bringing client accounting, CRM and payroll into one browser-based workspace. Nothing to install, nothing to patch: updates arrive on the server and every seat sees them the same morning.</p></div><a class="text-link" href="#plans">Compare seats</a></div>
+</section>
+
+<section class="section workflow-section" id="workflows">
+  <div class="intro"><div><div class="eyebrow">Every module</div><h2>The tools.<br><em>The details. The difference.</em></h2></div><p>Choose a module to see what it includes, how it supports your practice and which seats include it.</p></div>
+  <div class="flow-tabs" role="tablist" aria-label="Product module details">
+    <button role="tab" aria-selected="true" aria-controls="m-accounting" id="t-accounting">Accounting</button>
+    <button role="tab" aria-selected="false" aria-controls="m-crm" id="t-crm">Client CRM</button>
+    <button role="tab" aria-selected="false" aria-controls="m-payroll" id="t-payroll">Payroll</button>
+    <button role="tab" aria-selected="false" aria-controls="m-banking" id="t-banking">Banking</button>
+    <button role="tab" aria-selected="false" aria-controls="m-inventory" id="t-inventory">Inventory</button>
+    <button role="tab" aria-selected="false" aria-controls="m-tax" id="t-tax">GST/HST &amp; GIFI</button>
+    <button role="tab" aria-selected="false" aria-controls="m-reports" id="t-reports">Reports &amp; year end</button>
+    <button role="tab" aria-selected="false" aria-controls="m-practice" id="t-practice">Practice &amp; tutor</button>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-accounting" aria-labelledby="t-accounting">
+    <div class="module-edition">With Business, Bookkeeper and Full accountant seats</div>
+    <div class="flow-heading"><h3>The complete accounting foundation.</h3><p>Work from source documents to the ledger, with the controls you need to review and close client books.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Chart of accounts</h4><p>Organise the accounts used to classify transactions and prepare financial reports, with account types, sub-accounts and GIFI codes.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Journal entries</h4><p>Record accounting entries and adjustments, recurring or one-off, then review their effect in the general ledger.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>General ledger &amp; trial balance</h4><p>Inspect account activity and balances as part of your regular bookkeeping and review process.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Sales &amp; receivables</h4><p>Estimates, sales orders, invoices, sales receipts, credit notes, statements and late interest. Receive Payment then Make Deposit, the way the bank sees it.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bills &amp; payables</h4><p>Vendor bills, approvals, part payments, vendor credits, recurring bills and mileage claims, with accounts payable ageing.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Period control &amp; month-end</h4><p>Period locks, approval workflows and month-end close tools support a controlled accounting process.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>A connected route from everyday entry to review-ready client books.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-crm" aria-labelledby="t-crm" hidden>
+    <div class="module-edition">With the Full accountant seat</div>
+    <div class="flow-heading"><h3>Every client detail. Every next step.</h3><p>Keep relationships, filing information, outstanding work and communication close to the books.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Individual &amp; business profiles</h4><p>Contact details, personal and family information, T1/T2 return types, fiscal year-end and GST/HST filing frequency.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Linked companies</h4><p>Connect a client record to its company file and open the bookkeeping directly from the Client Hub.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Deadline tracking</h4><p>Colour-coded deadlines, due-soon and overdue work, 7- or 15-day views. Mark clients as informed after contacting them.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Documents &amp; return status</h4><p>Outstanding-document checklists and whether a return has been completed or filed.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Appointments, reminders &amp; notes</h4><p>Schedule appointments, create dated follow-ups and keep notes and dated comments for your next conversation.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Communication &amp; exports</h4><p>Phone, email and WhatsApp shortcuts. Engagement letters. Search client records and export client lists to a spreadsheet or PDF.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Insurance relationships</h4><p>Record insurance product types and policy expiry dates. Use renewal, thank-you and birthday message templates.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>Less time searching for context when a client calls or a deadline approaches.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-payroll" aria-labelledby="t-payroll" hidden>
+    <div class="module-edition">With Payroll Unlimited, Bookkeeper and Full accountant seats</div>
+    <div class="flow-heading"><h3>Canadian payroll for every province, connected to the books.</h3><p>Follow payroll from employee setup to pay runs, accounting entries, remittance reports and year-end slips.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Employee records</h4><p>Hourly and salaried, TD1 claims, vacation paid or accrued, benefits, RRSP match, union dues, direct deposit details.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Pay runs</h4><p>Weekly, biweekly, semi-monthly and monthly. CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Pay stubs</h4><p>Pay stubs with year-to-date figures, overtime, bonuses, taxable benefits and reimbursements.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Payroll journals</h4><p>Every run posts to the ledger, so payroll activity is reviewed alongside the general ledger.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Liabilities &amp; remittances</h4><p>PD7A by month for regular, quarterly and accelerated remitters, with the Action Centre warning before the due date.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Year-end slips</h4><p>T4, T4A, T5018, T5 and ROE straight from the posted runs, with a checklist of every deadline.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>A clear sequence from payroll preparation to the reports needed for follow-up.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-banking" aria-labelledby="t-banking" hidden>
+    <div class="module-edition">With Business, Bookkeeper and Full accountant seats</div>
+    <div class="flow-heading"><h3>Turn bank activity into organised records.</h3><p>Bring transactions into the accounting workflow, classify them and reconcile them against the books.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bank and card accounts</h4><p>Chequing, savings, credit cards and lines of credit, each with its own register and reconciliation history.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Transaction imports</h4><p>OFX, QFX, QBO and CSV downloads from any Canadian bank, imported for matching and review.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Categorisation rules</h4><p>Rules classify repeat transactions, with the HST code applied, so the same vendor is never typed twice.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Transaction matching</h4><p>Match bank lines against invoices, bills, payments and deposits already in the books.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bank reconciliation</h4><p>Reconcile to the cent and produce the reconciliation report your accountant wants, with history kept.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Quick Entry</h4><p>Receipts and card charges in five fields, or typed as a sentence and posted after one confirmation.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>A repeatable import, classify, match and reconcile process.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-inventory" aria-labelledby="t-inventory" hidden>
+    <div class="module-edition">Inventory with Business; purchase orders, valuation and projects with Bookkeeper and Full accountant</div>
+    <div class="flow-heading"><h3>Keep purchasing and stock in view.</h3><p>Bring products, supplier documents and inventory movement into the same accounting workflow.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Products &amp; services</h4><p>The item catalogue used in sales and purchasing, with prices, reorder points and tax codes.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Purchase orders</h4><p>Prepare purchase orders and keep purchasing commitments organised.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Receiving &amp; invoice matching</h4><p>Record received goods and match supplier invoices within the purchasing workflow.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Stock movements</h4><p>Review inventory movements and record adjustments when needed.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Inventory valuation</h4><p>Stock at moving-average cost, with valuation and movement reports.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Projects, jobs &amp; budgets</h4><p>Projects, tags by department or location, and budgets against actuals.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>Better visibility from a purchase order through stock movement and valuation.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-tax" aria-labelledby="t-tax" hidden>
+    <div class="module-edition">GST/HST with every bookkeeping seat; GIFI and T2 working papers with Full accountant</div>
+    <div class="flow-heading"><h3>Canadian tax preparation in context.</h3><p>Keep tax detail and working papers alongside the client accounting records they depend on.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GST/HST on every line</h4><p>HST, GST-only, exempt, zero-rated and meals codes on every transaction line, with the return built from them.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Filing periods</h4><p>Monthly, quarterly or annual filing periods, prepared, recorded and locked once filed.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GST/HST reconciliation</h4><p>Compare tax activity and balances as part of your review process.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Provincial reporting</h4><p>PST, RST and QST by province, sales tax by province and the GST/HST Quick Method report.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GIFI mapping &amp; validation</h4><p>Map accounting balances to GIFI codes, review validation results and export for the T2.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Corporate working papers</h4><p>Corporate tax working papers with Schedule 100, 101 and 125 support and T2 reconciliation.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>Supporting information for your tax preparation and review workflow.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-reports" aria-labelledby="t-reports" hidden>
+    <div class="module-edition">Reports with every bookkeeping seat; audit tools and Year-End Sign-off with Full accountant</div>
+    <div class="flow-heading"><h3>Follow the numbers back to the detail.</h3><p>Move from financial summaries to supporting entries, exceptions and year-end review tools.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Financial statements</h4><p>Balance sheet, P&amp;L on accrual or cash basis, cash flow, trial balance and general ledger, with comparatives.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>One-click drill-down</h4><p>Every name and amount on every report opens the customer, vendor, account or entry behind it.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Receivables &amp; payables</h4><p>Ageing reports, statements and late-interest calculations for outstanding balances.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Audit exceptions</h4><p>Flagged exceptions in the Auditor Centre, the Activity Log with the name behind every change, and reclassify tools.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Year-End Sign-off</h4><p>A CPA-style final report: every check with a green, amber or red light, the findings, and a decision line to sign.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Excel and PDF</h4><p>Every report and list downloads as a formatted Excel workbook or PDF, ready for the client or the auditor.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>More context behind the balances you discuss with clients.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+
+  <div class="flow-panel" role="tabpanel" id="m-practice" aria-labelledby="t-practice" hidden>
+    <div class="module-edition">Help, Tutor and backups with every seat; permissions and approvals with Full accountant</div>
+    <div class="flow-heading"><h3>Support the way your team works.</h3><p>Manage companies, seats and access, and learn every screen inside the application itself.</p></div>
+    <div class="module-features">
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>No limit on the number of companies</h4><p>Every seat keeps as many client companies as your practice needs. Each one is a separate file in your organisation's own folder.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Seats &amp; sign-ins</h4><p>Each person signs in with their Microsoft or Google account, or an email and password. Owners add people, reset passwords and free seats without calling us.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Permissions &amp; approvals</h4><p>Manage who can post, approve and close, with approval workflows for work that needs a second look.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Help &amp; Tutor</h4><p>Ask how to do anything and get the steps with a button to the screen. Forty-five lessons walk through each screen on the real page, field by field.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Action Centre</h4><p>One page of everything due: HST, PD7A, T4s, client deadlines, unreconciled accounts and unapproved bills.</p></div></article>
+      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Backup &amp; restore</h4><p>Nightly backups in Canada with a geo-redundant copy, and restore of any company file on request.</p></div></article>
+    </div>
+    <div class="flow-bottom"><p>A web-based workspace built around ongoing client work.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
+  </div>
+</section>
+
+<section class="section canada" id="canada">
+  <div class="intro"><div><div class="eyebrow">Hosted in Canada</div><h2>Your data stays<br><em>in Canada.</em></h2></div><p>A bookkeeping firm holds other people's books. That is a responsibility we designed around, not a feature we added later.</p></div>
+  <div class="canada-grid">
+    <article><svg class="ic"><use href="#i-pin"/></svg><h3>Canadian regions only</h3><p>The service runs in Canadian data centres, with backups kept in a second Canadian location. No data leaves the country.</p></article>
+    <article><svg class="ic"><use href="#i-lock"/></svg><h3>One file per company</h3><p>Each client's books are a separate file in your organisation's own folder on an encrypted disk. Another organisation can never open it.</p></article>
+    <article><svg class="ic"><use href="#i-users"/></svg><h3>Named sign-ins</h3><p>Every person has their own sign-in: a Microsoft or Google account, or an email and password. Every entry and every change is stamped with their name in the Activity Log.</p></article>
+    <article><svg class="ic"><use href="#i-globe"/></svg><h3>Nothing to install</h3><p>Runs in the browser on any computer, at the office or at home. Updates arrive on the server; there is nothing to download or keep patched.</p></article>
+    <article><svg class="ic"><use href="#i-history"/></svg><h3>Built to be audited</h3><p>Posted entries are voided, never deleted. Filed returns lock their period. Every report traces to the entry behind it.</p></article>
+    <article><svg class="ic"><use href="#i-shield"/></svg><h3>No AI in your books unless you ask</h3><p>The optional assistant and the optional voice recognition are off by default. Your books are never used to train anything.</p></article>
+  </div>
+  <p class="sec-link"><a href="/security.html">See exactly how your data is protected: hosting, encryption, isolation, sign-ins, backups</a></p>
+</section>
 
 <section id="plans" class="section plans">
-  <div class="eyebrow">YOUR PRACTICE. YOUR FIT.</div>
+  <div class="eyebrow">Pricing</div>
   <h2>One price per person. No limit on the number of companies.</h2>
   <p>Every seat is one person with their own sign-in. Pick the seat that matches what each person does. First month free, no card.</p>
   <div class="founding"><b>Founding firms:</b> the first 20 firms that sign up before 31 December 2026 pay <b>half price for six months</b>. After that, the normal rate.</div>
+  <div class="billing-toggle" role="group" aria-label="Billing period"><button type="button" data-billing="monthly" aria-pressed="true">Monthly</button><button type="button" data-billing="yearly" aria-pressed="false">Yearly <span class="save">save 20%</span></button></div>
   <div class="plan-grid plan-grid-4">
     <article class="plan">
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">FOR A BUSINESS · NO LIMIT ON THE NUMBER OF COMPANIES</div><h3>Business</h3><p>A company keeping its own books, without an accountant on staff.</p>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">For a business</div><h3>Business</h3><p>A company keeping its own books, without an accountant on staff.</p>
       <div class="price">$39 <small class="per">per seat / month</small><small>Founding firms: <b>$19.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
       <a class="button outline" href="#contact">Start as a business <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on the number of companies</li><li><svg class="ic"><use href="#i-check"/></svg>Invoices, bills &amp; payments</li><li><svg class="ic"><use href="#i-check"/></svg>Bank statement PDF &amp; CSV import, reconciliation</li><li><svg class="ic"><use href="#i-check"/></svg>GST/HST on every line and the return</li><li><svg class="ic"><use href="#i-check"/></svg>Quick Entry, receipts, inventory</li><li><svg class="ic"><use href="#i-check"/></svg>Reports with drill-down, Excel &amp; PDF</li><li><svg class="ic"><use href="#i-check"/></svg>Help &amp; Tutor with 45 lessons</li><li><svg class="ic"><use href="#i-check"/></svg>Hosted and backed up in Canada</li></ul>
     </article>
     <article class="plan">
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">PAYROLL ONLY · NO LIMIT ON EMPLOYEES</div><h3>Payroll Unlimited</h3><p>Canadian payroll for any number of employees, for a business or a payroll clerk.</p>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">Payroll only</div><h3>Payroll Unlimited</h3><p>Canadian payroll for any number of employees, for a business or a payroll clerk.</p>
       <div class="price">$45 <small class="per">per seat / month</small><small>Founding firms: <b>$22.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
       <a class="button outline" href="#contact">Start with payroll <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on employees</li><li><svg class="ic"><use href="#i-check"/></svg>Pay runs weekly, biweekly, semi-monthly or monthly</li><li><svg class="ic"><use href="#i-check"/></svg>CPP, CPP2, EI and tax from the CRA tables</li><li><svg class="ic"><use href="#i-check"/></svg>Pay stubs, ROE and direct deposit files</li><li><svg class="ic"><use href="#i-check"/></svg>PD7A remittances with due-date warnings</li><li><svg class="ic"><use href="#i-check"/></svg>T4, T4A, T5018 &amp; T5 year-end slips</li><li><svg class="ic"><use href="#i-check"/></svg>WSIB and Ontario EHT</li><li><svg class="ic"><use href="#i-check"/></svg>Payroll journals posted to the books</li></ul>
     </article>
     <article class="plan">
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">FOR A BOOKKEEPER · NO LIMIT ON THE NUMBER OF COMPANIES</div><h3>Bookkeeper</h3><p>The daily books and payroll for clients, without the accountant’s year-end tools.</p>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">For a bookkeeper</div><h3>Bookkeeper</h3><p>The daily books and payroll for clients, without the accountant’s year-end tools.</p>
       <div class="price">$59 <small class="per">per seat / month</small><small>Founding firms: <b>$29.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
       <a class="button outline" href="#contact">Start as a bookkeeper <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on the number of companies</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Business and Payroll</li><li><svg class="ic"><use href="#i-check"/></svg>Direct Excel import from QuickBooks &amp; Xero</li><li><svg class="ic"><use href="#i-check"/></svg>Statements, late interest &amp; payment reminders</li><li><svg class="ic"><use href="#i-check"/></svg>Purchase orders, receiving &amp; inventory valuation</li><li><svg class="ic"><use href="#i-check"/></svg>Projects, tags &amp; budgets</li><li><svg class="ic"><use href="#i-check"/></svg>Action Centre with every deadline</li><li><svg class="ic"><use href="#i-check"/></svg>Activity Log with every change</li></ul>
     </article>
     <article class="plan featured">
-      <div class="ribbon">FOR ACCOUNTANTS ↗</div>
-      <svg class="ic"><use href="#i-layers"/></svg><div class="number">EVERYTHING · NO LIMIT ON THE NUMBER OF COMPANIES</div><h3>Full accountant</h3><p>Everything in the application, for an accountant running client files.</p>
+      <div class="ribbon">For accountants</div>
+      <svg class="ic"><use href="#i-layers"/></svg><div class="number">Everything</div><h3>Full accountant</h3><p>Everything in the application, for an accountant running client files.</p>
       <div class="price">$79 <small class="per">per seat / month</small><small>Founding firms: <b>$39.50</b> a month for six months. CAD, plus HST. Pay yearly and save 20%.</small></div>
       <a class="button" href="#contact">Start as an accountant <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a>
       <ul><li class="hi"><svg class="ic"><use href="#i-infinity"/></svg>No limit on the number of companies</li><li><svg class="ic"><use href="#i-check"/></svg>Everything in Bookkeeper</li><li><svg class="ic"><use href="#i-check"/></svg>Client CRM, deadlines, reminders &amp; engagement letters</li><li><svg class="ic"><use href="#i-check"/></svg>Auditor Centre, audit exceptions &amp; workpapers</li><li><svg class="ic"><use href="#i-check"/></svg>Year-End Sign-off &amp; CPA review package</li><li><svg class="ic"><use href="#i-check"/></svg>GIFI mapping &amp; T2 working papers</li><li><svg class="ic"><use href="#i-check"/></svg>Month-end close, approvals &amp; permissions</li><li><svg class="ic"><use href="#i-check"/></svg>Custom reports, budgets, projects &amp; fixed assets</li></ul>
@@ -339,8 +596,20 @@ body:before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
   <p class="plan-note">A firm mixes seats as it likes: one Full accountant, one Bookkeeper and one Payroll Unlimited seat is $183 a month. Companies and employees are never counted. Prices are in Canadian dollars per seat per month, exclude HST, and can be cancelled at the end of any month.</p>
 </section>
 
+<section class="section closing" id="why">
+  <div class="eyebrow">Seats</div>
+  <h2>More clarity.<br><em>For every client.</em></h2>
+  <div class="details">
+    <div id="details-0"><h3>Business</h3><p>A company keeping its own books: invoices, bills, bank imports, HST and the reports the accountant asks for at year end.</p></div>
+    <div id="details-1"><h3>Payroll Unlimited</h3><p>Payroll for any number of employees: pay runs, pay stubs, direct deposit, PD7A remittances, ROE and year-end slips, posted to the books automatically.</p></div>
+    <div id="details-2"><h3>Bookkeeper</h3><p>Daily books for many clients plus payroll: bank imports, invoices, bills, HST and the Action Centre keeping every deadline in view.</p></div>
+    <div id="details-3"><h3>Full accountant</h3><p>Client management, payroll and inventory in the full accounting workflow, with permissions, approvals, audit tools, GIFI, T2 working papers and the Year-End Sign-off.</p></div>
+  </div>
+  <a href="#contact" class="button">Start a one-month trial <svg class="ic" style="width:19px;height:19px"><use href="#i-arrow"/></svg></a>
+</section>
+
 <section class="section contact" id="contact">
-  <div class="intro"><div><div class="eyebrow">TALK TO US</div><h2>Start your trial. Sign-ins the same day.</h2></div><p>Book a walkthrough, ask about moving from QuickBooks or Sage, or set up seats for your firm. We create your organisation and you receive your sign-ins the same day.</p></div>
+  <div class="intro"><div><div class="eyebrow">Talk to us</div><h2>Start your trial. Sign-ins the same day.</h2></div><p>Book a walkthrough, ask about moving from QuickBooks or Sage, or set up seats for your firm. We create your organisation and you receive your sign-ins the same day.</p></div>
   <form class="trial-form" id="trial" novalidate>
     <h3>Start your one-month trial</h3>
     <label>Firm or business name <input name="firm" required maxlength="200" autocomplete="organization"></label>
@@ -371,218 +640,12 @@ body:before{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;back
     </div>
   </dialog>
   <div class="contact-grid">
-    <article><span>EMAIL</span><h3>admin@apexledger.ca</h3><p><a href="mailto:admin@apexledger.ca?subject=One-month%20trial">Tell us your firm name, the edition and how many seats.</a></p></article>
-    <article><span>SIGN IN</span><h3>online.apexledger.ca</h3><p><a href="https://online.apexledger.ca">Already have a seat? Open the application.</a></p></article>
-    <article><span>WHERE</span><h3>Ontario, Canada</h3><p>Made in Mississauga. Hosted in Canada with backups in a second Canadian location.</p></article>
+    <article><span>Email</span><h3>admin@apexledger.ca</h3><p><a href="mailto:admin@apexledger.ca?subject=One-month%20trial">Tell us your firm name, the seat types and how many people.</a></p></article>
+    <article><span>Sign in</span><h3>online.apexledger.ca</h3><p><a href="https://online.apexledger.ca">Already have a seat? Open the application.</a></p></article>
+    <article><span>Where</span><h3>Ontario, Canada</h3><p>Made in Mississauga. Hosted in Canada with backups in a second Canadian location.</p></article>
   </div>
 </section>
 
-<section class="highlights" id="highlights">
-  <div class="eyebrow">MAIN HIGHLIGHTS</div>
-  <h2>Four things you will notice<br><em>on day one.</em></h2>
-  <div class="hl-grid">
-    <article class="hl"><svg class="ic"><use href="#i-receipt"/></svg><div class="number">01 / PDF STATEMENTS</div><h3>Bank statement PDF import</h3><p>Drop in the PDF statements from the bank or credit card, <b>a whole year at once</b>. ApexLedger reads the transaction table, checks the opening and closing balance on the statement, and takes you straight to categorise and reconcile. No CSV, no retyping.</p></article>
-    <article class="hl"><svg class="ic"><use href="#i-layers"/></svg><div class="number">02 / EXCEL</div><h3>Direct Excel import</h3><p>Bring a client over from <b>QuickBooks Online, QuickBooks Desktop or Xero</b>: the chart of accounts and the transactions come straight from the Excel export, no conversion first. Bank CSV files from Excel import the same way.</p></article>
-    <article class="hl"><svg class="ic"><use href="#i-infinity"/></svg><div class="number">03 / COMPANIES</div><h3>No limit on the number of companies</h3><p>Every edition keeps <b>as many client companies as you have</b>. A seat is one person; companies are never counted, never charged and never capped.</p></article>
-    <article class="hl"><svg class="ic"><use href="#i-shield"/></svg><div class="number">04 / YEAR END</div><h3>Year-End Sign-off</h3><p>A CPA-style final report with <b>a light on every check</b>: reconciliations, HST, payroll, GIFI, unmapped accounts and open exceptions, with a decision line to sign before the file goes to the accountant.</p></article>
-  </div>
-</section>
-
-<section id="solutions" class="section">
-  <div class="intro"><div><div class="eyebrow">LESS ADMIN. MORE CLIENT FOCUS.</div><h2>Connected client work.<br>A clearer working day.</h2></div><p>Bring client accounting, relationships and follow-ups together. Keep the details organised so your team can focus on the work that needs its attention.</p></div>
-  <div class="features">
-    <article><svg class="ic feature-icon"><use href="#i-zap"/></svg><div class="number">01 / AUTOMATE</div><h3>Import. Categorise. Reconcile.</h3><p>Import OFX, QFX, QBO and CSV bank downloads, apply categorisation rules, match payments and reconcile every bank and card to the cent. Type a sentence in Quick Entry and it comes back as a posting to confirm.</p><div class="mini"><span>"expense 85.50 fuel on Visa with HST"</span><span>Posted</span></div></article>
-    <article><svg class="ic feature-icon"><use href="#i-users"/></svg><div class="number">02 / CONNECT</div><h3>Keep client context close.</h3><p>Connect client information and financial activity with the built-in CRM. Open a client's books from their record and keep the context you need for the next conversation.</p><div class="mini"><span>Client → Invoice → Payment → Deposit</span><span>↗</span></div></article>
-    <article><svg class="ic feature-icon"><use href="#i-bell"/></svg><div class="number">03 / STAY AHEAD</div><h3>Stay ahead of every deadline.</h3><p>The Action Centre warns before HST filings, PD7A remittances, T4 season and client deadlines are due, so nothing is found late and the work is already in view.</p><div class="mini"><span>PD7A due 15 Oct</span><span>Reminder set</span></div></article>
-  </div>
-</section>
-
-<section class="section shots" id="screens">
-  <div class="intro"><div><div class="eyebrow">SEE IT</div><h2>The application,<br><em>as your team sees it.</em></h2></div><p>Real screens from a client file in the browser: the Dashboard with every bank and card at a glance, and the Client CRM with each client's filing deadlines already computed.</p></div>
-  <div class="shot-grid">
-    <div class="shot shot-wide"><figure><picture><source srcset="/img/dashboard.webp" type="image/webp"><img src="/img/dashboard.jpg" width="1920" height="1200" alt="ApexLedger dashboard showing eight bank and card accounts, cash balance, receivables, payables, net income, GST/HST payable and a cash-flow chart" loading="lazy"></picture><figcaption><div><b>Dashboard</b> · every bank and card balance, receivables, payables, HST payable and cash flow, one click from the entry behind each number.</div><span>ACCOUNTING</span></figcaption></figure></div>
-    <div class="shot shot-wide"><figure><picture><source srcset="/img/crm.webp" type="image/webp"><img src="/img/crm.jpg" width="1920" height="1200" alt="ApexLedger Client Management (CRM) showing upcoming GST/HST, T2 and fiscal year-end deadlines for several clients, colour-coded by urgency" loading="lazy"></picture><figcaption><div><b>Client Management (CRM)</b> · GST/HST, T2 and year-end deadlines for every client, colour-coded, with Mark Informed after each follow-up.</div><span>CLIENT CRM</span></figcaption></figure></div>
-  </div>
-</section>
-
-<section class="section crm-section" id="crm">
-  <div class="intro"><div><div class="eyebrow">CLIENT CRM · INCLUDED IN ULTIMATE SUITE</div><h2>Know the client.<br><em>Stay ahead of the work.</em></h2></div><p>More than a contact list. Bring client details, outstanding documents, deadlines and follow-ups into one place.</p></div>
-  <div class="crm-highlight"><svg class="ic"><use href="#i-users"/></svg><div><strong>From the client record straight to the books.</strong><p>Link a company file to a client and open their bookkeeping from the Client Hub.</p></div><a href="#plans" class="button">Explore Ultimate <svg class="ic" style="width:18px;height:18px"><use href="#i-arrow"/></svg></a></div>
-  <div class="capability-grid">
-    <article><span>01</span><h3>Complete client profiles</h3><p>Keep contact information, personal and family details, T1/T2 return type, fiscal year-end and GST/HST filing frequency together.</p></article>
-    <article><span>02</span><h3>Deadlines you can prioritise</h3><p>See colour-coded due dates and overdue work. Filter the next 7 or 15 days, and mark clients as informed after a follow-up.</p></article>
-    <article><span>03</span><h3>Missing documents &amp; return status</h3><p>Track outstanding documents with client checklists. Record whether a return is completed or filed so the next step stays clear.</p></article>
-    <article><span>04</span><h3>Appointments &amp; reminders</h3><p>Schedule client appointments and create dated reminders with notes. Track completed follow-ups alongside upcoming work.</p></article>
-    <article><span>05</span><h3>Communication within reach</h3><p>Open WhatsApp, email or a phone link from client details. Keep notes and dated comments for context before your next conversation.</p></article>
-    <article><span>06</span><h3>Engagement letters &amp; exports</h3><p>Generate engagement letters, search client records, open linked companies and export the client list to a spreadsheet.</p></article>
-  </div>
-  <div class="crm-extra"><svg class="ic"><use href="#i-bell"/></svg><p><strong>Also support your insurance clients.</strong> Track product types and policy expiry dates, with renewal, thank-you and birthday message templates.</p></div>
-</section>
-
-<section class="section product-depth" id="accountant-tools">
-  <div class="intro"><div><div class="eyebrow">THE DETAILS ACCOUNTANTS NEED</div><h2>Built beyond<br>everyday bookkeeping.</h2></div><p>Follow the work from source transactions through reconciliation, reporting and year-end preparation.</p></div>
-  <div class="capability-grid">
-    <article><span>01</span><h3>Accounting &amp; control</h3><p>Chart of accounts, journal entries, general ledger, trial balance, period locks, approvals and month-end close. Posted entries are voided, never deleted.</p></article>
-    <article><span>02</span><h3>Canadian tax preparation</h3><p>HST, GST-only, exempt and meals codes on every line; the return built from them; filed periods locked. PST, RST and QST by province, quick method, GIFI mapping and T2 schedules 100, 101 and 125.</p></article>
-    <article><span>03</span><h3>Review &amp; audit</h3><p>Auditor Centre, audit exceptions, Activity Log, reclassify, workpapers, CPA review package, continuity schedules and a Year-End Sign-off with a light on every check.</p></article>
-    <article><span>04</span><h3>Sales, purchases &amp; stock</h3><p>Estimates, sales orders, invoices, sales receipts, credit notes, statements, vendor bills, purchase orders with receiving and invoice matching, inventory at moving-average cost.</p></article>
-    <article><span>05</span><h3>Reports that drill down</h3><p>Trial balance, P&amp;L on accrual or cash basis, balance sheet, cash flow, ageing, sales by customer, expenses by vendor. Every name on every report opens the record behind it.</p></article>
-    <article><span>06</span><h3>Payroll through year-end</h3><p>CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT. Pay stubs, PD7A, ROE, T4, T4A, T5018, T5 and direct deposit files.</p></article>
-  </div>
-  <div class="desktop-note"><div><strong>Your browser. Your client work.</strong><p>A web application bringing client accounting, CRM and payroll into one browser-based workspace. Nothing to install, nothing to patch: updates arrive on the server and every seat sees them the same morning.</p></div><a class="text-link" href="#plans">Compare editions ↗</a></div>
-</section>
-
-<section class="section workflow-section" id="workflows">
-  <div class="intro"><div><div class="eyebrow">EXPLORE EVERY MODULE</div><h2>The tools.<br><em>The details. The difference.</em></h2></div><p>Choose a module to see what it includes, how it supports your practice and which editions provide it.</p></div>
-  <div class="flow-tabs" role="tablist" aria-label="Product module details">
-    <button role="tab" aria-selected="true" aria-controls="m-accounting" id="t-accounting">Accounting</button>
-    <button role="tab" aria-selected="false" aria-controls="m-crm" id="t-crm">Client CRM</button>
-    <button role="tab" aria-selected="false" aria-controls="m-payroll" id="t-payroll">Payroll</button>
-    <button role="tab" aria-selected="false" aria-controls="m-banking" id="t-banking">Banking</button>
-    <button role="tab" aria-selected="false" aria-controls="m-inventory" id="t-inventory">Inventory</button>
-    <button role="tab" aria-selected="false" aria-controls="m-tax" id="t-tax">GST/HST &amp; GIFI</button>
-    <button role="tab" aria-selected="false" aria-controls="m-reports" id="t-reports">Reports &amp; year end</button>
-    <button role="tab" aria-selected="false" aria-controls="m-practice" id="t-practice">Practice &amp; tutor</button>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-accounting" aria-labelledby="t-accounting">
-    <div class="module-edition">Included in all three editions</div>
-    <div class="flow-heading"><h3>The complete accounting foundation.</h3><p>Work from source documents to the ledger, with the controls you need to review and close client books.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Chart of accounts</h4><p>Organise the accounts used to classify transactions and prepare financial reports, with account types, sub-accounts and GIFI codes.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Journal entries</h4><p>Record accounting entries and adjustments, recurring or one-off, then review their effect in the general ledger.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>General ledger &amp; trial balance</h4><p>Inspect account activity and balances as part of your regular bookkeeping and review process.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Sales &amp; receivables</h4><p>Estimates, sales orders, invoices, sales receipts, credit notes, statements and late interest. Receive Payment then Make Deposit, the way the bank sees it.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bills &amp; payables</h4><p>Vendor bills, approvals, part payments, vendor credits, recurring bills and mileage claims, with accounts payable ageing.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Period control &amp; month-end</h4><p>Period locks, approval workflows and month-end close tools support a controlled accounting process.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>A connected route from everyday entry to review-ready client books.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-crm" aria-labelledby="t-crm" hidden>
-    <div class="module-edition">Included in Ultimate Suite</div>
-    <div class="flow-heading"><h3>Every client detail. Every next step.</h3><p>Keep relationships, filing information, outstanding work and communication close to the books.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Individual &amp; business profiles</h4><p>Contact details, personal and family information, T1/T2 return types, fiscal year-end and GST/HST filing frequency.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Linked companies</h4><p>Connect a client record to its company file and open the bookkeeping directly from the Client Hub.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Deadline tracking</h4><p>Colour-coded deadlines, due-soon and overdue work, 7- or 15-day views. Mark clients as informed after contacting them.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Documents &amp; return status</h4><p>Outstanding-document checklists and whether a return has been completed or filed.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Appointments, reminders &amp; notes</h4><p>Schedule appointments, create dated follow-ups and keep notes and dated comments for your next conversation.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Communication &amp; exports</h4><p>Phone, email and WhatsApp shortcuts. Engagement letters. Search client records and export client lists to a spreadsheet or PDF.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Insurance relationships</h4><p>Record insurance product types and policy expiry dates. Use renewal, thank-you and birthday message templates.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>Less time searching for context when a client calls or a deadline approaches.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-payroll" aria-labelledby="t-payroll" hidden>
-    <div class="module-edition">Included in Payroll and Ultimate Suite</div>
-    <div class="flow-heading"><h3>Canadian payroll for every province, connected to the books.</h3><p>Follow payroll from employee setup to pay runs, accounting entries, remittance reports and year-end slips.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Employee records</h4><p>Hourly and salaried, TD1 claims, vacation paid or accrued, benefits, RRSP match, union dues, direct deposit details.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Pay runs</h4><p>Weekly, biweekly, semi-monthly and monthly. CPP and CPP2, EI, federal and provincial tax from the CRA tables, WSIB, Ontario EHT.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Pay stubs</h4><p>Pay stubs with year-to-date figures, overtime, bonuses, taxable benefits and reimbursements.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Payroll journals</h4><p>Every run posts to the ledger, so payroll activity is reviewed alongside the general ledger.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Liabilities &amp; remittances</h4><p>PD7A by month for regular, quarterly and accelerated remitters, with the Action Centre warning before the due date.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Year-end slips</h4><p>T4, T4A, T5018, T5 and ROE straight from the posted runs, with a checklist of every deadline.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>A clear sequence from payroll preparation to the reports needed for follow-up.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-banking" aria-labelledby="t-banking" hidden>
-    <div class="module-edition">Included in all three editions</div>
-    <div class="flow-heading"><h3>Turn bank activity into organised records.</h3><p>Bring transactions into the accounting workflow, classify them and reconcile them against the books.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bank and card accounts</h4><p>Chequing, savings, credit cards and lines of credit, each with its own register and reconciliation history.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Transaction imports</h4><p>OFX, QFX, QBO and CSV downloads from any Canadian bank, imported for matching and review.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Categorisation rules</h4><p>Rules classify repeat transactions, with the HST code applied, so the same vendor is never typed twice.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Transaction matching</h4><p>Match bank lines against invoices, bills, payments and deposits already in the books.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Bank reconciliation</h4><p>Reconcile to the cent and produce the reconciliation report your accountant wants, with history kept.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Quick Entry</h4><p>Receipts and card charges in five fields, or typed as a sentence and posted after one confirmation.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>A repeatable import, classify, match and reconcile process.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-inventory" aria-labelledby="t-inventory" hidden>
-    <div class="module-edition">Included in Accounting Essential and Ultimate Suite</div>
-    <div class="flow-heading"><h3>Keep purchasing and stock in view.</h3><p>Bring products, supplier documents and inventory movement into the same accounting workflow.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Products &amp; services</h4><p>The item catalogue used in sales and purchasing, with prices, reorder points and tax codes.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Purchase orders</h4><p>Prepare purchase orders and keep purchasing commitments organised.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Receiving &amp; invoice matching</h4><p>Record received goods and match supplier invoices within the purchasing workflow.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Stock movements</h4><p>Review inventory movements and record adjustments when needed.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Inventory valuation</h4><p>Stock at moving-average cost, with valuation and movement reports.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Projects, jobs &amp; budgets</h4><p>Projects, tags by department or location, and budgets against actuals.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>Better visibility from a purchase order through stock movement and valuation.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-tax" aria-labelledby="t-tax" hidden>
-    <div class="module-edition">Accountant tools included in all three editions</div>
-    <div class="flow-heading"><h3>Canadian tax preparation in context.</h3><p>Keep tax detail and working papers alongside the client accounting records they depend on.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GST/HST on every line</h4><p>HST, GST-only, exempt, zero-rated and meals codes on every transaction line, with the return built from them.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Filing periods</h4><p>Monthly, quarterly or annual filing periods, prepared, recorded and locked once filed.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GST/HST reconciliation</h4><p>Compare tax activity and balances as part of your review process.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Provincial reporting</h4><p>PST, RST and QST by province, sales tax by province and the GST/HST Quick Method report.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>GIFI mapping &amp; validation</h4><p>Map accounting balances to GIFI codes, review validation results and export for the T2.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Corporate working papers</h4><p>Corporate tax working papers with Schedule 100, 101 and 125 support and T2 reconciliation.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>Supporting information for your tax preparation and review workflow.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-reports" aria-labelledby="t-reports" hidden>
-    <div class="module-edition">Reporting and audit tools included in all three editions</div>
-    <div class="flow-heading"><h3>Follow the numbers back to the detail.</h3><p>Move from financial summaries to supporting entries, exceptions and year-end review tools.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Financial statements</h4><p>Balance sheet, P&amp;L on accrual or cash basis, cash flow, trial balance and general ledger, with comparatives.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>One-click drill-down</h4><p>Every name and amount on every report opens the customer, vendor, account or entry behind it.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Receivables &amp; payables</h4><p>Ageing reports, statements and late-interest calculations for outstanding balances.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Audit exceptions</h4><p>Flagged exceptions in the Auditor Centre, the Activity Log with the name behind every change, and reclassify tools.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Year-End Sign-off</h4><p>A CPA-style final report: every check with a green, amber or red light, the findings, and a decision line to sign.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Excel and PDF</h4><p>Every report and list downloads as a formatted Excel workbook or PDF, ready for the client or the auditor.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>More context behind the balances you discuss with clients.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-
-  <div class="flow-panel" role="tabpanel" id="m-practice" aria-labelledby="t-practice" hidden>
-    <div class="module-edition">Included in all three editions</div>
-    <div class="flow-heading"><h3>Support the way your team works.</h3><p>Manage companies, seats and access, and learn every screen inside the application itself.</p></div>
-    <div class="module-features">
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>No limit on the number of companies</h4><p>Every edition keeps as many client companies as your practice needs. Each one is a separate file in your organisation's own folder.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Seats &amp; sign-ins</h4><p>Each person signs in with their Microsoft or Google account, or an email and password. Owners add people, reset passwords and free seats without calling us.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Permissions &amp; approvals</h4><p>Manage who can post, approve and close, with approval workflows for work that needs a second look.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Help &amp; Tutor</h4><p>Ask how to do anything and get the steps with a button to the screen. Forty-five lessons walk through each screen on the real page, field by field.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Action Centre</h4><p>One page of everything due: HST, PD7A, T4s, client deadlines, unreconciled accounts and unapproved bills.</p></div></article>
-      <article><svg class="ic"><use href="#i-check"/></svg><div><h4>Backup &amp; restore</h4><p>Nightly backups in Canada with a geo-redundant copy, and restore of any company file on request.</p></div></article>
-    </div>
-    <div class="flow-bottom"><p>A web-based workspace built around ongoing client work.</p><a href="#contact">Start a one-month trial <svg class="ic"><use href="#i-arrow"/></svg></a></div>
-  </div>
-</section>
-
-<section class="section canada" id="canada">
-  <div class="intro"><div><div class="eyebrow">HOSTED IN CANADA</div><h2>Your data stays<br><em>in Canada.</em></h2></div><p>A bookkeeping firm holds other people's books. That is a responsibility we designed around, not a feature we added later.</p></div>
-  <div class="canada-grid">
-    <article><svg class="ic"><use href="#i-pin"/></svg><h3>Canadian regions only</h3><p>The service runs in Canadian data centres, with backups kept in a second Canadian location. No data leaves the country.</p></article>
-    <article><svg class="ic"><use href="#i-lock"/></svg><h3>One file per company</h3><p>Each client's books are a separate file in your organisation's own folder on an encrypted disk. Another organisation can never open it.</p></article>
-    <article><svg class="ic"><use href="#i-users"/></svg><h3>Named sign-ins</h3><p>Every person has their own sign-in: a Microsoft or Google account, or an email and password. Every entry and every change is stamped with their name in the Activity Log.</p></article>
-    <article><svg class="ic"><use href="#i-globe"/></svg><h3>Nothing to install</h3><p>Runs in the browser on any computer, at the office or at home. Updates arrive on the server; there is nothing to download or keep patched.</p></article>
-    <article><svg class="ic"><use href="#i-history"/></svg><h3>Built to be audited</h3><p>Posted entries are voided, never deleted. Filed returns lock their period. Every report traces to the entry behind it.</p></article>
-    <article><svg class="ic"><use href="#i-shield"/></svg><h3>No AI in your books unless you ask</h3><p>The optional assistant and the optional voice recognition are off by default. Your books are never used to train anything.</p></article>
-  </div>
-  <p class="sec-link"><a href="/security.html">See exactly how your data is protected: hosting, encryption, isolation, sign-ins, backups ↗</a></p>
-</section>
-
-<section class="section closing" id="why">
-  <div class="eyebrow">BUILT AROUND YOUR PRACTICE</div>
-  <h2>More clarity.<br><em>For every client.</em></h2>
-  <div class="details">
-    <div id="details-0"><span>01</span><h3>Business</h3><p>A company keeping its own books: invoices, bills, bank imports, HST and the reports the accountant asks for at year end.</p></div>
-    <div id="details-1"><span>02</span><h3>Payroll Unlimited</h3><p>Payroll for any number of employees: pay runs, pay stubs, direct deposit, PD7A remittances, ROE and year-end slips, posted to the books automatically.</p></div>
-    <div id="details-2"><span>03</span><h3>Bookkeeper</h3><p>Daily books for many clients plus payroll: bank imports, invoices, bills, HST and the Action Centre keeping every deadline in view.</p></div>
-    <div id="details-3"><span>04</span><h3>Full accountant</h3><p>Client management, payroll and inventory in the full accounting workflow, with permissions, approvals, audit tools, GIFI, T2 working papers and the Year-End Sign-off.</p></div>
-  </div>
-  <a href="#contact" class="button">Start a one-month trial <svg class="ic" style="width:19px;height:19px"><use href="#i-arrow"/></svg></a>
-</section>
 
 <section class="cities" aria-label="Where we serve">
   <h2>Accounting software for accountants and bookkeepers across Canada</h2>
@@ -657,6 +720,14 @@ else{st.className='status err';st.textContent=r.error||'Something went wrong. Em
 }).catch(function(){st.className='status err';st.textContent='Could not reach the server. Email admin@apexledger.ca and we will set you up.';submitBtn.disabled=false;});}})();
 (function(){var tabs=document.querySelectorAll('.flow-tabs [role=tab]');function show(t){tabs.forEach(function(b){var on=b===t;b.setAttribute('aria-selected',on?'true':'false');document.getElementById(b.getAttribute('aria-controls')).hidden=!on;});}
 tabs.forEach(function(b,i){b.addEventListener('click',function(){show(b);});b.addEventListener('keydown',function(e){var n=e.key==='ArrowRight'?i+1:e.key==='ArrowLeft'?i-1:-1;if(n>=0&&n<tabs.length){tabs[n].focus();show(tabs[n]);}});});})();
+(function(){var btns=document.querySelectorAll('.billing-toggle button');if(!btns.length)return;
+// Yearly billing is 20% less. Each price keeps its monthly markup so switching back restores it exactly.
+var prices=Array.prototype.map.call(document.querySelectorAll('.plan .price'),function(el){return{el:el,html:el.innerHTML,cents:Math.round(parseFloat(el.textContent.replace(/^[^0-9]*/,''))*100)}});
+function money(c){return '$'+(c%100?(c/100).toFixed(2):String(c/100)).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function set(mode){btns.forEach(function(b){b.setAttribute('aria-pressed',b.dataset.billing===mode?'true':'false')});
+prices.forEach(function(p){if(mode==='monthly'){p.el.innerHTML=p.html;return}var month=Math.round(p.cents*0.8);
+p.el.innerHTML=money(month)+' <small class="per">per seat / month</small><small>Billed yearly: '+money(month*12)+' per seat. CAD, plus HST.</small>'});}
+btns.forEach(function(b){b.addEventListener('click',function(){set(b.dataset.billing)})});})();
 </script>
 <script src="/chat.js" defer></script>
 </body>
