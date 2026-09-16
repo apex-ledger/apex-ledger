@@ -10,6 +10,7 @@ import { webContext } from '../features/company-settings/WebOrganisationSection'
 import { useIpcQuery } from '../hooks/useIpcQuery';
 import { webSeat } from '../utils/platform';
 import { SEAT_NAV_HIDDEN } from '@shared/domain/seatScope';
+import { CUSTOM_WORKSPACE_LABEL, CustomWorkspaceButton } from './WorkspaceModeSwitch';
 import {
   applyStoredOrder,
   deleteYearEndLayout,
@@ -27,6 +28,10 @@ import {
   COLOR_SCHEMES,
   type ColorSchemeId,
   type SectionKey,
+  loadYearEndRemovedDefaults,
+  setYearEndDefaultRemoved,
+  setYearEndRemovedDefaults,
+  REMOVED_MARK,
 } from '../utils/sidebarPrefs';
 import {
   IconBook,
@@ -181,7 +186,8 @@ export const MAIN_NAV: NavItem[] = [
   // Close and review only after the daily source documents above are entered.
   // One screen for the accountant who only opens the file once a year — sign-off checklist,
   // payroll info-slip/regional deadlines and the final statements, without the day-to-day pages.
-  { label: 'Year-End Workspace', view: { kind: 'yearEndWorkspace' }, color: 'amber', icon: <IconShieldCheck /> },
+  // Shown as its own button at the top of the sidebar (and the top-bar switch); kept here so Quick Search finds it.
+  { label: CUSTOM_WORKSPACE_LABEL, view: { kind: 'yearEndWorkspace' }, color: 'violet', icon: <IconShieldCheck /> },
   { label: 'Auditor Centre', view: { kind: 'audit' }, color: 'rose', icon: <IconClipboardCheck /> },
   { label: 'Month-End Close', view: { kind: 'monthEndClose' }, color: 'violet', icon: <IconCalendar /> },
   { label: 'Business Tax & GIFI', view: { kind: 'taxGifi' }, color: 'purple', icon: <IconFileText /> },
@@ -734,9 +740,9 @@ const DATA_ENTRY_REVIEW_NAV: NavItem[] = [
 ];
 
 const YEAR_END_WORKSPACE_NAV_ITEM: NavItem = {
-  label: 'Year-End Workspace',
+  label: CUSTOM_WORKSPACE_LABEL,
   view: { kind: 'yearEndWorkspace' },
-  color: 'amber',
+  color: 'violet',
   icon: <IconShieldCheck />,
 };
 
@@ -745,6 +751,7 @@ function YearEndFocusNav() {
   const setYearEndMode = useUiStore((s) => s.setYearEndMode);
   const onWorkspacePage = useUiStore((s) => s.view.kind === 'yearEndWorkspace');
   const [pinnedLabels, setPinnedLabels] = useState<string[]>(() => loadYearEndTabs());
+  const [removedDefaults, setRemovedDefaults] = useState<string[]>(() => loadYearEndRemovedDefaults());
   const [picking, setPicking] = useState(false);
   const [layouts, setLayouts] = useState<Record<string, string[]>>(() => loadYearEndLayouts());
   const [saveName, setSaveName] = useState('');
@@ -756,11 +763,38 @@ function YearEndFocusNav() {
     .flatMap((item) => [item, ...(item.children ?? [])])
     .filter((item) => !DATA_ENTRY_REVIEW_NAV.some((fixed) => fixed.label === item.label) && item.label !== YEAR_END_WORKSPACE_NAV_ITEM.label);
   const pinned = addable.filter((item) => pinnedLabels.includes(item.label));
+  const shownDefaults = DATA_ENTRY_REVIEW_NAV.filter((item) => !removedDefaults.includes(item.label));
+  const isDefault = (label: string) => DATA_ENTRY_REVIEW_NAV.some((item) => item.label === label);
+  const isShown = (label: string) => (isDefault(label) ? !removedDefaults.includes(label) : pinnedLabels.includes(label));
 
   function togglePinned(label: string) {
+    if (isDefault(label)) {
+      const remove = !removedDefaults.includes(label);
+      setYearEndDefaultRemoved(label, remove);
+      setRemovedDefaults((prev) => (remove ? [...prev, label] : prev.filter((l) => l !== label)));
+      return;
+    }
     const next = !pinnedLabels.includes(label);
     setYearEndTabPinned(label, next);
     setPinnedLabels((prev) => (next ? [...prev, label] : prev.filter((l) => l !== label)));
+  }
+
+  /** A tab with a small ✕ to take it out of the workspace; it can be added back from "+ Add a tab". */
+  function removableTab(item: NavItem) {
+    return (
+      <div key={item.label} className="group relative">
+        <NavButton item={item} />
+        <button
+          type="button"
+          onClick={() => togglePinned(item.label)}
+          aria-label={`Remove ${item.label} from the workspace`}
+          title="Remove this tab (add it back with + Add a tab)"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded px-1.5 text-xs text-gray-400 opacity-0 hover:bg-red-50 hover:text-red-600 focus:opacity-100 group-hover:opacity-100"
+        >
+          ✕
+        </button>
+      </div>
+    );
   }
 
   // Whoever is sitting here saves their arrangement under their own name, so the next person's
@@ -769,14 +803,18 @@ function YearEndFocusNav() {
   function saveLayout() {
     const name = (saveName.trim() || whoami).trim();
     if (!name) return;
-    saveYearEndLayout(name, pinnedLabels);
+    saveYearEndLayout(name, [...pinnedLabels, ...removedDefaults.map((l) => `${REMOVED_MARK}${l}`)]);
     setLayouts(loadYearEndLayouts());
     setSaveName('');
   }
   function loadLayout(name: string) {
-    const labels = layouts[name] ?? [];
+    const saved = layouts[name] ?? [];
+    const labels = saved.filter((l) => !l.startsWith(REMOVED_MARK));
+    const removed = saved.filter((l) => l.startsWith(REMOVED_MARK)).map((l) => l.slice(REMOVED_MARK.length));
     setYearEndTabs(labels);
     setPinnedLabels(labels);
+    setYearEndRemovedDefaults(removed);
+    setRemovedDefaults(removed);
   }
   function removeLayout(name: string) {
     deleteYearEndLayout(name);
@@ -794,29 +832,29 @@ function YearEndFocusNav() {
         onClick={() => { setYearEndMode(false); setView({ kind: 'dashboard' }); }}
         className="mb-2 flex w-full items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm font-medium text-brand-700 hover:bg-brand-100"
       >
-        ← Full menu
+        ← Daily Books
       </button>
 
       <NavButton item={YEAR_END_WORKSPACE_NAV_ITEM} />
 
       <div className="mt-2 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-500">Client's data entry — the whole year</div>
-      {DATA_ENTRY_REVIEW_NAV.map((item) => <NavButton key={item.label} item={item} />)}
-      {pinned.map((item) => <NavButton key={item.label} item={item} />)}
+      {shownDefaults.map(removableTab)}
+      {pinned.map(removableTab)}
 
       <button
         type="button"
         onClick={() => setPicking((v) => !v)}
         className="mt-1 flex w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-brand-600 hover:bg-brand-100"
       >
-        {picking ? 'Done adding' : '+ Add a tab'}
+        {picking ? 'Done' : '+ Add a tab'}
       </button>
       {picking && (
         <div className="mb-2 rounded-lg border border-brand-200 bg-white p-2">
-          <p className="mb-1 text-[11px] text-gray-500">Tick anything else this review needs.</p>
+          <p className="mb-1 text-[11px] text-gray-500">Tick a tab to add it, untick to remove it.</p>
           <div className="max-h-52 overflow-y-auto">
-            {addable.map((item) => (
+            {[...DATA_ENTRY_REVIEW_NAV, ...addable].map((item) => (
               <label key={item.label} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs text-gray-700 hover:bg-brand-50">
-                <input type="checkbox" checked={pinnedLabels.includes(item.label)} onChange={() => togglePinned(item.label)} />
+                <input type="checkbox" checked={isShown(item.label)} onChange={() => togglePinned(item.label)} />
                 {item.label}
               </label>
             ))}
@@ -957,6 +995,7 @@ export function Sidebar() {
       </div>
 
       {!yearEndFocus && webSeat() !== 'payroll' && <NewMenu />}
+      {!yearEndFocus && <CustomWorkspaceButton />}
 
       {!yearEndFocus && webSeat() !== 'payroll' && (
         <div className="px-2 pt-2">
@@ -989,7 +1028,7 @@ export function Sidebar() {
         <nav className="flex-1 overflow-y-auto px-2 py-2">
           <NavSection
             section="main"
-            items={mainNav}
+            items={mainNav.filter((item) => item.view?.kind !== 'yearEndWorkspace')}
             setItems={setMainNav}
             editMode={editMode}
             colorOverrides={colorOverrides}

@@ -34,9 +34,9 @@ export function YearEndWorkspacePage() {
   return (
     <div className="w-full space-y-4" data-testid="year-end-workspace">
       <div>
-        <h1 className="text-lg font-semibold text-gray-900">Year-End Workspace</h1>
+        <h1 className="text-lg font-semibold text-gray-900">Custom Workspace <span className="font-normal text-violet-700">· Year-End</span></h1>
         <p className="text-sm text-gray-500">
-          For a once-a-year review of a file the client keeps themselves: what the books show, what still needs fixing, what's due where, and the final statements — one page, top to bottom.
+          A focused sidebar you arrange with + Add a tab and save under your name. It starts as the year-end review of a file the client keeps themselves: what the books show, what still needs fixing, what's due where, and the final statements — one page, top to bottom.
         </p>
       </div>
 

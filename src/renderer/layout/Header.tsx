@@ -19,6 +19,7 @@ import { storeAccessRole } from '../utils/accessRole';
 import { isWeb, webSeat } from '../utils/platform';
 import { seatAllowsToolbar } from '@shared/domain/seatScope';
 import { FeedbackDialog } from './FeedbackDialog';
+import { WorkspaceModeSwitch } from './WorkspaceModeSwitch';
 
 /** Feedback: on the web a dialog that posts to the server (the Header listens for this event);
  * on the desktop the mail client, as before. Shared by the header button and both menus. */
@@ -49,7 +50,6 @@ import {
   IconUndo,
   IconUserGroup,
   IconBell,
-  IconShieldCheck,
 } from '../components/icons';
 
 type ActionColor = 'rose' | 'emerald' | 'orange' | 'blue' | 'purple' | 'violet' | 'cyan' | 'amber' | 'gray';
@@ -973,13 +973,14 @@ export function Header() {
         <button
           type="button"
           onClick={() => setShowQuickSearch(true)}
-          className="relative w-72 rounded border border-brand-700 bg-white/95 py-1.5 pl-8 pr-2 text-left text-sm text-gray-400 hover:bg-white focus:border-gold-400 focus:outline-none focus:ring-1 focus:ring-gold-400"
+          className="relative w-56 2xl:w-72 rounded border border-brand-700 bg-white/95 py-1.5 pl-8 pr-2 text-left text-sm text-gray-400 hover:bg-white focus:border-gold-400 focus:outline-none focus:ring-1 focus:ring-gold-400"
         >
           <IconSearch className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" width={16} height={16} />
           Search everything…
           <span className="absolute right-2 top-1/2 -translate-y-1/2 rounded border border-gray-300 px-1 text-[10px] text-gray-400">Ctrl+K</span>
         </button>
         <QuickSearchPalette open={showQuickSearch} onClose={() => setShowQuickSearch(false)} />
+        <WorkspaceModeSwitch />
 
         <div className="flex items-center gap-1 text-brand-100">
           <ZoomControl />
@@ -1088,7 +1089,6 @@ export function Header() {
         {!isWeb() && <ActionButton icon={<IconMonitor />} label="Mirror Window" onClick={() => window.api.window.openMirror()} color="cyan" />}
         {seatAllowsToolbar(webSeat(), 'accountant') && <ActionButton icon={<IconLedger />} label="Accountant Centre" onClick={() => setView({ kind: 'accountantCentre' })} color="violet" />}
         {can('crm') && seatAllowsToolbar(webSeat(), 'crm') && <ActionButton icon={<IconUserGroup />} label="Client Management (CRM)" onClick={() => setView({ kind: 'clientHub' })} color="purple" />}
-        {seatAllowsToolbar(webSeat(), 'accountant') && <ActionButton icon={<IconShieldCheck />} label="Year-End" onClick={() => setView({ kind: 'yearEndWorkspace' })} color="amber" />}
       </div>
 
       {toast && (

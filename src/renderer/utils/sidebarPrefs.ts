@@ -25,6 +25,8 @@ interface SidebarPrefs {
   /** Named saves of that set, so two people sharing a machine each keep their own — "Nisha",
    * "Resham" — instead of overwriting one shared arrangement every time the other sits down. */
   yearEndLayouts?: Record<string, string[]>;
+  /** Starting tabs of the Custom Workspace (All Sales, Vendor Bills…) the person removed. */
+  yearEndRemovedDefaults?: string[];
 }
 
 const STORAGE_KEY = 'northLedger.sidebarPrefs';
@@ -41,7 +43,7 @@ function loadPrefs(): SidebarPrefs {
     if (parsed.layoutVersion !== CURRENT_LAYOUT_VERSION) {
       return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: parsed.colors ?? {}, hidden: [] };
     }
-    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [], yearEndTabs: parsed.yearEndTabs ?? [], yearEndLayouts: parsed.yearEndLayouts ?? {} };
+    return { layoutVersion: CURRENT_LAYOUT_VERSION, order: parsed.order ?? {}, colors: parsed.colors ?? {}, hidden: parsed.hidden ?? [], yearEndTabs: parsed.yearEndTabs ?? [], yearEndLayouts: parsed.yearEndLayouts ?? {}, yearEndRemovedDefaults: parsed.yearEndRemovedDefaults ?? [] };
   } catch {
     return { layoutVersion: CURRENT_LAYOUT_VERSION, order: {}, colors: {}, hidden: [] };
   }
@@ -131,6 +133,29 @@ export function deleteYearEndLayout(name: string): void {
   prefs.yearEndLayouts = layouts;
   savePrefs(prefs);
 }
+
+export function loadYearEndRemovedDefaults(): string[] {
+  return loadPrefs().yearEndRemovedDefaults ?? [];
+}
+
+export function setYearEndDefaultRemoved(itemLabel: string, removed: boolean): void {
+  const prefs = loadPrefs();
+  const set = new Set(prefs.yearEndRemovedDefaults ?? []);
+  if (removed) set.add(itemLabel);
+  else set.delete(itemLabel);
+  prefs.yearEndRemovedDefaults = [...set];
+  savePrefs(prefs);
+}
+
+export function setYearEndRemovedDefaults(labels: string[]): void {
+  const prefs = loadPrefs();
+  prefs.yearEndRemovedDefaults = labels;
+  savePrefs(prefs);
+}
+
+/** A saved layout lists the extra tabs, plus "!Label" for each starting tab that was removed, so
+ * layouts saved before starting tabs could be removed still load as they were. */
+export const REMOVED_MARK = '!';
 
 /** Replaces the pinned set wholesale — used when loading somebody's saved layout. */
 export function setYearEndTabs(labels: string[]): void {

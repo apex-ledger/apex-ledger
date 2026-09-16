@@ -7,7 +7,7 @@ export const TITLES: Record<string, string> = {
   dashboard: 'Dashboard',
   actionCentre: 'Action Centre',
   audit: 'Auditor Centre',
-  yearEndWorkspace: 'Year-End Workspace',
+  yearEndWorkspace: 'Custom Workspace',
   fixedAssets: 'Fixed Assets',
   approvals: 'Approvals',
   reclassify: 'Reclassify Transactions',

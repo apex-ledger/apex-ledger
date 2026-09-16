@@ -33,10 +33,10 @@ describe('Sidebar in Year-End Workspace focus mode', () => {
     expect(await screen.findByText("Client's data entry — the whole year")).toBeInTheDocument();
     expect(screen.queryByText('Sales & Payments')).not.toBeInTheDocument();
     // The workspace itself stays one click away, while the on-page jump links drop out.
-    expect(screen.getByText('Year-End Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Custom Workspace')).toBeInTheDocument();
     expect(screen.queryByText('Sign-off checklist')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('← Full menu'));
+    await userEvent.click(screen.getByText('← Daily Books'));
     expect(useUiStore.getState().view.kind).toBe('dashboard');
     expect(useUiStore.getState().yearEndMode).toBe(false);
     expect(await screen.findByText('Sales & Payments')).toBeInTheDocument();
@@ -54,7 +54,7 @@ describe('Sidebar in Year-End Workspace focus mode', () => {
     expect(screen.queryByText('Fixed Assets')).not.toBeInTheDocument();
     await userEvent.click(screen.getByText('+ Add a tab'));
     await userEvent.click(screen.getByLabelText('Fixed Assets'));
-    await userEvent.click(screen.getByText('Done adding'));
+    await userEvent.click(screen.getByText('Done'));
 
     expect(screen.getByText('Fixed Assets')).toBeInTheDocument();
   });
@@ -81,5 +81,23 @@ describe('Sidebar in Year-End Workspace focus mode', () => {
     expect(screen.getByLabelText('Fixed Assets')).not.toBeChecked();
     await userEvent.click(screen.getByTitle("Load Nisha's workspace"));
     expect(screen.getByLabelText('Fixed Assets')).toBeChecked();
+  });
+
+  it('removes a starting tab with its ✕ and adds it back from + Add a tab', async () => {
+    mockApi('receiptInbox', 'list', []);
+    mockApi('actionCentre', 'items', { counts: { overdue: 0, today: 0, soon: 0 } });
+    window.localStorage.clear();
+    useUiStore.setState({ view: { kind: 'welcome' }, yearEndMode: false });
+    useUiStore.getState().setView({ kind: 'yearEndWorkspace' });
+
+    render(<Sidebar />);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove Vendor Bills from the workspace' }));
+    expect(screen.queryByText('Vendor Bills')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('+ Add a tab'));
+    await userEvent.click(screen.getByLabelText('Vendor Bills'));
+    await userEvent.click(screen.getByText('Done'));
+    expect(screen.getByText('Vendor Bills')).toBeInTheDocument();
   });
 });

@@ -239,7 +239,7 @@ interface UiState {
   /** The Year-End Workspace is a mode, not a screen. Opening it turns this on and it STAYS on
    * while the reviewer walks through the client's sales, bills and journals — otherwise the
    * day-to-day sidebar springs back the moment they open All Sales, which is the one thing the
-   * focused nav exists to prevent. Only "Full menu" turns it off. */
+   * focused nav exists to prevent. Only "Daily Books" turns it off. */
   yearEndMode: boolean;
   setYearEndMode: (on: boolean) => void;
   setView: (view: View) => void;
