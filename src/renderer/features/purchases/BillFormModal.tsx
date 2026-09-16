@@ -1,3 +1,4 @@
+import { contentPane, FullScreenToggle } from '../../components/Modal';
 import { PaymentTermsSelect } from '../../components/PaymentTermsSelect';
 import { dueDateFor, termFromDates, type PaymentTerm } from '@shared/domain/contacts/paymentTerms';
 import { useEffect, useMemo, useState, useRef } from 'react';
@@ -79,6 +80,8 @@ export function BillFormModal({
    * Save re-posts that bill rather than entering a new one. */
   editing?: Bill | null;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { if (!open) setExpanded(false); }, [open]);
   const { province: taxProvince, defaultTaxCode, loaded: taxDefaultLoaded } = useCompanyTaxDefault();
   const TAX_CODE_OPTIONS = taxCodeOptions('expense', taxProvince);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -417,11 +420,14 @@ export function BillFormModal({
 
   // Rendered into document.body, like the shared Modal: a transform or filter on any page ancestor
   // turns `fixed` into "relative to that ancestor", which clipped this sheet to a short strip.
+  // Opens in the content pane beside the sidebar, like the other full-page forms.
+  const pane = expanded ? null : contentPane();
   return createPortal(
-    <div className="fixed inset-0 z-40 flex flex-col bg-white" role="dialog" aria-modal="true" aria-labelledby="bill-form-title">
+    <div className={`${pane ? 'absolute z-20' : 'fixed z-50'} inset-0 flex flex-col bg-white`} role="dialog" aria-modal="true" aria-labelledby="bill-form-title">
       <div className="flex items-center justify-between border-b border-gray-200 px-5 py-2">
         <h1 id="bill-form-title" className="text-lg font-semibold text-gray-900">{editing ? `Edit bill${editing.billNumber ? ` ${editing.billNumber}` : ''}` : 'Bill'}</h1>
         <div className="flex items-center gap-3">
+          {contentPane() && <FullScreenToggle expanded={expanded} onToggle={() => setExpanded((v) => !v)} />}
           <button type="button" onClick={() => void readFromFile()} className="rounded-full border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50" title="Pick the vendor's PDF or a scan; the vendor, date and amounts are filled in for you to check">
             Read from PDF or scan…
           </button>
@@ -743,6 +749,6 @@ export function BillFormModal({
         />
       )}
     </div>,
-    document.body,
+    pane ?? document.body,
   );
 }

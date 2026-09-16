@@ -1,3 +1,4 @@
+import { CraNumberFields } from '../../components/CraNumberFields';
 import { useEffect, useState } from 'react';
 import { useUiStore } from '../../app/store/uiStore';
 import { Modal } from '../../components/Modal';
@@ -30,6 +31,7 @@ export function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () 
   const [fiscalEndDate, setFiscalEndDate] = useState(`${new Date().getFullYear()}-12-31`);
   const [baseCurrency, setBaseCurrency] = useState('CAD');
   const [businessNumber, setBusinessNumber] = useState('');
+  const [cra, setCra] = useState({ hstNumber: '', payrollNumber: '', corporateTaxNumber: '' });
   const [businessType, setBusinessType] = useState('general');
   const [templateId, setTemplateId] = useState<string | null>(null);
 
@@ -41,6 +43,7 @@ export function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () 
     setFiscalEndDate(`${year}-12-31`);
     setBaseCurrency('CAD');
     setBusinessNumber('');
+    setCra({ hstNumber: '', payrollNumber: '', corporateTaxNumber: '' });
     setBusinessType('general');
     setTemplateId(null);
     setError(null);
@@ -109,6 +112,9 @@ export function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () 
       fiscalYearEndDay: fiscalEnd.day,
       baseCurrency,
       businessNumber: businessNumber || null,
+      hstNumber: cra.hstNumber || null,
+      payrollNumber: cra.payrollNumber || null,
+      corporateTaxNumber: cra.corporateTaxNumber || null,
       businessType,
       coaTemplateId: templateId,
     });
@@ -208,17 +214,17 @@ export function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () 
             <span className="mt-1 block text-xs text-gray-400">CAD stays the accounting and reporting base. Select foreign currencies on individual transactions.</span>
             <SuggestionDatalist fieldKey="company-base-currency" />
           </label>
-          <label className="block text-sm">
-            <span className="text-gray-600">Business Number (optional)</span>
-            <input
-              list={suggestionListId('company-business-number')}
-              className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
-              value={businessNumber}
-              onChange={(e) => setBusinessNumber(e.target.value)}
-              onBlur={(e) => recordSuggestion('company-business-number', e.target.value)}
+        </div>
+        <div>
+          <p className="text-sm text-gray-600">CRA numbers (optional)</p>
+          <p className="text-xs text-gray-400">RT for GST/HST, RP for payroll and RC for corporate income tax are fixed; type the 9-digit Business Number and each 4-digit reference.</p>
+          <div className="mt-2">
+            <CraNumberFields
+              compact
+              values={{ businessNumber, ...cra }}
+              onChange={(next) => { setBusinessNumber(next.businessNumber); setCra({ hstNumber: next.hstNumber, payrollNumber: next.payrollNumber, corporateTaxNumber: next.corporateTaxNumber }); }}
             />
-            <SuggestionDatalist fieldKey="company-business-number" />
-          </label>
+          </div>
         </div>
         <label className="block text-sm">
           <span className="text-gray-600">Business Type</span>

@@ -1,3 +1,4 @@
+import { businessNumberProblem, compactCraNumber, mismatchedBusinessNumber, programAccountProblem } from '../domain/company/craAccounts';
 import { z } from 'zod';
 import { FOREIGN_CURRENCY_CODES } from '../domain/types';
 
@@ -133,17 +134,21 @@ export const newFiscalPeriodSchema = z.object({
   label: z.string().trim().min(1).max(100),
 });
 
-export const companyCreateSchema = z.object({
+/** Blank becomes null; otherwise spaces, dashes and case are removed so every number is stored one way. */
+const craNumber = z.string().trim().max(30).nullable().optional().transform((v) => (v == null ? v : compactCraNumber(v) || null));
+
+const companyFields = z.object({
   legalName: z.string().trim().min(1).max(300),
   fiscalYearEndMonth: z.number().int().min(1).max(12),
   fiscalYearEndDay: z.number().int().min(1).max(31),
   baseCurrency: z.literal('CAD').default('CAD'),
-  businessNumber: z.string().trim().max(20).nullable().optional(),
+  businessNumber: craNumber,
   businessType: z.string().trim().max(50).nullable().optional(),
   hstQuickMethodEnabled: z.boolean().optional(),
   hstQuickMethodRate: z.number().min(0).max(100).nullable().optional(),
-  hstNumber: z.string().trim().max(20).nullable().optional(),
-  payrollNumber: z.string().trim().max(20).nullable().optional(),
+  hstNumber: craNumber,
+  payrollNumber: craNumber,
+  corporateTaxNumber: craNumber,
   approvalJournalThresholdCents: z.number().int().min(0).nullable().optional(),
   approvalPoThresholdCents: z.number().int().min(0).nullable().optional(),
   hstFilingFrequency: z.enum(['Monthly', 'Quarterly', 'Annually', 'None']).optional(),
@@ -174,7 +179,20 @@ export const companyCreateSchema = z.object({
   wsibRate: z.number().min(0).nullable().optional(),
 });
 
-export const companyUpdateSchema = companyCreateSchema.omit({ coaTemplateId: true }).partial();
+/** The CRA numbers are a hard rule: nine digits for the Business Number, and each program account
+ * under that number with its own letters: RT for GST/HST, RP for payroll, RC for corporate tax. */
+function checkCraNumbers(v: { businessNumber?: string | null; hstNumber?: string | null; payrollNumber?: string | null; corporateTaxNumber?: string | null }, ctx: z.RefinementCtx) {
+  const bnProblem = businessNumberProblem(v.businessNumber);
+  if (bnProblem) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['businessNumber'], message: bnProblem });
+  for (const [program, key] of [['RT', 'hstNumber'], ['RP', 'payrollNumber'], ['RC', 'corporateTaxNumber']] as const) {
+    const problem = programAccountProblem(v[key], program) ?? (bnProblem ? null : mismatchedBusinessNumber(v.businessNumber, v[key], program));
+    if (problem) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [key], message: problem });
+  }
+}
+
+export const companyCreateSchema = companyFields.superRefine(checkCraNumbers);
+
+export const companyUpdateSchema = companyFields.omit({ coaTemplateId: true }).partial().superRefine(checkCraNumbers);
 
 export const trialBalanceQuerySchema = z.object({ asOfDate: ISO_DATE });
 

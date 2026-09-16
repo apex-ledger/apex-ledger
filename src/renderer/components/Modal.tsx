@@ -1,6 +1,27 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { QuickScroll } from './QuickScroll';
+
+/** The ⤢ / ⤡ button on a pane form: expand to the whole window, or back into the pane. */
+export function FullScreenToggle({ expanded, onToggle }: { expanded: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={expanded}
+      title={expanded ? 'Back to the pane (sidebar and menus showing)' : 'Full screen'}
+      className="rounded-full px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+    >
+      {expanded ? '⤡ Exit full screen' : '⤢ Full screen'}
+    </button>
+  );
+}
+
+/** The content pane (right of the sidebar, under the toolbar) that full-page forms open in, or null
+ * where the app shell is not showing, such as the welcome screen. */
+export function contentPane(): HTMLElement | null {
+  return typeof document === 'undefined' ? null : document.querySelector<HTMLElement>('[data-shell="content"]');
+}
 
 interface ModalProps {
   open: boolean;
@@ -9,7 +30,7 @@ interface ModalProps {
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
-  /** A record or document form: takes the whole window, title at the left, close at the top
+  /** A record or document form: fills the content pane, title at the left, close at the top
    * right, footer bar at the bottom — the way every ledger opens a bill or an invoice. Small
    * confirmations and pickers stay as centred dialogs. */
   fullScreen?: boolean;
@@ -17,6 +38,8 @@ interface ModalProps {
 
 export function Modal({ open, onClose, title, children, footer, wide = false, fullScreen = false }: ModalProps) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  useEffect(() => { if (!open) setExpanded(false); }, [open]);
   // Esc closes a full-page form, like the × at its top right. (Centred dialogs keep their scrim click.)
   useEffect(() => {
     if (!open || !fullScreen) return;
@@ -27,14 +50,22 @@ export function Modal({ open, onClose, title, children, footer, wide = false, fu
     return () => window.removeEventListener('keydown', onKey);
   }, [open, fullScreen, onClose]);
   if (!open) return null;
-  if (fullScreen) {
+  // Opens in the content pane (right of the sidebar, under the toolbar) so the sidebar and top bar
+  // stay in view. Where there is no pane (the welcome screen before a company is open) it shows as a
+  // large centred window instead of covering the whole screen.
+  // The ⤢ button expands it over the whole window, and back.
+  const pane = fullScreen ? contentPane() : null;
+  if (pane) {
     return createPortal(
-      <div className="fixed inset-0 z-50 flex flex-col bg-white animate-fadeIn" role="dialog" aria-modal="true" aria-label={title}>
+      <div className={`${expanded ? 'fixed z-50' : 'absolute z-20'} inset-0 flex flex-col bg-white animate-fadeIn`} role="dialog" aria-modal="true" aria-label={title}>
         <div className="flex items-center justify-between border-b border-gray-200 px-5 py-2">
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          <span className="flex items-center gap-1">
+          <FullScreenToggle expanded={expanded} onToggle={() => setExpanded((v) => !v)} />
           <button type="button" onClick={onClose} className="rounded-full p-2 text-xl leading-none text-gray-500 hover:bg-gray-100 hover:text-gray-900" aria-label="Close" title="Close (Esc)">
             ×
           </button>
+          </span>
         </div>
         <div className="relative flex min-h-0 flex-1">
           <div ref={bodyRef} className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
@@ -42,7 +73,7 @@ export function Modal({ open, onClose, title, children, footer, wide = false, fu
         </div>
         {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-gray-200 bg-gray-50 px-5 py-2">{footer}</div>}
       </div>,
-      document.body,
+      expanded ? document.body : pane,
     );
   }
   // Rendered into document.body, NOT in place. `position: fixed` is only relative to the viewport
@@ -71,7 +102,7 @@ export function Modal({ open, onClose, title, children, footer, wide = false, fu
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 animate-fadeIn" onMouseDown={onClose}>
       <div className="flex min-h-full items-center justify-center p-3">
         <div
-          className={`max-h-[calc(100vh-2rem)] w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} overflow-y-auto overscroll-contain rounded-xl2 bg-white shadow-float ring-1 ring-slate-900/5 animate-popIn`}
+          className={`max-h-[calc(100vh-2rem)] w-full ${fullScreen ? 'max-w-5xl' : wide ? 'max-w-3xl' : 'max-w-lg'} overflow-y-auto overscroll-contain rounded-xl2 bg-white shadow-float ring-1 ring-slate-900/5 animate-popIn`}
           onMouseDown={(e) => e.stopPropagation()}
         >
           {/* Sticky so the title and close button stay reachable in a long form. */}

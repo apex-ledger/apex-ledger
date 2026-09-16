@@ -1,3 +1,4 @@
+import { CraNumberFields } from '../../components/CraNumberFields';
 import { useEffect, useState } from 'react';
 import type { AiKeyStatus } from '../../../preload/index';
 import { useIpcQuery } from '../../hooks/useIpcQuery';
@@ -63,6 +64,7 @@ export function CompanySettingsPage() {
   const [businessNumber, setBusinessNumber] = useState('');
   const [businessType, setBusinessType] = useState('general');
   const [hstNumber, setHstNumber] = useState('');
+  const [corporateTaxNumber, setCorporateTaxNumber] = useState('');
   const [payrollNumber, setPayrollNumber] = useState('');
   const [approvals, setApprovals] = useState<{ journal: string; po: string }>({ journal: '', po: '' });
   const [filing, setFiling] = useState<{ hstFilingFrequency: 'Monthly' | 'Quarterly' | 'Annually' | 'None'; payrollRemitterType: 'quarterly' | 'regular' | 'accelerated1' | 'accelerated2' }>({ hstFilingFrequency: 'None', payrollRemitterType: 'regular' });
@@ -155,6 +157,7 @@ export function CompanySettingsPage() {
     setQuickMethodEnabled(company.hstQuickMethodEnabled);
     setQuickMethodRate(company.hstQuickMethodRate ?? 8.5);
     setHstNumber(company.hstNumber ?? '');
+    setCorporateTaxNumber(company.corporateTaxNumber ?? '');
     setPayrollNumber(company.payrollNumber ?? '');
     setApprovals({ journal: company.approvalJournalThresholdCents != null ? String(company.approvalJournalThresholdCents / 100) : '', po: company.approvalPoThresholdCents != null ? String(company.approvalPoThresholdCents / 100) : '' });
     setFiling({ hstFilingFrequency: company.hstFilingFrequency ?? 'None', payrollRemitterType: company.payrollRemitterType ?? 'regular' });
@@ -211,6 +214,7 @@ export function CompanySettingsPage() {
       hstQuickMethodEnabled: quickMethodEnabled,
       hstQuickMethodRate: quickMethodRate,
       hstNumber: hstNumber || null,
+      corporateTaxNumber: corporateTaxNumber || null,
       payrollNumber: payrollNumber || null,
       approvalJournalThresholdCents: approvals.journal.trim() === '' ? null : Math.round(Number(approvals.journal) * 100),
       approvalPoThresholdCents: approvals.po.trim() === '' ? null : Math.round(Number(approvals.po) * 100),
@@ -547,7 +551,7 @@ export function CompanySettingsPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Company Information</h2>
+        <h2 className="mb-3 text-sm font-semibold text-gray-700">About Company</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
           <label className="block text-sm">
             <span className="text-gray-600">Legal Name</span>
@@ -599,16 +603,6 @@ export function CompanySettingsPage() {
             />
             <span className="mt-1 block text-xs text-gray-400">CAD is the permanent ledger and final-report base currency.</span>
             </label>
-            <label className="block text-sm">
-              <span className="text-gray-600">Business Number (optional)</span>
-              <input maxLength={16}
-                list={suggestionListId('company-business-number')}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
-                value={businessNumber}
-                onChange={(e) => setBusinessNumber(e.target.value)}
-                onBlur={(e) => recordSuggestion('company-business-number', e.target.value)}
-              />
-            </label>
           </div>
           <label className="block text-sm">
             <span className="text-gray-600">Business Type</span>
@@ -625,90 +619,17 @@ export function CompanySettingsPage() {
             </select>
             <span className="mt-1 block text-xs text-gray-400">Surfaces trade-relevant categories first in Quick Entry — every account is always still available.</span>
           </label>
-          <div className="flex items-center gap-3">
-            <button type="button" onClick={handleSave} className="rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200">
-              Save
-            </button>
-            {saved && <span className="text-sm text-green-600">Saved.</span>}
+          <div>
+            <p className="text-sm font-medium text-gray-600">CRA numbers</p>
+            <p className="text-xs text-gray-400">The letters are fixed by the CRA: RT for GST/HST, RP for payroll, RC for corporate income tax. Type only the 4-digit reference.</p>
+            <div className="mt-2">
+              <CraNumberFields
+                values={{ businessNumber, hstNumber, payrollNumber, corporateTaxNumber }}
+                onChange={(next) => { setBusinessNumber(next.businessNumber); setHstNumber(next.hstNumber); setPayrollNumber(next.payrollNumber); setCorporateTaxNumber(next.corporateTaxNumber); }}
+              />
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">Business Details & Addresses</h2>
-        <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
-          <div className="grid grid-cols-3 gap-3">
-            <label className="block text-sm">
-              <span className="text-gray-600">GST/HST Account Number</span>
-              <input maxLength={16}
-                list={suggestionListId('company-hst-number')}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
-                placeholder="123456789RT0001"
-                value={hstNumber}
-                onChange={(e) => setHstNumber(e.target.value)}
-                onBlur={(e) => recordSuggestion('company-hst-number', e.target.value)}
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-gray-600">Payroll Account Number (optional)</span>
-              <input maxLength={16}
-                list={suggestionListId('company-payroll-number')}
-                className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5"
-                placeholder="123456789RP0001"
-                value={payrollNumber}
-                onChange={(e) => setPayrollNumber(e.target.value)}
-                onBlur={(e) => recordSuggestion('company-payroll-number', e.target.value)}
-              />
-            </label>
-            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="filing-settings">
-              <div className="text-sm font-semibold text-gray-800">Filing &amp; remittance schedule</div>
-              <div className="mt-2 grid gap-2 md:grid-cols-2">
-                <label className="block text-sm"><span className="text-gray-600">GST/HST reporting period</span>
-                  <select className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1.5" value={filing.hstFilingFrequency} onChange={(e) => setFiling({ ...filing, hstFilingFrequency: e.target.value as typeof filing.hstFilingFrequency })}>
-                    <option value="None">Not registered / not set</option>
-                    <option value="Monthly">Monthly — return due one month after period end</option>
-                    <option value="Quarterly">Quarterly — return due one month after quarter end</option>
-                    <option value="Annually">Annually — return due three months after year end</option>
-                  </select>
-                </label>
-                <label className="block text-sm"><span className="text-gray-600">CRA payroll remitter type</span>
-                  <select className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1.5" value={filing.payrollRemitterType} onChange={(e) => setFiling({ ...filing, payrollRemitterType: e.target.value as typeof filing.payrollRemitterType })}>
-                    <option value="quarterly">Quarterly remitter (small employer)</option>
-                    <option value="regular">Regular — due the 15th of the following month</option>
-                    <option value="accelerated1">Threshold 1 — 25th and 10th</option>
-                    <option value="accelerated2">Threshold 2 — within 3 working days</option>
-                  </select>
-                </label>
-              </div>
-              <div className="mt-3 grid gap-2 md:grid-cols-2">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={eht.eligible} onChange={(e) => setEht({ ...eht, eligible: e.target.checked })} /><span className="text-gray-600">Eligible for the Ontario EHT exemption (private sector, under $5M payroll)</span></label>
-                <label className="block text-sm"><span className="text-gray-600">EHT exemption claimed by this company ($, share of $1,000,000 if associated)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eht.exemption} onChange={(e) => setEht({ ...eht, exemption: e.target.value })} disabled={!eht.eligible} /></label>
-              </div>
-              <p className="mt-1 text-[11px] text-gray-500">The Action Centre uses these to warn before GST/HST returns and PD7A remittances fall due; the PD7A panel opens on this remitter type.</p>
-            </div>
-            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="approval-settings">
-              <div className="text-sm font-semibold text-gray-800">Approvals — a second pair of eyes above a threshold</div>
-              <div className="mt-2 grid gap-2 md:grid-cols-2">
-                <label className="block text-sm"><span className="text-gray-600">Manual journal entries at or above $ (blank = never)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={approvals.journal} onChange={(e) => setApprovals({ ...approvals, journal: e.target.value })} placeholder="e.g. 1000" /></label>
-                <label className="block text-sm"><span className="text-gray-600">Purchase orders at or above $ (blank = never)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={approvals.po} onChange={(e) => setApprovals({ ...approvals, po: e.target.value })} placeholder="e.g. 5000" /></label>
-              </div>
-              <p className="mt-1 text-[11px] text-gray-500">Above the threshold a journal cannot post and a purchase order cannot be sent until an administrator or accountant approves it in Approvals. Bills already have their own approval on the Purchases page.</p>
-            </div>
-            <InstallationSettingsSection logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
-            <WebOrganisationSection />
-            <SelfTutorialSection />
-            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3">
-              <div className="text-sm font-semibold text-gray-800">Direct deposit (EFT) — from your bank’s EFT agreement</div>
-              <div className="mt-2 grid gap-2 md:grid-cols-3">
-                <label className="block text-sm"><span className="text-gray-600">Originator ID (10 characters)</span><input maxLength={10} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 uppercase" value={eft.eftOriginatorId} onChange={(e) => setEft({ ...eft, eftOriginatorId: e.target.value.toUpperCase().slice(0, 10) })} /></label>
-                <label className="block text-sm"><span className="text-gray-600">Short name on statements (15)</span><input maxLength={15} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftOriginatorShortName} onChange={(e) => setEft({ ...eft, eftOriginatorShortName: e.target.value.slice(0, 15) })} /></label>
-                <label className="block text-sm"><span className="text-gray-600">Data centre (5 digits)</span><input inputMode="numeric" maxLength={5} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftDataCentre} onChange={(e) => setEft({ ...eft, eftDataCentre: e.target.value.replace(/\D/g, '').slice(0, 5) })} /></label>
-                <label className="block text-sm"><span className="text-gray-600">Settlement institution (3)</span><input inputMode="numeric" maxLength={3} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementInstitution} onChange={(e) => setEft({ ...eft, eftSettlementInstitution: e.target.value.replace(/\D/g, '').slice(0, 3) })} /></label>
-                <label className="block text-sm"><span className="text-gray-600">Settlement transit (5)</span><input inputMode="numeric" maxLength={5} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementTransit} onChange={(e) => setEft({ ...eft, eftSettlementTransit: e.target.value.replace(/\D/g, '').slice(0, 5) })} /></label>
-                <label className="block text-sm"><span className="text-gray-600">Settlement account</span><input inputMode="numeric" maxLength={12} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementAccount} onChange={(e) => setEft({ ...eft, eftSettlementAccount: e.target.value.replace(/\D/g, '').slice(0, 12) })} /></label>
-              </div>
-              <p className="mt-1 text-[11px] text-gray-500">Used by Payroll → Direct deposit file (CPA-005). The file number counts up automatically with each file saved.</p>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
             <label className="block text-sm">
               <span className="text-gray-600">Number of Employees (optional)</span>
               <input inputMode="decimal" maxLength={7}
@@ -720,7 +641,6 @@ export function CompanySettingsPage() {
               />
             </label>
           </div>
-
           <div>
             <p className="text-sm font-medium text-gray-600">Business Address</p>
             <div className="mt-1 space-y-2">
@@ -863,6 +783,70 @@ export function CompanySettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={handleSave} className="rounded-full bg-brand-100 px-4 py-2 text-sm font-medium text-brand-700 hover:bg-brand-200">
+              Save
+            </button>
+            {saved && <span className="text-sm text-green-600">Saved.</span>}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-gray-700">Filing, Payroll &amp; Firm Settings</h2>
+        <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="filing-settings">
+              <div className="text-sm font-semibold text-gray-800">Filing &amp; remittance schedule</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                <label className="block text-sm"><span className="text-gray-600">GST/HST reporting period</span>
+                  <select className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1.5" value={filing.hstFilingFrequency} onChange={(e) => setFiling({ ...filing, hstFilingFrequency: e.target.value as typeof filing.hstFilingFrequency })}>
+                    <option value="None">Not registered / not set</option>
+                    <option value="Monthly">Monthly — return due one month after period end</option>
+                    <option value="Quarterly">Quarterly — return due one month after quarter end</option>
+                    <option value="Annually">Annually — return due three months after year end</option>
+                  </select>
+                </label>
+                <label className="block text-sm"><span className="text-gray-600">CRA payroll remitter type</span>
+                  <select className="mt-1 w-full rounded border border-gray-300 bg-white px-2 py-1.5" value={filing.payrollRemitterType} onChange={(e) => setFiling({ ...filing, payrollRemitterType: e.target.value as typeof filing.payrollRemitterType })}>
+                    <option value="quarterly">Quarterly remitter (small employer)</option>
+                    <option value="regular">Regular — due the 15th of the following month</option>
+                    <option value="accelerated1">Threshold 1 — 25th and 10th</option>
+                    <option value="accelerated2">Threshold 2 — within 3 working days</option>
+                  </select>
+                </label>
+              </div>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={eht.eligible} onChange={(e) => setEht({ ...eht, eligible: e.target.checked })} /><span className="text-gray-600">Eligible for the Ontario EHT exemption (private sector, under $5M payroll)</span></label>
+                <label className="block text-sm"><span className="text-gray-600">EHT exemption claimed by this company ($, share of $1,000,000 if associated)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eht.exemption} onChange={(e) => setEht({ ...eht, exemption: e.target.value })} disabled={!eht.eligible} /></label>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">The Action Centre uses these to warn before GST/HST returns and PD7A remittances fall due; the PD7A panel opens on this remitter type.</p>
+            </div>
+            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="approval-settings">
+              <div className="text-sm font-semibold text-gray-800">Approvals — a second pair of eyes above a threshold</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-2">
+                <label className="block text-sm"><span className="text-gray-600">Manual journal entries at or above $ (blank = never)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={approvals.journal} onChange={(e) => setApprovals({ ...approvals, journal: e.target.value })} placeholder="e.g. 1000" /></label>
+                <label className="block text-sm"><span className="text-gray-600">Purchase orders at or above $ (blank = never)</span><input inputMode="decimal" className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={approvals.po} onChange={(e) => setApprovals({ ...approvals, po: e.target.value })} placeholder="e.g. 5000" /></label>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Above the threshold a journal cannot post and a purchase order cannot be sent until an administrator or accountant approves it in Approvals. Bills already have their own approval on the Purchases page.</p>
+            </div>
+            <InstallationSettingsSection logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
+            <WebOrganisationSection />
+            <SelfTutorialSection />
+            <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3">
+              <div className="text-sm font-semibold text-gray-800">Direct deposit (EFT) — from your bank’s EFT agreement</div>
+              <div className="mt-2 grid gap-2 md:grid-cols-3">
+                <label className="block text-sm"><span className="text-gray-600">Originator ID (10 characters)</span><input maxLength={10} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 uppercase" value={eft.eftOriginatorId} onChange={(e) => setEft({ ...eft, eftOriginatorId: e.target.value.toUpperCase().slice(0, 10) })} /></label>
+                <label className="block text-sm"><span className="text-gray-600">Short name on statements (15)</span><input maxLength={15} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftOriginatorShortName} onChange={(e) => setEft({ ...eft, eftOriginatorShortName: e.target.value.slice(0, 15) })} /></label>
+                <label className="block text-sm"><span className="text-gray-600">Data centre (5 digits)</span><input inputMode="numeric" maxLength={5} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftDataCentre} onChange={(e) => setEft({ ...eft, eftDataCentre: e.target.value.replace(/\D/g, '').slice(0, 5) })} /></label>
+                <label className="block text-sm"><span className="text-gray-600">Settlement institution (3)</span><input inputMode="numeric" maxLength={3} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementInstitution} onChange={(e) => setEft({ ...eft, eftSettlementInstitution: e.target.value.replace(/\D/g, '').slice(0, 3) })} /></label>
+                <label className="block text-sm"><span className="text-gray-600">Settlement transit (5)</span><input inputMode="numeric" maxLength={5} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementTransit} onChange={(e) => setEft({ ...eft, eftSettlementTransit: e.target.value.replace(/\D/g, '').slice(0, 5) })} /></label>
+                <label className="block text-sm"><span className="text-gray-600">Settlement account</span><input inputMode="numeric" maxLength={12} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" value={eft.eftSettlementAccount} onChange={(e) => setEft({ ...eft, eftSettlementAccount: e.target.value.replace(/\D/g, '').slice(0, 12) })} /></label>
+              </div>
+              <p className="mt-1 text-[11px] text-gray-500">Used by Payroll → Direct deposit file (CPA-005). The file number counts up automatically with each file saved.</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">

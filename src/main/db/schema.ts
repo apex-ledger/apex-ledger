@@ -22,6 +22,8 @@ export interface CompanyInfoTable {
   hstQuickMethodRate: Generated<number | null>;
   hstNumber: string | null;
   payrollNumber: string | null;
+  /** CRA corporate income tax program account, e.g. "123456789RC0001". */
+  corporateTaxNumber: string | null;
   /** CPA-005 direct deposit settings from the bank's EFT agreement. */
   eftOriginatorId: string | null;
   eftOriginatorShortName: string | null;

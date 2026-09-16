@@ -465,8 +465,6 @@ export default function App() {
     <>
       {view.kind === 'welcome' ? (
         <WelcomePage />
-      ) : view.kind === 'paystub' ? (
-        <PaystubPage runId={view.runId} />
       ) : (
         <AppShell>
           {/* Quick Entry is excluded from the remount key: a full remount would wipe its
@@ -530,6 +528,7 @@ export default function App() {
           {view.kind === 'knowledgeBase' && <KnowledgeBasePage />}
           {view.kind === 'audit' && <AuditorCentrePage tab={view.tab} />}
           {view.kind === 'yearEndWorkspace' && <YearEndWorkspacePage />}
+          {view.kind === 'paystub' && <PaystubPage runId={view.runId} />}
           {view.kind === 'about' && <AboutPage />}
           {view.kind === 'whatsNew' && <WhatsNewPage />}
           {view.kind === 'accessPermissions' && <AccessPermissionsPage />}

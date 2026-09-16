@@ -94,6 +94,7 @@ import m0093 from './0093_year_end_signoffs.sql?raw';
 import m0094 from './0094_reversing_entries.sql?raw';
 import m0095 from './0095_invoice_write_off.sql?raw';
 import m0096 from './0096_employee_email.sql?raw';
+import m0097 from './0097_company_corporate_tax_number.sql?raw';
 
 export interface Migration {
   version: number;
@@ -198,4 +199,5 @@ export const MIGRATIONS: Migration[] = [
   { version: 94, name: 'reversing_entries', sql: m0094 },
   { version: 95, name: 'invoice_write_off', sql: m0095 },
   { version: 96, name: 'employee_email', sql: m0096 },
+  { version: 97, name: 'company_corporate_tax_number', sql: m0097 },
 ];

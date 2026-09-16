@@ -457,6 +457,7 @@ export function mapCompanyInfoRow(row: Selectable<CompanyInfoTable>): CompanyInf
     hstQuickMethodRate: row.hstQuickMethodRate,
     hstNumber: row.hstNumber,
     payrollNumber: row.payrollNumber,
+    corporateTaxNumber: (row as { corporateTaxNumber?: string | null }).corporateTaxNumber ?? null,
     approvalJournalThresholdCents: (row as { approvalJournalThresholdCents?: number | null }).approvalJournalThresholdCents ?? null,
     approvalPoThresholdCents: (row as { approvalPoThresholdCents?: number | null }).approvalPoThresholdCents ?? null,
     hstFilingFrequency: ((row as { hstFilingFrequency?: string }).hstFilingFrequency ?? 'None') as CompanyInfo['hstFilingFrequency'],

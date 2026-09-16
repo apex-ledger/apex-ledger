@@ -234,6 +234,8 @@ export interface CompanyInfo {
   hstNumber: string | null;
   /** CRA payroll program account number, e.g. "123456789RP0001". */
   payrollNumber: string | null;
+  /** CRA corporate income tax program account number, e.g. "123456789RC0001". */
+  corporateTaxNumber?: string | null;
   /** Own GST/HST reporting period and CRA remitter type; absent on hand-built test objects. */
   hstFilingFrequency?: HstFilingFrequency;
   payrollRemitterType?: 'quarterly' | 'regular' | 'accelerated1' | 'accelerated2';

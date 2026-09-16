@@ -54,14 +54,14 @@ export function PaystubPage({ runId }: { runId: number }) {
 
   if (error) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+      <div className="flex h-full min-h-[50vh] items-center justify-center">
         <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
       </div>
     );
   }
   if (!data) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-gray-50">
+      <div className="flex h-full min-h-[50vh] items-center justify-center">
         <p className="text-sm text-gray-400">Loading…</p>
       </div>
     );
@@ -86,7 +86,7 @@ export function PaystubPage({ runId }: { runId: number }) {
   const hasStoredPaySplit = run.regularPayCents > 0 || run.overtimePayCents > 0;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-5">
+    <div className="min-h-full bg-gray-100 py-5">
       <div className="mx-auto mb-3 flex max-w-2xl items-center gap-3 print:hidden">
         <BackButton fallback={{ kind: 'payroll' }} fallbackLabel="Payroll" />
         {saveError && <span className="ml-auto text-sm text-red-600">{saveError}</span>}
