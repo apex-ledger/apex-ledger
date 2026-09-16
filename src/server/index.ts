@@ -40,6 +40,7 @@ import { authorizeUrl, exchangeCode, providersFromEnv, signingKeys, verifyIdToke
 import { notifySiteQuestion, notifyTrialRequest } from './notify';
 import { IpLimiter, answerSiteQuestion, limitTurns } from './siteChat';
 import { answerFromSite } from './siteAnswers';
+import { diskSpace, folderBytes } from './storage';
 import { addPayment, deletePayment, lastActivityFor, listPayments, setOrgBilling } from './admin';
 import { billingTotals, computeOrgBilling } from './billing';
 import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
@@ -427,7 +428,8 @@ function orgBillingRow(o: ReturnType<typeof listOrgs>[number], today: string) {
   let companies = 0;
   try { companies = fs.readdirSync(companiesDirFor(o)).filter((n) => n.endsWith('.company')).length; } catch { companies = 0; }
   const agreed = users.filter((u) => u.isActive && u.agreedAt).length;
-  return { org: o, billing, people: users, payments, companies, agreedCount: agreed, activeCount: users.filter((u) => u.isActive).length, lastActivity: lastActivityFor(o.id) };
+  const storageBytes = folderBytes(companiesDirFor(o));
+  return { org: o, billing, people: users, payments, companies, storageBytes, agreedCount: agreed, activeCount: users.filter((u) => u.isActive).length, lastActivity: lastActivityFor(o.id) };
 }
 app.get('/api/admin/subscriptions', (req, res) => {
   const s = requirePlatform(req, res); if (!s) return;
@@ -435,7 +437,8 @@ app.get('/api/admin/subscriptions', (req, res) => {
   res.json(wrap(() => {
     const today = new Date().toISOString().slice(0, 10);
     const rows = listOrgs().filter((o) => !o.isPlatform).map((o) => orgBillingRow(o, today));
-    return { today, rates: seatRates(), totals: billingTotals(rows.map((r) => r.billing)), rows };
+    const storage = { usedBytes: rows.reduce((t, r) => t + r.storageBytes, 0), disk: diskSpace(DATA_DIR) };
+    return { today, rates: seatRates(), totals: billingTotals(rows.map((r) => r.billing)), storage, rows };
   }));
 });
 app.post('/api/admin/orgs/:id/billing', (req, res) => {

@@ -15,9 +15,9 @@ interface Person { id: number; email: string; name: string; role: 'owner' | 'mem
 interface Payment { id: number; orgId: number; paidOn: string; amountCents: number; method: string; reference: string; periodFrom: string | null; periodTo: string | null; note: string }
 interface Charge { periodFrom: string; periodTo: string; listCents: number; discountCents: number; amountCents: number; discountPct: number }
 interface Billing { status: 'trial' | 'active' | 'paused' | 'cancelled'; billingStart: string; firstChargeDate: string; monthlyListCents: number; monthlyNowCents: number; seatCounts: Record<string, number>; charges: Charge[]; billedCents: number; paidCents: number; owingCents: number; nextCharge: { date: string; amountCents: number } | null; discountEndsOn: string | null }
-interface Row { org: Org; billing: Billing; people: Person[]; payments: Payment[]; companies: number; agreedCount: number; activeCount: number; lastActivity: string | null }
+interface Row { org: Org; billing: Billing; people: Person[]; payments: Payment[]; companies: number; storageBytes: number; agreedCount: number; activeCount: number; lastActivity: string | null }
 interface Totals { firms: number; trial: number; active: number; paused: number; cancelled: number; monthlyRecurringCents: number; owingCents: number; paidCents: number; billedCents: number }
-interface Dashboard { today: string; rates: Record<string, number>; totals: Totals; rows: Row[] }
+interface Dashboard { today: string; rates: Record<string, number>; totals: Totals; storage?: { usedBytes: number; disk: { totalBytes: number; freeBytes: number } | null }; rows: Row[] }
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
 
 async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
@@ -30,6 +30,8 @@ async function call<T>(url: string, body?: unknown): Promise<Result<T>> {
 }
 
 const money = (cents: number) => (cents < 0 ? '-' : '') + '$' + (Math.abs(cents) / 100).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** File sizes the way a person reads them: 52 MB, 1.4 GB. */
+const bytes = (n: number) => { if (n < 1024) return `${n} B`; const u = ['KB', 'MB', 'GB', 'TB']; let v = n / 1024; let i = 0; while (v >= 1024 && i < u.length - 1) { v /= 1024; i += 1; } return `${v >= 10 ? Math.round(v) : v.toFixed(1)} ${u[i]}`; };
 const day = (s: string | null) => (s ? s.slice(0, 10) : '—');
 const STATUS_STYLE: Record<Billing['status'], string> = { trial: 'bg-sky-100 text-sky-800', active: 'bg-emerald-100 text-emerald-800', paused: 'bg-amber-100 text-amber-800', cancelled: 'bg-gray-200 text-gray-700' };
 const STATUS_LABEL: Record<Billing['status'], string> = { trial: 'Trial', active: 'Active', paused: 'Paused', cancelled: 'Cancelled' };
@@ -65,11 +67,12 @@ export function WebSubscriptionsSection() {
         <button type="button" onClick={() => void load()} className="rounded-full border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50">Refresh</button>
       </div>
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         {tile('Firms', String(t.firms), 'bg-brand-50 text-brand-900', `${t.trial} on trial · ${t.active} active · ${t.paused} paused · ${t.cancelled} cancelled`)}
         {tile('Monthly recurring', money(t.monthlyRecurringCents), 'bg-emerald-50 text-emerald-900', `${money(t.monthlyRecurringCents * 12)} a year at today's seats`)}
         {tile('Billed to date', money(t.billedCents), 'bg-gray-50 text-gray-900', 'all charge periods started')}
         {tile('Received', money(t.paidCents), 'bg-emerald-50 text-emerald-900', 'payments recorded')}
+        {tile('Storage', bytes(data.storage?.usedBytes ?? 0), 'bg-sky-50 text-sky-900', data.storage?.disk ? `${bytes(data.storage.disk.freeBytes)} free of ${bytes(data.storage.disk.totalBytes)}` : 'company files, all firms')}
         {tile('Owing', money(t.owingCents), t.owingCents > 0 ? 'bg-gold-100 text-amber-900' : 'bg-gray-50 text-gray-900', t.owingCents > 0 ? 'billed less received' : 'nothing outstanding')}
       </div>
 
@@ -82,7 +85,7 @@ export function WebSubscriptionsSection() {
       <div className="max-w-full" style={{ overflowX: 'auto' }}>
         <table className="w-full table-fixed text-xs">
           <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600">
-            <tr><th className="w-[19%] px-1.5 py-2">Firm</th><th className="w-[11%] px-1.5 py-2">Status</th><th className="w-[17%] px-1.5 py-2">Seats in use</th><th className="w-[9%] px-1.5 py-2 text-right">Per month</th><th className="w-[10%] px-1.5 py-2">Next charge</th><th className="w-[8%] px-1.5 py-2 text-right">Billed</th><th className="w-[8%] px-1.5 py-2 text-right">Received</th><th className="w-[8%] px-1.5 py-2 text-right">Owing</th><th className="w-[5%] px-1.5 py-2 text-center">Cos.</th><th className="w-[8%] px-1.5 py-2">Last active</th></tr>
+            <tr><th className="w-[19%] px-1.5 py-2">Firm</th><th className="w-[11%] px-1.5 py-2">Status</th><th className="w-[17%] px-1.5 py-2">Seats in use</th><th className="w-[9%] px-1.5 py-2 text-right">Per month</th><th className="w-[10%] px-1.5 py-2">Next charge</th><th className="w-[8%] px-1.5 py-2 text-right">Billed</th><th className="w-[8%] px-1.5 py-2 text-right">Received</th><th className="w-[8%] px-1.5 py-2 text-right">Owing</th><th className="w-[5%] px-1.5 py-2 text-center" title="Company files and the space they use">Cos.</th><th className="w-[8%] px-1.5 py-2">Last active</th></tr>
           </thead>
           <tbody>
             {rows.length === 0 && <tr><td colSpan={10} className="px-2 py-4 text-center text-gray-500">No firms match.</td></tr>}
@@ -110,7 +113,7 @@ function FirmRows({ row, open, onToggle, onChanged }: { row: Row; open: boolean;
         <td className="px-1.5 py-2 text-right tabular-nums">{money(b.billedCents)}</td>
         <td className="px-1.5 py-2 text-right tabular-nums">{money(b.paidCents)}</td>
         <td className={`px-1.5 py-2 text-right font-semibold tabular-nums ${b.owingCents > 0 ? 'text-amber-800' : b.owingCents < 0 ? 'text-emerald-800' : 'text-gray-700'}`}>{money(b.owingCents)}{b.owingCents < 0 && <div className="text-xs font-normal">credit</div>}</td>
-        <td className="px-1.5 py-2 text-center">{row.companies}</td>
+        <td className="px-1.5 py-2 text-center">{row.companies}<div className="text-gray-500" title="Space used by this firm's company files">{bytes(row.storageBytes)}</div></td>
         <td className="px-1.5 py-2 text-xs text-gray-600">{day(row.lastActivity)}</td>
       </tr>
       {open && (
@@ -211,7 +214,7 @@ function FirmDetail({ row, onChanged }: { row: Row; onChanged: () => void }) {
           <label>Status<select value={form.billingStatus} onChange={(e) => setForm({ ...form, billingStatus: e.target.value as Org['billingStatus'] })} className={field}><option value="active">Active</option><option value="paused">Paused (stop charging)</option><option value="cancelled">Cancelled</option></select></label>
           {form.billingStatus !== 'active' && <label>Charges stop from<input type="date" value={form.billingEnd} onChange={(e) => setForm({ ...form, billingEnd: e.target.value })} className={field} /></label>}
           <label>Notes<textarea rows={3} value={form.billingNotes} onChange={(e) => setForm({ ...form, billingNotes: e.target.value })} className={field} placeholder="terms agreed, contact, anything to remember" /></label>
-          <div className="text-gray-500">Created {day(org.createdAt)} · {row.companies} compan{row.companies === 1 ? 'y' : 'ies'} · seat allowance {org.seats}</div>
+          <div className="text-gray-500">Created {day(org.createdAt)} · {row.companies} compan{row.companies === 1 ? 'y' : 'ies'} using {bytes(row.storageBytes)} · seat allowance {org.seats}</div>
         </div>
         <button type="button" onClick={() => void saveBilling()} className="mt-2 rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800">Save billing details</button>
         {msg && <div className="mt-2 text-xs text-brand-800">{msg}</div>}
