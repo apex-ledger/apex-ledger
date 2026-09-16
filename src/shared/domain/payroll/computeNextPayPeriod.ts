@@ -45,11 +45,19 @@ export function followingFridayIso(fromIso: string): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** The Saturday on or before the supplied date: the end of the last whole Sunday-to-Saturday week. */
+export function mostRecentSaturdayIso(fromIso: string): string {
+  const date = new Date(`${fromIso}T00:00:00Z`);
+  const daysBack = (date.getUTCDay() + 1) % 7;
+  date.setUTCDate(date.getUTCDate() - daysBack);
+  return date.toISOString().slice(0, 10);
+}
+
 /**
  * A sensible starting period for an employee's very first pay run, based on their pay frequency —
  * used only when there's no prior run to continue a cadence from (see computeNextPayPeriod below).
- * Existing biweekly behavior is preserved. Semi-monthly employees use fixed calendar halves:
- * 1st–15th paid on the 20th, then 16th–month-end paid on the following month's 5th. Monthly
+ * Weekly and biweekly end on the most recent Saturday and are paid the following Friday.
+ * Semi-monthly employees use fixed calendar halves: 1st–15th paid on the 20th, then 16th–month-end paid on the following month's 5th. Monthly
  * employees use the full calendar month and are paid on the following month's 5th. Anything else
  * falls back to one day on `today`, since there is no safe schedule to infer.
  */
@@ -58,18 +66,13 @@ export function defaultFirstPayPeriod(payPeriodsPerYear: number, today: string):
   const year = Number(yearStr);
   const month = Number(monthStr);
   const day = Number(dayStr);
-  const nextMonth = month === 12 ? 1 : month + 1;
-  const nextMonthYear = month === 12 ? year + 1 : year;
 
-  if (payPeriodsPerYear === 26) {
-    if (day <= 14) {
-      return { payPeriodStart: `${yearStr}-${monthStr}-01`, payPeriodEnd: `${yearStr}-${monthStr}-14`, payDate: `${yearStr}-${monthStr}-15` };
-    }
-    return {
-      payPeriodStart: `${yearStr}-${monthStr}-15`,
-      payPeriodEnd: `${yearStr}-${monthStr}-${pad2(lastDayOfMonth(year, month))}`,
-      payDate: `${nextMonthYear}-${pad2(nextMonth)}-01`,
-    };
+  if (payPeriodsPerYear === 26 || payPeriodsPerYear === 52) {
+    // Weekly and biweekly run in whole weeks: the period ends on the most recent Saturday (a
+    // Sunday-to-Saturday week), and pay is the following Friday.
+    const payPeriodEnd = mostRecentSaturdayIso(today);
+    const payPeriodStart = addDaysIso(payPeriodEnd, payPeriodsPerYear === 26 ? -13 : -6);
+    return { payPeriodStart, payPeriodEnd, payDate: followingFridayIso(payPeriodEnd) };
   }
 
   if (payPeriodsPerYear === 24) {
@@ -125,6 +128,13 @@ export function computeNextPayPeriod(lastRun: PayPeriodDates | null, fallbackDat
       payPeriodEnd: `${yearStr}-${monthStr}-${pad2(lastDayOfMonth(year, month))}`,
       payDate: fifthOfNextMonth(year, month),
     };
+  }
+
+  if (payPeriodsPerYear === 26 || payPeriodsPerYear === 52) {
+    // Always a whole two weeks (or one) from the day after the last period, however long the last
+    // one happened to be, and paid the Friday after the period ends.
+    const payPeriodEnd = addDaysIso(payPeriodStart, payPeriodsPerYear === 26 ? 13 : 6);
+    return { payPeriodStart, payPeriodEnd, payDate: followingFridayIso(payPeriodEnd) };
   }
 
   const periodLengthDays = daysBetweenIso(lastRun.payPeriodStart, lastRun.payPeriodEnd);

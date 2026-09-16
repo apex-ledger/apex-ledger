@@ -37,8 +37,22 @@ describe('computeNextPayPeriod', () => {
     expect(computeNextPayPeriod(null, '2026-08-01')).toEqual({ payPeriodStart: '2026-08-01', payPeriodEnd: '2026-08-01', payDate: '2026-08-01' });
   });
 
-  it('defaults a brand-new biweekly employee to a real calendar period instead of a same-day one', () => {
-    expect(computeNextPayPeriod(null, '2026-08-05', 26)).toEqual({ payPeriodStart: '2026-08-01', payPeriodEnd: '2026-08-14', payDate: '2026-08-15' });
+  it('defaults a brand-new biweekly employee to the two weeks ending last Saturday, paid the following Friday', () => {
+    // 2026-08-05 is a Wednesday: the last whole week ended Saturday 2026-08-01.
+    expect(computeNextPayPeriod(null, '2026-08-05', 26)).toEqual({ payPeriodStart: '2026-07-19', payPeriodEnd: '2026-08-01', payDate: '2026-08-07' });
+  });
+
+  it('continues biweekly two weeks from the last period, paid the Friday after it ends', () => {
+    expect(computeNextPayPeriod({ payPeriodStart: '2026-08-30', payPeriodEnd: '2026-09-12', payDate: '2026-09-18' }, '2026-09-16', 26)).toEqual({ payPeriodStart: '2026-09-13', payPeriodEnd: '2026-09-26', payDate: '2026-10-02' });
+  });
+
+  it('puts a drifted biweekly schedule back on whole two-week periods', () => {
+    // The old default made a 15th-to-31st run; the next one is still two weeks, paid on a Friday.
+    expect(computeNextPayPeriod({ payPeriodStart: '2026-08-15', payPeriodEnd: '2026-08-31', payDate: '2026-09-01' }, '2026-09-16', 26)).toEqual({ payPeriodStart: '2026-09-01', payPeriodEnd: '2026-09-14', payDate: '2026-09-18' });
+  });
+
+  it('continues weekly one week at a time, paid the following Friday', () => {
+    expect(computeNextPayPeriod({ payPeriodStart: '2026-09-06', payPeriodEnd: '2026-09-12', payDate: '2026-09-18' }, '2026-09-16', 52)).toEqual({ payPeriodStart: '2026-09-13', payPeriodEnd: '2026-09-19', payDate: '2026-09-25' });
   });
 
   it('continues semi-monthly from the first half into the second half', () => {
@@ -67,16 +81,16 @@ describe('computeNextPayPeriod', () => {
 });
 
 describe('defaultFirstPayPeriod', () => {
-  it('biweekly: gives the 1st-14th (paid the 15th) when today is in the first half of the month', () => {
-    expect(defaultFirstPayPeriod(26, '2026-08-05')).toEqual({ payPeriodStart: '2026-08-01', payPeriodEnd: '2026-08-14', payDate: '2026-08-15' });
+  it('biweekly: the two weeks ending the most recent Saturday, paid the following Friday', () => {
+    expect(defaultFirstPayPeriod(26, '2026-09-16')).toEqual({ payPeriodStart: '2026-08-30', payPeriodEnd: '2026-09-12', payDate: '2026-09-18' });
   });
 
-  it('biweekly: gives the 15th-end of month (paid the 1st of next month) when today is in the second half', () => {
-    expect(defaultFirstPayPeriod(26, '2026-08-20')).toEqual({ payPeriodStart: '2026-08-15', payPeriodEnd: '2026-08-31', payDate: '2026-09-01' });
+  it('biweekly: on a Saturday that Saturday ends the period', () => {
+    expect(defaultFirstPayPeriod(26, '2026-09-12')).toEqual({ payPeriodStart: '2026-08-30', payPeriodEnd: '2026-09-12', payDate: '2026-09-18' });
   });
 
-  it('biweekly: rolls the pay date into January when the second half falls in December', () => {
-    expect(defaultFirstPayPeriod(26, '2026-12-20')).toEqual({ payPeriodStart: '2026-12-15', payPeriodEnd: '2026-12-31', payDate: '2027-01-01' });
+  it('biweekly: a period ending late December is paid in January', () => {
+    expect(defaultFirstPayPeriod(26, '2026-12-28')).toEqual({ payPeriodStart: '2026-12-13', payPeriodEnd: '2026-12-26', payDate: '2027-01-01' });
   });
 
   it('semi-monthly first half runs 1st-15th and pays on the 20th', () => {
@@ -95,8 +109,12 @@ describe('defaultFirstPayPeriod', () => {
     expect(defaultFirstPayPeriod(12, '2026-02-10')).toEqual({ payPeriodStart: '2026-02-01', payPeriodEnd: '2026-02-28', payDate: '2026-03-05' });
   });
 
-  it('an unrecognized frequency (e.g. weekly) falls back to a single day on the given date', () => {
-    expect(defaultFirstPayPeriod(52, '2026-08-05')).toEqual({ payPeriodStart: '2026-08-05', payPeriodEnd: '2026-08-05', payDate: '2026-08-05' });
+  it('weekly: the week ending the most recent Saturday, paid the following Friday', () => {
+    expect(defaultFirstPayPeriod(52, '2026-09-16')).toEqual({ payPeriodStart: '2026-09-06', payPeriodEnd: '2026-09-12', payDate: '2026-09-18' });
+  });
+
+  it('an unrecognized frequency falls back to a single day on the given date', () => {
+    expect(defaultFirstPayPeriod(4, '2026-08-05')).toEqual({ payPeriodStart: '2026-08-05', payPeriodEnd: '2026-08-05', payDate: '2026-08-05' });
   });
 });
 

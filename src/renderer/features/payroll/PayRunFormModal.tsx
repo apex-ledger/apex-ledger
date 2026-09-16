@@ -16,10 +16,11 @@ function today(): string {
   return localIsoDate();
 }
 
-function automaticPayDate(next: { payDate: string }, payPeriodsPerYear?: number): string {
-  // Preserve the established following-Friday behavior for biweekly (and any legacy weekly
-  // employee). Calendar-based schedules use the exact payday calculated by their rules.
-  return payPeriodsPerYear === 24 || payPeriodsPerYear === 12 ? next.payDate : followingFridayIso(today());
+function automaticPayDate(next: { payDate: string; payPeriodEnd: string }, payPeriodsPerYear?: number): string {
+  // Weekly and biweekly: the Friday after the period ends (computeNextPayPeriod already gives it).
+  // Semi-monthly and monthly use their calendar paydays. An unknown frequency still gets the
+  // Friday after its period end rather than a date counted from today.
+  return payPeriodsPerYear === 24 || payPeriodsPerYear === 12 || payPeriodsPerYear === 26 || payPeriodsPerYear === 52 ? next.payDate : followingFridayIso(next.payPeriodEnd);
 }
 
 export function PayRunFormModal({
