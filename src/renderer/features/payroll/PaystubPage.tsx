@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BackButton } from '../../components/BackButton';
 import { employeeAddressLines } from '@shared/domain/payroll/employeeAddress';
 import { Money } from '../../components/Money';
+import { companyAddressLines } from '@shared/domain/company/companyAddress';
 import { useUiStore } from '../../app/store/uiStore';
 import { EmailComposeModal } from '../../components/EmailComposeModal';
 import { webContext } from '../company-settings/WebOrganisationSection';
@@ -123,9 +124,9 @@ export function PaystubPage({ runId }: { runId: number }) {
         <div className="flex items-start justify-between border-b border-gray-300 pb-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900">{company.legalName}</h1>
-            {company.businessAddressLine1 && <p className="text-xs text-gray-500">{[company.businessAddressLine1, company.businessAddressLine2].filter(Boolean).join(', ')}</p>}
-            {(company.businessCity || company.businessProvince || company.businessPostalCode) && (
-              <p className="text-xs text-gray-500">{[company.businessCity, [company.businessProvince, company.businessPostalCode].filter(Boolean).join(' ')].filter(Boolean).join(', ')}</p>
+            {companyAddressLines(company).map((line) => <p key={line} className="text-xs text-gray-500">{line}</p>)}
+            {companyAddressLines(company).length === 0 && (
+              <p className="text-xs text-amber-700 print:hidden">No company address on file. Add it in Company Settings, About Company, and it prints here.</p>
             )}
           </div>
           <div className="text-right">

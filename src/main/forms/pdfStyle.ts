@@ -111,16 +111,5 @@ export function formatMoney(cents: number): string {
   return (cents / 100).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-export function companyAddressLines(company: {
-  businessAddressLine1: string | null;
-  businessAddressLine2: string | null;
-  businessCity: string | null;
-  businessProvince: string | null;
-  businessPostalCode: string | null;
-}): string[] {
-  const lines: string[] = [];
-  if (company.businessAddressLine1) lines.push([company.businessAddressLine1, company.businessAddressLine2].filter(Boolean).join(', '));
-  const cityLine = [company.businessCity, [company.businessProvince, company.businessPostalCode].filter(Boolean).join(' ')].filter(Boolean).join(', ');
-  if (cityLine) lines.push(cityLine);
-  return lines;
-}
+/** Business address, or the mailing address when the business one is blank. See companyAddress.ts. */
+export { companyAddressLines } from '@shared/domain/company/companyAddress';
