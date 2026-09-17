@@ -5,6 +5,7 @@ import { TopBar } from './TopBar';
 import { StatusBar } from './StatusBar';
 import { UpdateBanner } from './UpdateBanner';
 import { QuickScroll } from '../components/QuickScroll';
+import { SeatPreviewBanner } from './SeatPreview';
 
 export function AppShell({ children }: { children: ReactNode }) {
   // The one scroll container every sheet and report lives in — the quick scroller in its
@@ -12,6 +13,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50" data-shell="root">
+      <SeatPreviewBanner />
       <div className="flex min-h-0 flex-1" data-shell="body">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col" data-shell="column">

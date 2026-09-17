@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { WebOrganisationSection, webContext } from './WebOrganisationSection';
+import { SeatPreviewPicker } from '../../layout/SeatPreview';
 import { WebFeedbackSection } from './WebFeedbackSection';
 import { useUiStore } from '../../app/store/uiStore';
 
@@ -61,6 +62,7 @@ export function WebAdminPage() {
         )}
       </div>
 
+      <SeatPreviewPicker />
       {ctx.org.isPlatform && <SubscriptionsLink />}
       <WebFeedbackSection />
       <WebOrganisationSection />

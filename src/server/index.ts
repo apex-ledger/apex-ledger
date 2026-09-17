@@ -73,16 +73,21 @@ interface Session {
   pendingCompany: string | null;
   savedCompany: string | null;
   persistedAt: number;
+  /** The platform administrator trying the app as another seat (Business, Payroll Unlimited or
+   * Bookkeeper) to see what that seat sees and is refused. Only this session; never stored. */
+  previewSeat: SeatType | null;
 }
 const sessions = new Map<string, Session>();
 const sessionContext = new AsyncLocalStorage<Session>();
 let nextSessionId = 1;
+/** The seat this session acts as: the person's own, or the one the platform administrator is previewing. */
+const seatOf = (s: { user: WebUser; previewSeat: SeatType | null }): SeatType => s.previewSeat ?? s.user.seatType;
 const hashToken = (token: string) => crypto.createHash('sha256').update(token).digest('base64url');
 const cleaned = purgeSessions();
 if (cleaned) console.log(`[web] removed ${cleaned} expired sessions`);
 
 function buildSession(token: string, user: WebUser, org: Org, pendingCompany: string | null): Session {
-  const s: Session = { id: nextSessionId++, token, user, org, company: { connection: null }, createdAt: Date.now(), lastSeen: Date.now(), listeners: new Set(), pendingCompany, savedCompany: pendingCompany, persistedAt: Date.now() };
+  const s: Session = { id: nextSessionId++, token, user, org, company: { connection: null }, createdAt: Date.now(), lastSeen: Date.now(), listeners: new Set(), pendingCompany, savedCompany: pendingCompany, persistedAt: Date.now(), previewSeat: null };
   sessions.set(token, s);
   runWithAccessSession(s.id, () => { setAccessIdentity({ key: `web:${user.id}`, name: user.name, email: user.email }); applySeatAccess(user.seatType); });
   return s;
@@ -154,7 +159,8 @@ function sessionOf(req: express.Request): Session | null {
     const fresh = getUser(s.user.id);
     const org = fresh ? getOrg(fresh.orgId) : null;
     if (!fresh || !fresh.isActive || !org) { endSession(s, true); return null; }
-    if (fresh.seatType !== s.user.seatType) runWithAccessSession(s.id, () => applySeatAccess(fresh.seatType));
+    if (!org.isPlatform) s.previewSeat = null;
+    if (!s.previewSeat && fresh.seatType !== s.user.seatType) runWithAccessSession(s.id, () => applySeatAccess(fresh.seatType));
     s.user = fresh;
     s.org = org;
     s.lastSeen = Date.now();
@@ -207,7 +213,7 @@ setBroadcastSink((channel, payload) => {
 /** Channels the web answers itself, where the desktop would open a file dialog. */
 const overrides: Record<string, (s: Session, args: unknown[]) => Promise<unknown>> = {
   // The seat decides the role on the web; a screen asking for another role gets the seat's role back.
-  'access:setRole': async (s) => (s.user.seatType === 'full' ? applySeatAccess('full') : getAccessRole()),
+  'access:setRole': async (s) => (seatOf(s) === 'full' ? applySeatAccess('full') : getAccessRole()),
   'company:listRecent': async (s) => {
     fs.mkdirSync(companiesDirFor(s.org), { recursive: true });
     return reachableCompanies(reachFor(s));
@@ -433,7 +439,7 @@ app.post('/api/logout', (req, res) => {
 
 app.get('/api/session', (req, res) => {
   const s = sessionOf(req);
-  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role, seatType: s.user.seatType, accessRole: SEAT_ACCESS[s.user.seatType].role, agreementAccepted: Boolean(s.user.agreedAt) || s.org.isPlatform }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
+  res.json({ ok: true, data: s ? { signedIn: true, user: { name: s.user.name, email: s.user.email, role: s.user.role, seatType: seatOf(s), previewSeat: s.previewSeat, accessRole: SEAT_ACCESS[seatOf(s)].role, agreementAccepted: Boolean(s.user.agreedAt) || s.org.isPlatform }, org: { name: s.org.name, seats: s.org.seats, isPlatform: s.org.isPlatform } } : { signedIn: false } });
 });
 
 app.get('/api/events', (req, res) => {
@@ -518,6 +524,17 @@ app.post('/api/admin/users', (req, res) => {
 // Seat types and their monthly rates: the platform administrator sets the rates; an owner may
 // change the type of their own people (it changes what the firm is billed).
 app.get('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => seatRates())); });
+// The platform administrator tries the app as a Business, Payroll Unlimited or Bookkeeper seat: the
+// same menus, the same refusals from the server. null returns to their own seat.
+app.post('/api/admin/preview-seat', (req, res) => {
+  const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
+  const requested = (req.body ?? {}).seatType;
+  const seat = requested === 'business' || requested === 'payroll' || requested === 'bookkeeper' ? requested : null;
+  s.previewSeat = seat;
+  runWithAccessSession(s.id, () => applySeatAccess(seatOf(s)));
+  console.log(`[web] ${s.user.email} ${seat ? `previewing as ${seat}` : 'back to own seat'}`);
+  res.json({ ok: true, data: { previewSeat: seat } });
+});
 app.post('/api/admin/referral-credit', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setReferralCreditCents(Math.round(Number((req.body ?? {}).dollars) * 100)))); });
 app.post('/api/admin/referrals', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { clientOrgId?: number; firmOrgId?: number }; res.json(wrap(() => startReferral(Number(b.clientOrgId), Number(b.firmOrgId)))); });
 app.post('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { seatType?: SeatType; dollars?: number }; res.json(wrap(() => setSeatRate(b.seatType as SeatType, Math.round(Number(b.dollars) * 100)))); });
@@ -751,7 +768,7 @@ app.post('/api/:channel', async (req, res) => {
   if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
   const channel = req.params.channel;
   if (!s.org.isPlatform && !s.user.agreedAt) { res.json({ ok: false, error: 'Please accept the subscription agreement first.' }); return; }
-  if (!seatAllowsChannel(s.user.seatType, channel)) { res.json({ ok: false, error: `Your ${SEAT_LABELS[s.user.seatType]} seat does not include this part of Apex Ledger. Ask your organisation's owner if you need it.` }); return; }
+  if (!seatAllowsChannel(seatOf(s), channel)) { res.json({ ok: false, error: `Your ${SEAT_LABELS[seatOf(s)]} seat does not include this part of Apex Ledger. Ask your organisation's owner if you need it.` }); return; }
   const args = Array.isArray((req.body ?? {}).args) ? (req.body.args as unknown[]) : [];
   const files = uploadedFiles(s, (req.body ?? {}).uploads);
   res.on('finish', () => { for (const f of files) fs.rm(path.dirname(f), { recursive: true, force: true }, () => undefined); });
@@ -774,7 +791,7 @@ app.post('/api/:channel', async (req, res) => {
     const r = result as { ok?: boolean; data?: unknown } | null;
     if (opened.filePath && r && r.ok) result = { ...r, data: { ...(r.data && typeof r.data === 'object' ? (r.data as object) : {}), filePath: opened.filePath } };
     const filtered = result as { ok?: boolean; data?: unknown } | null;
-    if (filtered && filtered.ok) result = { ...filtered, data: filterResultForSeat(s.user.seatType, channel, filtered.data) };
+    if (filtered && filtered.ok) result = { ...filtered, data: filterResultForSeat(seatOf(s), channel, filtered.data) };
     res.json(asDownload(result, s) ?? { ok: true, data: null });
     if (channel.startsWith('company:')) persistSession(s);
   } catch (error) {
