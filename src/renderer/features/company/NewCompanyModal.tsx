@@ -1,4 +1,5 @@
 import { CraNumberFields } from '../../components/CraNumberFields';
+import { businessNumberDigits } from '@shared/domain/company/craAccounts';
 import { useEffect, useState } from 'react';
 import { useUiStore } from '../../app/store/uiStore';
 import { Modal } from '../../components/Modal';
@@ -111,7 +112,7 @@ export function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () 
       fiscalYearEndMonth: fiscalEnd.month,
       fiscalYearEndDay: fiscalEnd.day,
       baseCurrency,
-      businessNumber: businessNumber || null,
+      businessNumber: businessNumberDigits(businessNumber) || null,
       hstNumber: cra.hstNumber || null,
       payrollNumber: cra.payrollNumber || null,
       corporateTaxNumber: cra.corporateTaxNumber || null,

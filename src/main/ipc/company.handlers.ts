@@ -4,7 +4,7 @@ import path from 'node:path';
 import { seedFirmServices } from '../db/seeds/firmServices.seed';
 import { recordAllSignedOut, recordStaffSignIn } from '../staffSessions';
 import { companyCreateSchema, companyUpdateSchema } from '@shared/validation/schemas';
-import { businessNumberProblem, compactCraNumber, mismatchedBusinessNumber, programAccountProblem } from '@shared/domain/company/craAccounts';
+import { businessNumberDigits, businessNumberProblem, mismatchedBusinessNumber, programAccountProblem } from '@shared/domain/company/craAccounts';
 import {
   backupCompanyTo,
   closeCompany,
@@ -57,11 +57,12 @@ async function holdBackInvalidCraNumbers(input: unknown): Promise<{ cleaned: Rec
   const cleaned = { ...((input ?? {}) as Record<string, unknown>) };
   const warnings: string[] = [];
   const asText = (v: unknown) => (typeof v === 'string' ? v : v == null ? v : String(v)) as string | null | undefined;
+  if ('businessNumber' in cleaned && cleaned.businessNumber != null) cleaned.businessNumber = businessNumberDigits(asText(cleaned.businessNumber)) || null;
   if ('businessNumber' in cleaned) {
     const problem = businessNumberProblem(asText(cleaned.businessNumber));
     if (problem) { warnings.push(problem); delete cleaned.businessNumber; }
   }
-  const bn = 'businessNumber' in cleaned ? compactCraNumber(asText(cleaned.businessNumber)) : compactCraNumber((await companyGet()).businessNumber);
+  const bn = businessNumberDigits('businessNumber' in cleaned ? asText(cleaned.businessNumber) : (await companyGet()).businessNumber);
   for (const [program, key] of [['RT', 'hstNumber'], ['RP', 'payrollNumber'], ['RC', 'corporateTaxNumber']] as const) {
     if (!(key in cleaned)) continue;
     const value = asText(cleaned[key]);

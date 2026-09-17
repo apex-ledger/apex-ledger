@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { businessNumberProblem, compactCraNumber, mismatchedBusinessNumber, parseProgramAccount, programAccountProblem } from './craAccounts';
+import { businessNumberDigits, businessNumberProblem, compactCraNumber, mismatchedBusinessNumber, parseProgramAccount, programAccountProblem } from './craAccounts';
 
 describe("the CRA's numbers for a business", () => {
   it('accepts a nine-digit Business Number, however it was spaced', () => {
@@ -29,5 +29,12 @@ describe("the CRA's numbers for a business", () => {
     expect(compactCraNumber(' 123-456-789 rp 0002 ')).toBe('123456789RP0002');
     expect(parseProgramAccount('123456789 RP 0002')).toEqual({ businessNumber: '123456789', program: 'RP', reference: '0002' });
     expect(parseProgramAccount('RP0002')).toBeNull();
+  });
+
+  it('reads an older Business Number box that holds a whole program account as its nine digits', () => {
+    expect(businessNumberDigits('783221005RP0001')).toBe('783221005');
+    expect(businessNumberDigits('783 221 005')).toBe('783221005');
+    expect(businessNumberDigits('')).toBe('');
+    expect(businessNumberDigits('12345')).toBe('12345');
   });
 });

@@ -1,4 +1,4 @@
-import { compactCraNumber, CRA_PROGRAMS, mismatchedBusinessNumber, parseProgramAccount, type CraProgram } from '@shared/domain/company/craAccounts';
+import { businessNumberDigits, compactCraNumber, CRA_PROGRAMS, mismatchedBusinessNumber, parseProgramAccount, type CraProgram } from '@shared/domain/company/craAccounts';
 
 /**
  * The Business Number and the company's CRA program accounts, entered the way the CRA writes them.
@@ -20,7 +20,7 @@ const PROGRAM_KEYS: Array<[CraProgram, keyof Omit<CraNumbers, 'businessNumber'>,
 /** The nine digits a company's numbers are under: the Business Number box, or failing that the first
  * program account already on file (older files kept only the full account). */
 export function businessNumberOf(values: CraNumbers): string {
-  const own = digitsOnly(values.businessNumber, 9);
+  const own = digitsOnly(businessNumberDigits(values.businessNumber), 9);
   if (own) return own;
   for (const [, key] of PROGRAM_KEYS) {
     const parts = parseProgramAccount(values[key]);

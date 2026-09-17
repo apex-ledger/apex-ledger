@@ -1,3 +1,4 @@
+import { businessNumberDigits, compactCraNumber, parseProgramAccount } from '@shared/domain/company/craAccounts';
 import { CraNumberFields } from '../../components/CraNumberFields';
 import { useEffect, useState } from 'react';
 import type { AiKeyStatus } from '../../../preload/index';
@@ -156,13 +157,17 @@ export function CompanySettingsPage({ mode = 'company' }: { mode?: 'company' | '
     setFiscalEndDate(dates.endDate);
     setFiscalDateError(null);
     setBaseCurrency(company.baseCurrency);
-    setBusinessNumber(company.businessNumber ?? '');
+    // Older files kept a whole program account ("783221005RP0001") in the Business Number box: show
+    // the nine digits there, and put the account in its own box if that box is empty.
+    setBusinessNumber(businessNumberDigits(company.businessNumber));
+    const oldAccount = parseProgramAccount(company.businessNumber);
     setBusinessType(company.businessType ?? 'general');
     setQuickMethodEnabled(company.hstQuickMethodEnabled);
     setQuickMethodRate(company.hstQuickMethodRate ?? 8.5);
-    setHstNumber(company.hstNumber ?? '');
-    setCorporateTaxNumber(company.corporateTaxNumber ?? '');
-    setPayrollNumber(company.payrollNumber ?? '');
+    const fromOld = (program: string, current: string | null | undefined) => current || (oldAccount && oldAccount.program === program ? compactCraNumber(company.businessNumber) : '');
+    setHstNumber(fromOld('RT', company.hstNumber));
+    setCorporateTaxNumber(fromOld('RC', company.corporateTaxNumber));
+    setPayrollNumber(fromOld('RP', company.payrollNumber));
     setApprovals({ journal: company.approvalJournalThresholdCents != null ? String(company.approvalJournalThresholdCents / 100) : '', po: company.approvalPoThresholdCents != null ? String(company.approvalPoThresholdCents / 100) : '' });
     setFiling({ hstFilingFrequency: company.hstFilingFrequency ?? 'None', payrollRemitterType: company.payrollRemitterType ?? 'regular' });
     setEft({ eftOriginatorId: company.eftOriginatorId ?? '', eftOriginatorShortName: company.eftOriginatorShortName ?? '', eftDataCentre: company.eftDataCentre ?? '', eftSettlementInstitution: company.eftSettlementInstitution ?? '', eftSettlementTransit: company.eftSettlementTransit ?? '', eftSettlementAccount: company.eftSettlementAccount ?? '' });
@@ -214,7 +219,7 @@ export function CompanySettingsPage({ mode = 'company' }: { mode?: 'company' | '
       fiscalYearEndMonth: fiscalEnd.month,
       fiscalYearEndDay: fiscalEnd.day,
       baseCurrency,
-      businessNumber: businessNumber || null,
+      businessNumber: businessNumberDigits(businessNumber) || null,
       businessType,
       hstQuickMethodEnabled: quickMethodEnabled,
       hstQuickMethodRate: quickMethodRate,

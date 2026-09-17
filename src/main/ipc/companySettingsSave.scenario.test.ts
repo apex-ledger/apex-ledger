@@ -99,4 +99,13 @@ describe('saving About Company', () => {
     expect(company.payrollNumber).toBe('783221005RP0001');
     expect(company.corporateTaxNumber).toBeNull();
   });
+
+  it('accepts an older Business Number saved as a whole account, keeping its nine digits, and saves the accounts under it', async () => {
+    await db.updateTable('companyInfo').set({ businessNumber: '783221005RP0001', hstNumber: null, payrollNumber: null }).where('id', '=', 1).execute();
+    const result = await companyUpdate({ businessNumber: '783221005RP0001', hstNumber: '783221005RT0001', payrollNumber: '783221005RP0001', corporateTaxNumber: '783221005RC0001' });
+    expect(result.saveWarnings).toEqual([]);
+    const company = await companyGet();
+    expect(company.businessNumber).toBe('783221005');
+    expect([company.hstNumber, company.payrollNumber, company.corporateTaxNumber]).toEqual(['783221005RT0001', '783221005RP0001', '783221005RC0001']);
+  });
 });

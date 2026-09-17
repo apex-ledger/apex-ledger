@@ -34,6 +34,15 @@ export function programAccountProblem(value: string | null | undefined, program:
   return `The ${CRA_PROGRAMS[program].label} is the 9-digit Business Number, ${program}, then 4 digits (for example 123456789${program}0001).`;
 }
 
+/** What older files kept in the Business Number box, reduced to the nine digits: "783221005",
+ * "783 221 005" and a full program account "783221005RP0001" all give "783221005". Anything else is
+ * returned compacted, for the rule to judge. */
+export function businessNumberDigits(value: string | null | undefined): string {
+  const v = compactCraNumber(value);
+  const account = /^(\d{9})[A-Z]{2}\d{4}$/.exec(v);
+  return account ? account[1] : v;
+}
+
 export interface ProgramAccountParts { businessNumber: string; program: string; reference: string }
 
 /** "123456789RT0001" → its parts; null when it is not shaped like a program account. */
