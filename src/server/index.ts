@@ -44,7 +44,7 @@ import { diskSpace, folderBytes } from './storage';
 import { referralInviteMail } from './referralInvite';
 import { sendPlatformEmail } from '../main/email/sendEmail';
 import { mayOpenCompany, reachableCompanies, type CompanyReach } from './companyAccess';
-import { setOrgTest, orgByReferralCode, activeReferralFor, createClientSubscription, endReferral, linkedClientOrgs, listReferrals, referralCreditCents, setReferralCreditCents, setUserAccess, startReferral, CLIENT_RATE_KEY } from './admin';
+import { completePasswordReset, createPasswordReset, setOrgTest, orgByReferralCode, activeReferralFor, createClientSubscription, endReferral, linkedClientOrgs, listReferrals, referralCreditCents, setReferralCreditCents, setUserAccess, startReferral, CLIENT_RATE_KEY } from './admin';
 import { addPayment, deletePayment, lastActivityFor, listPayments, setOrgBilling } from './admin';
 import { billingTotals, computeOrgBilling, referralCredit } from './billing';
 import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
@@ -428,6 +428,45 @@ app.post('/api/me/agree', (req, res) => {
   const s = sessionOf(req);
   if (!s) { res.status(401).json({ ok: false, error: 'Please sign in.' }); return; }
   res.json(wrap(() => { s.user = recordAgreement(s.user.id, String((req.body ?? {}).name ?? '')); console.log(`[agreement] ${s.user.email} accepted at ${s.user.agreedAt} signed ${s.user.agreedName}`); return { agreedAt: s.user.agreedAt, agreedName: s.user.agreedName }; }));
+});
+
+// ---- forgot password ----
+// The answer is the same whether or not the email has a sign-in, so the page cannot be used to find
+// out who has one. The link is single-use, lasts an hour, and signs out anyone using the old password.
+const resetLimiter = new IpLimiter(5, 15 * 60 * 1000);
+app.post('/api/password-reset/request', async (req, res) => {
+  const email = String((req.body ?? {}).email ?? '').trim();
+  const generic = { ok: true, data: { message: 'If that email has an Apex Ledger sign-in, a link to set a new password is on its way. It works once, for one hour. Check the junk folder too.' } };
+  if (!resetLimiter.allow(req.ip ?? 'unknown')) { res.status(429).json({ ok: false, error: 'Too many requests. Try again in 15 minutes.' }); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { res.json({ ok: false, error: 'Enter the email you sign in with.' }); return; }
+  try {
+    const reset = createPasswordReset(email);
+    if (reset) {
+      const link = `${publicOrigin(req)}/?reset=${encodeURIComponent(reset.token)}`;
+      await sendPlatformEmail(reset.user.email, 'Set a new Apex Ledger password', [
+        `Hi ${reset.user.name},`,
+        '',
+        'Someone asked to reset the password for your Apex Ledger sign-in. To choose a new password, open this link within one hour:',
+        link,
+        '',
+        'The link works once. If you did not ask for this, ignore this email; your password stays as it is.',
+        '',
+        'Apex Ledger',
+      ].join('\n'));
+      console.log(`[web] password reset link sent to ${reset.user.email}`);
+    }
+  } catch (e) {
+    console.error('[web] password reset email failed:', e instanceof Error ? e.message : e);
+  }
+  res.json(generic);
+});
+app.post('/api/password-reset/complete', (req, res) => {
+  const b = (req.body ?? {}) as { token?: string; password?: string };
+  res.json(wrap(() => {
+    const user = completePasswordReset(String(b.token ?? ''), String(b.password ?? ''));
+    for (const s of [...sessions.values()]) if (s.user.id === user.id) endSession(s, true);
+    return { email: user.email };
+  }));
 });
 
 app.post('/api/logout', (req, res) => {

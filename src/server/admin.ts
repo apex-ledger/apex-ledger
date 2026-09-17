@@ -677,3 +677,53 @@ export function setOrgTest(id: number, isTest: boolean): Org {
   store().prepare('UPDATE orgs SET is_test = ?, discount_pct = CASE WHEN ? = 1 THEN 0 ELSE discount_pct END, discount_until = CASE WHEN ? = 1 THEN NULL ELSE discount_until END WHERE id = ?').run(isTest ? 1 : 0, isTest ? 1 : 0, isTest ? 1 : 0, id);
   return getOrg(id)!;
 }
+
+// ---- forgot password: a single-use link, valid for an hour ----
+const RESET_MINUTES = 60;
+const tokenHash = (token: string) => crypto.createHash('sha256').update(token).digest('hex');
+
+function ensureResetTable(): void {
+  store().exec(`CREATE TABLE IF NOT EXISTS password_resets (
+    token_hash TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%d %H:%M:%S', 'now'))
+  )`);
+}
+
+/**
+ * Starts a password reset for an email. Returns the person and a one-time token when an active
+ * person has that email, or null when not; the caller answers the same either way, so the page
+ * never tells a stranger which emails have a sign-in. Only the token's hash is stored, and any
+ * earlier unused link for that person stops working.
+ */
+export function createPasswordReset(email: string, now = new Date()): { user: WebUser; token: string } | null {
+  ensureResetTable();
+  const norm = email.trim().toLowerCase();
+  const r = store().prepare('SELECT * FROM users WHERE email = ? AND is_active = 1').get(norm) as Record<string, unknown> | undefined;
+  if (!r) return null;
+  const user = mapUser(r);
+  const recent = Number((store().prepare("SELECT COUNT(*) AS n FROM password_resets WHERE user_id = ? AND created_at > strftime('%Y-%m-%d %H:%M:%S', 'now', '-1 hour')").get(user.id) as { n: number }).n);
+  if (recent >= 5) return null;
+  store().prepare('DELETE FROM password_resets WHERE user_id = ?').run(user.id);
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expires = new Date(now.getTime() + RESET_MINUTES * 60_000).toISOString();
+  store().prepare('INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)').run(tokenHash(token), user.id, expires);
+  return { user, token };
+}
+
+/** Sets the new password from a reset link, once. The link is spent whether or not it had expired. */
+export function completePasswordReset(token: string, password: string, now = new Date()): WebUser {
+  ensureResetTable();
+  if (password.length < 8) throw new Error('The password needs at least 8 characters.');
+  const row = store().prepare('SELECT user_id, expires_at FROM password_resets WHERE token_hash = ?').get(tokenHash(String(token))) as { user_id: number; expires_at: string } | undefined;
+  if (!row) throw new Error('This reset link has already been used or is not valid. Ask for a new one.');
+  store().prepare('DELETE FROM password_resets WHERE token_hash = ?').run(tokenHash(String(token)));
+  if (row.expires_at < now.toISOString()) throw new Error('This reset link has expired. Ask for a new one.');
+  const user = getUser(row.user_id);
+  if (!user || !user.isActive) throw new Error('This sign-in is no longer active. Ask your organisation’s owner.');
+  setUserPassword(user.id, password);
+  // Anyone signed in with the old password is signed out.
+  store().prepare('DELETE FROM sessions WHERE user_id = ?').run(user.id);
+  return user;
+}

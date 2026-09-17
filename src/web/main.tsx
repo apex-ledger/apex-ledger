@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { buildWebApi, webSession, webSignIn } from './api';
+import { ForgotPasswordForm, ResetPasswordForm } from './PasswordReset';
 import '../renderer/index.css';
 import { installZeroFriendlyNumbers } from '../renderer/utils/zeroFriendlyNumbers';
 
@@ -8,7 +9,6 @@ import { installZeroFriendlyNumbers } from '../renderer/utils/zeroFriendlyNumber
 installZeroFriendlyNumbers();
 
 /** The sign-in background: the wordmark repeated at 45 degrees in a very light tint. */
-const SIGN_IN_WATERMARK = 'data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22360%22 height=%22360%22%3E%3Ctext x=%22180%22 y=%22190%22 text-anchor=%22middle%22 transform=%22rotate%28-45 180 180%29%22 font-family=%22Segoe UI%2C Arial%2C sans-serif%22 font-size=%2240%22 font-weight=%22800%22 letter-spacing=%22-1%22 fill-opacity=%220.22%22%3E%3Ctspan fill=%22%237fd9a5%22%3Eapex%3C/tspan%3E%3Ctspan fill=%22%23f2ca72%22%3Eledger.%3C/tspan%3E%3C/text%3E%3C/svg%3E';
 
 // The screens read window.api at import time in places, so it exists before App is loaded.
 (window as unknown as { api: unknown }).api = buildWebApi();
@@ -26,6 +26,10 @@ function Gate() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // Forgot password: a reset link opens this page with ?reset=<token>.
+  const [resetToken, setResetToken] = useState<string | null>(() => new URLSearchParams(window.location.search).get('reset'));
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [signInNotice, setSignInNotice] = useState<string | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [needsAgreement, setNeedsAgreement] = useState(false);
   const [agreeTicked, setAgreeTicked] = useState(false);
@@ -79,11 +83,28 @@ function Gate() {
   }
 
   if (state === 'checking') return <div className="flex h-screen items-center justify-center text-sm text-gray-500">Connecting…</div>;
+  if (resetToken) {
+    return (
+      <div className="relative flex h-screen items-center justify-center overflow-hidden bg-brand-900">
+        <ResetPasswordForm token={resetToken} onDone={(message) => {
+          window.history.replaceState(null, '', window.location.pathname);
+          setResetToken(null);
+          setSignInNotice(message);
+          setState('signedOut');
+        }} />
+      </div>
+    );
+  }
+  if (state === 'signedOut' && forgotOpen) {
+    return (
+      <div className="relative flex h-screen items-center justify-center overflow-hidden bg-brand-900">
+        <ForgotPasswordForm initialEmail={email} onBack={() => setForgotOpen(false)} />
+      </div>
+    );
+  }
   if (state === 'signedOut') {
     return (
       <div className="relative flex h-screen items-center justify-center overflow-hidden bg-brand-900">
-        {/* faint "apexledger." written at 45 degrees across the background, like a watermark */}
-        <div aria-hidden className="pointer-events-none absolute inset-0" style={{ backgroundImage: `url("${SIGN_IN_WATERMARK}")`, backgroundSize: '360px 360px' }} />
         <form onSubmit={(e) => void submit(e)} className="relative w-80 rounded-lg bg-white p-6 shadow-xl">
           <div className="text-lg font-semibold text-brand-900">Apex Ledger</div>
           <div className="mb-4 text-xs text-gray-500">Canadian accounting software · web</div>
@@ -105,6 +126,8 @@ function Gate() {
             <span className="text-gray-600">Password</span>
             <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5" />
           </label>
+          <div className="mt-1 text-right"><button type="button" onClick={() => { setError(null); setForgotOpen(true); }} className="text-xs text-brand-700 hover:underline">Forgot password?</button></div>
+          {signInNotice && <div className="mt-2 text-sm text-emerald-800">{signInNotice}</div>}
           {error && <div className="mt-2 text-sm text-red-700">{error}</div>}
           <button type="submit" className="mt-4 w-full rounded-full bg-brand-700 py-2 text-sm font-medium text-white hover:bg-brand-800">Sign in</button>
           <p className="mt-3 text-[11px] text-gray-400">Your books stay on this server in Canada. Nothing is sent anywhere else.</p>
