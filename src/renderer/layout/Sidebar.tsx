@@ -192,6 +192,7 @@ export const MAIN_NAV: NavItem[] = [
   { label: 'Month-End Close', view: { kind: 'monthEndClose' }, color: 'violet', icon: <IconCalendar /> },
   { label: 'Business Tax & GIFI', view: { kind: 'taxGifi' }, color: 'purple', icon: <IconFileText /> },
   { label: 'Settings', view: { kind: 'companySettings' }, color: 'teal', icon: <IconGear /> },
+  { label: 'App Settings', view: { kind: 'appSettings' }, color: 'sky', icon: <IconGear /> },
 
   // Reports deliberately come last: enter and reconcile the books first, then review the output.
   {

@@ -19,7 +19,8 @@ export const TITLES: Record<string, string> = {
   quickEntry: 'Quick Entry',
   bulkExpenseImport: 'Bulk Expense Import',
   bankImport: 'Banking',
-  companySettings: 'Settings',
+  companySettings: 'Company Settings',
+  appSettings: 'App Settings',
   webAdmin: 'Administration',
   webSubscriptions: 'Subscriptions',
   hstCentre: 'GST/HST Centre',
@@ -122,7 +123,7 @@ const SECTIONS: Record<string, string> = {
   purchases: 'Expenses', vendors: 'Expenses', purchaseOrders: 'Expenses', purchaseOrderEditor: 'Expenses', expenses: 'Expenses', mileage: 'Expenses', receiptInbox: 'Banking',
   banking: 'Banking', bankImport: 'Banking', bankReconciliation: 'Banking', transactions: 'Banking',
   chartOfAccounts: 'Accounting', journalList: 'Accounting', journalForm: 'Accounting', fixedAssets: 'Accounting', monthEndClose: 'Accounting', taxGifi: 'Accounting',
-  products: 'Inventory', projects: 'Projects', tags: 'Settings', companySettings: 'Settings', accessPermissions: 'Settings', webAdmin: 'Administration',
+  products: 'Inventory', projects: 'Projects', tags: 'Settings', companySettings: 'Settings', appSettings: 'Settings', accessPermissions: 'Settings', webAdmin: 'Administration',
   payroll: 'Payroll', paystub: 'Payroll', hstCentre: 'Sales Tax (GST/HST)',
   approvals: 'Accounting', reclassify: 'Accountant', reportsHub: 'Reports', report: 'Reports', audit: 'Auditor', accountantCentre: 'Accountant', workpapers: 'Accountant', cpaReview: 'Accountant', clientHub: 'CRM', yearEndWorkspace: 'Accountant',
 };

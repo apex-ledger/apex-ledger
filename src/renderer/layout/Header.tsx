@@ -412,6 +412,7 @@ function SettingsMenu() {
       heading: 'Settings',
       links: [
         { label: 'Company Settings', onClick: () => go({ kind: 'companySettings' }) },
+        { label: 'App Settings', onClick: () => go({ kind: 'appSettings' }) },
         { label: 'Chart of Accounts', onClick: () => go({ kind: 'chartOfAccounts' }) },
         { label: 'Payroll Settings', onClick: () => go({ kind: 'payroll' }) },
       ],

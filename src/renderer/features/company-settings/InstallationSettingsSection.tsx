@@ -8,7 +8,8 @@ import type { AppSettingsView } from '../../../preload/index';
  * backup goes, and how email leaves the app. The last two are the same for every client opened
  * on this machine, so they are saved with the installation, not with any company.
  */
-export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { logoDataUrl: string | null; onLogoChanged: (next: string | null) => void }) {
+/** part 'logo' is the company's logo (Company Settings); part 'app' is this install's email, backups and voice (App Settings). */
+export function InstallationSettingsSection({ logoDataUrl, onLogoChanged, part = 'app' }: { logoDataUrl: string | null; onLogoChanged: (next: string | null) => void; part?: 'logo' | 'app' }) {
   const [settings, setSettings] = useState<AppSettingsView | null>(null);
   const [password, setPassword] = useState('');
   const [testTo, setTestTo] = useState('');
@@ -81,6 +82,7 @@ export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { lo
 
   return (
     <>
+      {part === 'logo' && (
       <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3" data-testid="logo-settings">
         <div className="text-sm font-semibold text-gray-800">Logo on invoices, receipts and statements</div>
         <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -88,8 +90,11 @@ export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { lo
           <button type="button" onClick={() => void pickLogo()} className="rounded-full border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100">{logoDataUrl ? 'Change logo…' : 'Choose logo…'}</button>
           {logoDataUrl && <button type="button" onClick={() => void removeLogo()} className="text-xs text-gray-500 hover:underline">Remove</button>}
         </div>
-        <p className="mt-1 text-[11px] text-gray-500">PNG or JPG up to 400 KB, ideally wide rather than tall. It prints at the top right of customer PDFs, beside the company name.</p>
+        <p className="mt-1 text-[11px] text-gray-500">PNG or JPG up to 400 KB, ideally wide rather than tall. It prints at the top left of customer PDFs, above the company name and address.</p>
       </div>
+      )}
+      {part === 'app' && (
+      <>
 
       <VoiceModelCard />
 
@@ -145,6 +150,8 @@ export function InstallationSettingsSection({ logoDataUrl, onLogoChanged }: { lo
       </div>
       {error && <div className="col-span-full rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
       {notice && <div className="col-span-full rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800">{notice}</div>}
+      </>
+      )}
     </>
   );
 }

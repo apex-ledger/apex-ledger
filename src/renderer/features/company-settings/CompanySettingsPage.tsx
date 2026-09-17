@@ -5,7 +5,6 @@ import { useIpcQuery } from '../../hooks/useIpcQuery';
 import { FiscalPeriodsPanel } from './FiscalPeriodsPanel';
 import { InstallationSettingsSection } from './InstallationSettingsSection';
 import { SelfTutorialSection } from './SelfTutorialSection';
-import { WebOrganisationSection } from './WebOrganisationSection';
 import { ALL_SUGGESTED_CATEGORIES, BUSINESS_TYPES, suggestedCategoriesForBusinessType, type SuggestedCategory } from '@shared/domain/businessTypes';
 import { currentFiscalYearDates, fiscalYearEndFromStart, fiscalYearEndParts } from '@shared/domain/company/fiscalYearDates';
 import { WSIB_RATE_CLASSES_2026, wsibRateForClass } from '@shared/domain/payroll/wsibRates2026';
@@ -49,7 +48,11 @@ const DEFAULT_AI_MODELS: Record<(typeof AI_PROVIDERS)[number]['key'], string> = 
   groq: 'llama-3.3-70b-versatile',
 };
 
-export function CompanySettingsPage() {
+/** Company Settings holds what belongs to the company file; App Settings holds how the app looks and
+ * works on this install (colours, font, AI, email server, backups, voice, tutorial). One component,
+ * two pages, so the save logic is not duplicated. */
+export function CompanySettingsPage({ mode = 'company' }: { mode?: 'company' | 'app' } = {}) {
+  const isApp = mode === 'app';
   const colorScheme = useUiStore((s) => s.colorScheme);
   const setColorScheme = useUiStore((s) => s.setColorScheme);
   const fontSize = useUiStore((s) => s.fontSize);
@@ -88,6 +91,7 @@ export function CompanySettingsPage() {
   const [mailingProvinceChosen, setMailingProvinceChosen] = useState(false);
   const [mailingPostalCode, setMailingPostalCode] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [templates, setTemplates] = useState<CoaTemplateOption[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [aiKeyStatus, setAiKeyStatus] = useState<AiKeyStatus | null>(null);
@@ -196,6 +200,7 @@ export function CompanySettingsPage() {
 
   async function handleSave() {
     setSaved(false);
+    setSaveError(null);
     setFiscalDateError(null);
     const fiscalEnd = fiscalYearEndParts(fiscalStartDate, fiscalEndDate);
     if (!fiscalEnd) {
@@ -245,7 +250,11 @@ export function CompanySettingsPage() {
     });
     if (result.ok) {
       setSaved(true);
+      const warnings = (result.data as { saveWarnings?: string[] }).saveWarnings ?? [];
+      if (warnings.length > 0) setSaveError(warnings.join(' '));
       reload();
+    } else {
+      setSaveError(result.error);
     }
   }
 
@@ -404,8 +413,14 @@ export function CompanySettingsPage() {
       <SuggestionDatalist fieldKey="postal-code" />
       <SuggestionDatalist fieldKey="custom-category-name" />
       <div>
-        <h1 className="text-lg font-semibold text-brand-900">Settings</h1>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <h1 className="text-lg font-semibold text-brand-900">{isApp ? 'App Settings' : 'Company Settings'}</h1>
+        <p className="text-sm text-gray-500">
+          {isApp ? 'How Apex Ledger looks and works on this install. ' : 'Everything about this company file. '}
+          <button type="button" onClick={() => setView({ kind: isApp ? 'companySettings' : 'appSettings' })} className="font-medium text-brand-700 hover:underline">
+            {isApp ? 'Company Settings' : 'App Settings (colours, font, AI, email, backups, tutorial)'}
+          </button>
+        </p>
+        {isApp && <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setView({ kind: 'userGuide' })}
@@ -438,15 +453,16 @@ export function CompanySettingsPage() {
             <IconLock width={16} height={16} />
             About &amp; License
           </button>
-        </div>
+        </div>}
       </div>
 
-      {company && !craHstAccountNumber(hstNumber, businessNumber) && (
+      {!isApp && company && !craHstAccountNumber(hstNumber, businessNumber) && (
         <div role="alert" className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
           <strong>GST/HST account number missing.</strong> Enter the complete 15-character CRA program account (for example, 123456789RT0001) under Business Details below before filing a sales tax return.
         </div>
       )}
 
+      {isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Color Scheme</h2>
         <div className="rounded border border-gray-200 bg-white p-3">
@@ -474,7 +490,9 @@ export function CompanySettingsPage() {
           </div>
         </div>
       </section>
+      )}
 
+      {isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Font Size</h2>
         <div className="rounded border border-gray-200 bg-white p-3">
@@ -496,7 +514,9 @@ export function CompanySettingsPage() {
           </div>
         </div>
       </section>
+      )}
 
+      {isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">AI Assistant</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -549,7 +569,25 @@ export function CompanySettingsPage() {
           {aiKeyMessage && <p className="text-xs text-gray-500">{aiKeyMessage}</p>}
         </div>
       </section>
+      )}
 
+      {isApp && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">Email, Backups &amp; Voice</h2>
+          <div className="grid grid-cols-1 gap-2 rounded border border-gray-200 bg-white p-3">
+            <InstallationSettingsSection part="app" logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
+          </div>
+        </section>
+      )}
+      {isApp && (
+        <section>
+          <div className="rounded border border-gray-200 bg-white p-3">
+            <SelfTutorialSection />
+          </div>
+        </section>
+      )}
+
+      {!isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">About Company</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -790,10 +828,13 @@ export function CompanySettingsPage() {
               Save
             </button>
             {saved && <span className="text-sm text-green-600">Saved.</span>}
+            {saveError && <span role="alert" className="text-sm text-red-700">{saved ? 'Everything else saved. Fix this: ' : 'Not saved: '}{saveError}</span>}
           </div>
         </div>
       </section>
+      )}
 
+      {!isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Filing, Payroll &amp; Firm Settings</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -832,9 +873,7 @@ export function CompanySettingsPage() {
               </div>
               <p className="mt-1 text-[11px] text-gray-500">Above the threshold a journal cannot post and a purchase order cannot be sent until an administrator or accountant approves it in Approvals. Bills already have their own approval on the Purchases page.</p>
             </div>
-            <InstallationSettingsSection logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
-            <WebOrganisationSection />
-            <SelfTutorialSection />
+            <InstallationSettingsSection part="logo" logoDataUrl={logoDataUrl} onLogoChanged={setLogoDataUrl} />
             <div className="col-span-full mt-2 rounded border border-gray-200 bg-gray-50 p-3">
               <div className="text-sm font-semibold text-gray-800">Direct deposit (EFT) — from your bank’s EFT agreement</div>
               <div className="mt-2 grid gap-2 md:grid-cols-3">
@@ -854,11 +893,13 @@ export function CompanySettingsPage() {
               Save
             </button>
             {saved && <span className="text-sm text-green-600">Saved.</span>}
+            {saveError && <span role="alert" className="text-sm text-red-700">{saved ? 'Everything else saved. Fix this: ' : 'Not saved: '}{saveError}</span>}
           </div>
         </div>
       </section>
+      )}
 
-      {businessProvince === 'ON' && (
+      {!isApp && businessProvince === 'ON' && (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-gray-700">WSIB (Ontario)</h2>
           <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -897,7 +938,7 @@ export function CompanySettingsPage() {
         </section>
       )}
 
-      {suggestedCategoriesForBusinessType(businessType).length > 0 && (
+      {!isApp && suggestedCategoriesForBusinessType(businessType).length > 0 && (
         <section>
           <h2 className="mb-3 text-sm font-semibold text-gray-700">Suggested Categories for This Business</h2>
           <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -965,6 +1006,7 @@ export function CompanySettingsPage() {
         </section>
       )}
 
+      {!isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">HST Quick Method</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -995,10 +1037,13 @@ export function CompanySettingsPage() {
               Save
             </button>
             {saved && <span className="text-sm text-green-600">Saved.</span>}
+            {saveError && <span role="alert" className="text-sm text-red-700">{saved ? 'Everything else saved. Fix this: ' : 'Not saved: '}{saveError}</span>}
           </div>
         </div>
       </section>
+      )}
 
+      {!isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Chart of Accounts Templates</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -1043,7 +1088,9 @@ export function CompanySettingsPage() {
           {templateMessage && <p className="text-sm text-gray-600">{templateMessage}</p>}
         </div>
       </section>
+      )}
 
+      {!isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Data Portability</h2>
         <div className="space-y-3 rounded border border-gray-200 bg-white p-3">
@@ -1081,12 +1128,15 @@ export function CompanySettingsPage() {
           </div>
         </div>
       </section>
+      )}
 
+      {!isApp && (
       <section>
         <div className="rounded border border-gray-200 bg-white p-3">
           <FiscalPeriodsPanel />
         </div>
       </section>
+      )}
     </div>
   );
 }

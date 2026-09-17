@@ -488,6 +488,7 @@ export default function App() {
           {view.kind === 'bulkExpenseImport' && <BulkExpenseImportPage />}
           {view.kind === 'bankImport' && <BankImportPage />}
           {view.kind === 'companySettings' && <CompanySettingsPage />}
+          {view.kind === 'appSettings' && <CompanySettingsPage mode="app" />}
           {view.kind === 'webAdmin' && <WebAdminPage />}
           {view.kind === 'webSubscriptions' && <WebSubscriptionsPage />}
           {view.kind === 'report' && <ReportView report={view.report} />}

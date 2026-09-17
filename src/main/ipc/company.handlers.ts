@@ -4,6 +4,7 @@ import path from 'node:path';
 import { seedFirmServices } from '../db/seeds/firmServices.seed';
 import { recordAllSignedOut, recordStaffSignIn } from '../staffSessions';
 import { companyCreateSchema, companyUpdateSchema } from '@shared/validation/schemas';
+import { businessNumberProblem, compactCraNumber, mismatchedBusinessNumber, programAccountProblem } from '@shared/domain/company/craAccounts';
 import {
   backupCompanyTo,
   closeCompany,
@@ -47,8 +48,36 @@ export async function companyGet() {
   return mapCompanyInfoRow(row);
 }
 
+/**
+ * Company details always save. A CRA number that breaks the rule (wrong letters, short, or under
+ * another Business Number) is the one thing left as it was, and the answer says which and why, so
+ * a half-typed payroll account never stops the address or the filing schedule from saving.
+ */
+async function holdBackInvalidCraNumbers(input: unknown): Promise<{ cleaned: Record<string, unknown>; warnings: string[] }> {
+  const cleaned = { ...((input ?? {}) as Record<string, unknown>) };
+  const warnings: string[] = [];
+  const asText = (v: unknown) => (typeof v === 'string' ? v : v == null ? v : String(v)) as string | null | undefined;
+  if ('businessNumber' in cleaned) {
+    const problem = businessNumberProblem(asText(cleaned.businessNumber));
+    if (problem) { warnings.push(problem); delete cleaned.businessNumber; }
+  }
+  const bn = 'businessNumber' in cleaned ? compactCraNumber(asText(cleaned.businessNumber)) : compactCraNumber((await companyGet()).businessNumber);
+  for (const [program, key] of [['RT', 'hstNumber'], ['RP', 'payrollNumber'], ['RC', 'corporateTaxNumber']] as const) {
+    if (!(key in cleaned)) continue;
+    const value = asText(cleaned[key]);
+    const problem = programAccountProblem(value, program) ?? mismatchedBusinessNumber(bn, value, program);
+    if (problem) { warnings.push(`${problem} It was not changed.`); delete cleaned[key]; }
+  }
+  return { cleaned, warnings };
+}
+
 export async function companyUpdate(input: unknown) {
-  const { hstQuickMethodEnabled, mailingSameAsBusinessAddress, ehtExemptionEligible, ...rest } = companyUpdateSchema.parse(input);
+  const { cleaned, warnings } = await holdBackInvalidCraNumbers(input);
+  const parsed = companyUpdateSchema.safeParse(cleaned);
+  // Say what is wrong in plain words ("The Payroll account is the 9-digit Business Number, RP, then 4 digits…")
+  // rather than handing the screen a validation dump it cannot show.
+  if (!parsed.success) throw new Error(parsed.error.issues.map((issue) => issue.message).join(' '));
+  const { hstQuickMethodEnabled, mailingSameAsBusinessAddress, ehtExemptionEligible, ...rest } = parsed.data;
   const patch = {
     ...rest,
     ...(hstQuickMethodEnabled !== undefined ? { hstQuickMethodEnabled: hstQuickMethodEnabled ? 1 : 0 } : {}),
@@ -61,7 +90,7 @@ export async function companyUpdate(input: unknown) {
   }
   // Becoming a firm (or being set up as one from the start) brings the service catalogue with it.
   if (patch.businessType !== undefined) await seedFirmServices(db, patch.businessType);
-  return companyGet();
+  return { ...(await companyGet()), saveWarnings: warnings };
 }
 
 export async function companyCreateHandler(window: BrowserWindow, input: unknown) {

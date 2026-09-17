@@ -144,6 +144,7 @@ export type View =
   | { kind: 'taxGifi' }
   | { kind: 'reportsHub'; group?: string }
   | { kind: 'companySettings' }
+  | { kind: 'appSettings' }
   | { kind: 'clientHub' }
   | { kind: 'payroll' }
   | { kind: 'customers' }
