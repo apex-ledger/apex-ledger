@@ -209,10 +209,21 @@ export function EmployeeFormModal({
             <CurrencyInput valueCents={hourlyRateCents} onChange={setHourlyRateCents} />
           </label>
         ) : (
-          <label className="block text-sm">
-            <span className="text-gray-600">Annual Salary</span>
-            <CurrencyInput valueCents={annualSalaryCents} onChange={setAnnualSalaryCents} />
-          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block text-sm">
+              <span className="text-gray-600">Annual Salary</span>
+              <CurrencyInput valueCents={annualSalaryCents} onChange={setAnnualSalaryCents} />
+            </label>
+            <label className="block text-sm">
+              <span className="text-gray-600">or Monthly Salary</span>
+              <CurrencyInput valueCents={Math.round(annualSalaryCents / 12)} onChange={(monthly) => setAnnualSalaryCents(monthly * 12)} />
+            </label>
+            {annualSalaryCents > 0 && (
+              <p className="col-span-2 -mt-1 text-xs text-gray-500">
+                Paid {(annualSalaryCents / 100 / payPeriodsPerYear).toLocaleString('en-CA', { style: 'currency', currency: 'CAD' })} each pay period on this schedule ({payPeriodsPerYear} a year).
+              </p>
+            )}
+          </div>
         )}
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
@@ -223,9 +234,9 @@ export function EmployeeFormModal({
               onChange={(e) => setPayPeriodsPerYear(Number(e.target.value))}
             >
               {payPeriodsPerYear === 52 && <option value={52}>Weekly (existing employee)</option>}
-              <option value={26}>Biweekly (26/year)</option>
-              <option value={24}>Semi-monthly (24/year)</option>
-              <option value={12}>Monthly (12/year)</option>
+              <option value={26}>Biweekly: every 2 weeks, paid the following Friday (26/year)</option>
+              <option value={24}>Semi-monthly: 1st–15th paid the 20th, 16th–month end paid the 5th (24/year)</option>
+              <option value={12}>Monthly: 1st–month end, paid the 5th of next month (12/year)</option>
             </select>
           </label>
           <label className="block text-sm">
