@@ -1,3 +1,4 @@
+import { MyPasswordSection } from './MyPasswordSection';
 import { businessNumberDigits, compactCraNumber, parseProgramAccount } from '@shared/domain/company/craAccounts';
 import { CraNumberFields } from '../../components/CraNumberFields';
 import { useEffect, useState } from 'react';
@@ -467,6 +468,7 @@ export function CompanySettingsPage({ mode = 'company' }: { mode?: 'company' | '
         </div>
       )}
 
+      {isApp && <MyPasswordSection />}
       {isApp && (
       <section>
         <h2 className="mb-3 text-sm font-semibold text-gray-700">Color Scheme</h2>
