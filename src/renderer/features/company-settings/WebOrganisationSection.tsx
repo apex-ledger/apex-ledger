@@ -7,7 +7,7 @@ import { WebReferralsSection } from './WebReferralsSection';
  * them, and reset a password. The platform administrator sees every organisation, creates new
  * ones, and changes seat counts. Everyone can change their own password. The desktop app has no
  * organisations, so this section does not appear there. */
-interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null; referralCode?: string }
+interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; activeSeats: number; discountPct: number; discountUntil: string | null; referralCode?: string; isTest?: boolean }
 interface Founding { pct: number; months: number; maxFirms: number; signUpBy: string; used: number }
 type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
 const SEAT_TYPES: SeatType[] = ['business', 'payroll', 'bookkeeper', 'full'];
@@ -49,7 +49,7 @@ export function WebOrganisationSection() {
   const monthlyFor = (orgId: number) => people.filter((p) => p.orgId === orgId && p.isActive).reduce((n, p) => n + (p.isClient ? clientRate : rates[p.seatType] ?? 0), 0);
   const today = new Date().toISOString().slice(0, 10);
   const discountActive = (o: Org) => o.discountPct > 0 && !!o.discountUntil && o.discountUntil >= today;
-  const billingLine = (o: Org) => { const full = monthlyFor(o.id); if (!o.activeSeats) return ''; if (!discountActive(o)) return ` · ${money(full)} a month`; return ` · ${money(Math.round(full * (100 - o.discountPct) / 100))} a month (founding ${o.discountPct}% off until ${o.discountUntil}, then ${money(full)})`; };
+  const billingLine = (o: Org) => { if (o.isTest) return ' · test organisation, not billed'; const full = monthlyFor(o.id); if (!o.activeSeats) return ''; if (!discountActive(o)) return ` · ${money(full)} a month`; return ` · ${money(Math.round(full * (100 - o.discountPct) / 100))} a month (founding ${o.discountPct}% off until ${o.discountUntil}, then ${money(full)})`; };
   const [newOrg, setNewOrg] = useState({ name: '', seats: 2, founding: true, referrerOrgId: null as number | null });
   const [founding, setFounding] = useState<Founding | null>(null);
   const [myPassword, setMyPassword] = useState('');
@@ -171,6 +171,20 @@ export function WebOrganisationSection() {
     setNewOrg({ name: '', seats: 2, founding: true, referrerOrgId: null });
     void reload();
   }
+  async function createTestFirm() {
+    setError(null); setNotice(null);
+    const r = await call<Org>('/api/admin/orgs', { name: 'Test Firm (not billed)', seats: 5, founding: false, isTest: true });
+    if (!r.ok) { setError(r.error); return; }
+    setNewPerson((n) => ({ ...n, orgId: r.data.id }));
+    setFilesOrg(r.data.id);
+    setNotice(`${r.data.name} created. Add a Bookkeeper, a Payroll Unlimited and a Business person to it below, each with an email and a first password you choose, then sign in as each one in a private window. Nothing in it is billed or counted.`);
+    void reload();
+  }
+  async function setTest(o: Org, isTest: boolean) {
+    setError(null);
+    const r = await call<Org>(`/api/admin/orgs/${o.id}/test`, { isTest });
+    if (!r.ok) setError(r.error); else { setNotice(isTest ? `${o.name} is a test organisation: not billed, not in Subscriptions.` : `${o.name} is billed as a normal subscriber again.`); void reload(); }
+  }
   async function setSeats(o: Org, seats: number) {
     const r = await call<Org>(`/api/admin/orgs/${o.id}/seats`, { seats });
     if (!r.ok) setError(r.error); else void reload();
@@ -237,7 +251,8 @@ export function WebOrganisationSection() {
                 </div>
                 {ctx.org.isPlatform && !o.isPlatform && (
                   <div className="mt-1 text-xs">
-                    {discountActive(o)
+                    <label className="mr-3 inline-flex items-center gap-1 text-gray-600" title="For trying seats out: never billed, not in Subscriptions"><input type="checkbox" checked={Boolean(o.isTest)} onChange={(e) => void setTest(o, e.target.checked)} /> Test organisation (not billed)</label>
+                    {o.isTest ? null : discountActive(o)
                       ? <span className="rounded-full bg-gold-100 px-2 py-0.5 text-gold-800">Founding firm · {o.discountPct}% off until {o.discountUntil} <button type="button" onClick={() => void setFoundingOn(o, false)} className="ml-1 text-gray-500 hover:underline">remove</button></span>
                       : <button type="button" onClick={() => void setFoundingOn(o, true)} className="text-brand-700 hover:underline">Give founding offer ({founding?.pct ?? 50}% off for {founding?.months ?? 6} months)</button>}
                   </div>
@@ -440,6 +455,10 @@ export function WebOrganisationSection() {
                 {newOrg.referrerOrgId && <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[11px] text-gold-800">Linked to {orgName(newOrg.referrerOrgId)} (referral) <button type="button" onClick={() => setNewOrg({ ...newOrg, referrerOrgId: null })} className="ml-1 text-gray-500 hover:underline">remove</button></span>}
                 <label className="flex items-center gap-1 text-xs text-gray-600" title="Half price for six months, for the first firms"><input type="checkbox" checked={newOrg.founding} onChange={(e) => setNewOrg({ ...newOrg, founding: e.target.checked })} /> Founding firm{founding ? ` (${founding.used} of ${founding.maxFirms} used, sign up by ${founding.signUpBy})` : ''}</label>
                 <button type="button" onClick={() => void addOrg()} disabled={!newOrg.name.trim()} className="rounded-full bg-brand-700 px-3 py-1 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-50">Create</button>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-200 pt-2">
+                <button type="button" onClick={() => void createTestFirm()} className="rounded-full border border-violet-300 bg-white px-3 py-1 text-xs font-medium text-violet-800 hover:bg-violet-50">Create a test firm (not billed)</button>
+                <span className="text-[11px] text-gray-500">For checking how Bookkeeper, Payroll Unlimited and Business seats work, with real sign-ins. Never billed or counted.</span>
               </div>
             </div>
           )}

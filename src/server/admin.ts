@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string; referralCode: string }
+export interface Org { id: number; name: string; slug: string; seats: number; isPlatform: boolean; createdAt: string; discountPct: number; discountUntil: string | null; billingEmail: string; billingStart: string | null; billingCycle: 'monthly' | 'yearly'; billingStatus: 'active' | 'paused' | 'cancelled'; billingEnd: string | null; billingNotes: string; referralCode: string; /** For trying seats out: never billed, never counted in subscriptions or founding places. */ isTest: boolean }
 /** The founding-firms offer: half price for six months, for the first firms that sign up. */
 export const FOUNDING = { pct: 50, months: 6, maxFirms: 20, signUpBy: '2026-12-31' };
 export type SeatType = 'business' | 'payroll' | 'bookkeeper' | 'full';
@@ -275,6 +275,7 @@ function ensureColumns(): void {
   if (!cols.includes('company_scope')) store().exec('ALTER TABLE users ADD COLUMN company_scope TEXT');
   if (!cols.includes('is_client')) store().exec('ALTER TABLE users ADD COLUMN is_client INTEGER NOT NULL DEFAULT 0');
   if (!orgCols.includes('referral_code')) store().exec('ALTER TABLE orgs ADD COLUMN referral_code TEXT');
+  if (!orgCols.includes('is_test')) store().exec('ALTER TABLE orgs ADD COLUMN is_test INTEGER NOT NULL DEFAULT 0');
   if (!trialCols.includes('referral_org_id')) store().exec('ALTER TABLE trial_requests ADD COLUMN referral_org_id INTEGER');
   store().exec(`CREATE TABLE IF NOT EXISTS referrals (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -300,7 +301,7 @@ function hash(password: string, salt: string): string {
   return crypto.scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 }).toString('hex');
 }
 
-const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null, billingEmail: String(r.billing_email ?? ''), billingStart: r.billing_start ? String(r.billing_start) : null, billingCycle: r.billing_cycle === 'yearly' ? 'yearly' : 'monthly', billingStatus: r.billing_status === 'paused' || r.billing_status === 'cancelled' ? (r.billing_status as 'paused' | 'cancelled') : 'active', billingEnd: r.billing_end ? String(r.billing_end) : null, billingNotes: String(r.billing_notes ?? ''), referralCode: String(r.referral_code ?? '') });
+const mapOrg = (r: Record<string, unknown>): Org => ({ id: Number(r.id), name: String(r.name), slug: String(r.slug), seats: Number(r.seats), isPlatform: Boolean(r.is_platform), createdAt: String(r.created_at), discountPct: Number(r.discount_pct ?? 0), discountUntil: r.discount_until ? String(r.discount_until) : null, billingEmail: String(r.billing_email ?? ''), billingStart: r.billing_start ? String(r.billing_start) : null, billingCycle: r.billing_cycle === 'yearly' ? 'yearly' : 'monthly', billingStatus: r.billing_status === 'paused' || r.billing_status === 'cancelled' ? (r.billing_status as 'paused' | 'cancelled') : 'active', billingEnd: r.billing_end ? String(r.billing_end) : null, billingNotes: String(r.billing_notes ?? ''), referralCode: String(r.referral_code ?? ''), isTest: Boolean(r.is_test) });
 
 /** Founding offer on an organisation: 50% off until six months from today, or off. */
 export function setOrgFounding(id: number, on: boolean): Org {
@@ -315,7 +316,7 @@ export function setOrgFounding(id: number, on: boolean): Org {
   return o;
 }
 export function foundingFirmsCount(): number {
-  return Number((store().prepare('SELECT COUNT(*) AS n FROM orgs WHERE discount_pct > 0 AND is_platform = 0').get() as { n: number }).n);
+  return Number((store().prepare('SELECT COUNT(*) AS n FROM orgs WHERE discount_pct > 0 AND is_platform = 0 AND is_test = 0').get() as { n: number }).n);
 }
 const mapUser = (r: Record<string, unknown>): WebUser => ({ id: Number(r.id), orgId: Number(r.org_id), email: String(r.email), name: String(r.name), role: r.role === 'owner' ? 'owner' : 'member', seatType: SEAT_TYPES.includes(r.seat_type as SeatType) ? (r.seat_type as SeatType) : 'full', agreedAt: r.agreed_at ? String(r.agreed_at) : null, agreedName: r.agreed_name ? String(r.agreed_name) : null, isActive: Boolean(r.is_active), createdAt: String(r.created_at), lastSignIn: r.last_sign_in ? String(r.last_sign_in) : null, companyScope: parseScope(r.company_scope), isClient: Boolean(r.is_client) });
 
@@ -328,7 +329,7 @@ export function getOrg(id: number): Org | null {
   return r ? mapOrg(r) : null;
 }
 
-export function createOrg(input: { name: string; seats?: number; isPlatform?: boolean; founding?: boolean }): Org {
+export function createOrg(input: { name: string; seats?: number; isPlatform?: boolean; founding?: boolean; isTest?: boolean }): Org {
   const name = input.name.trim();
   if (!name) throw new Error('The organisation needs a name.');
   const seats = Math.max(1, Math.floor(input.seats ?? 2));
@@ -337,7 +338,8 @@ export function createOrg(input: { name: string; seats?: number; isPlatform?: bo
   for (let i = 2; taken.get(slug); i += 1) slug = `${slugify(name)}-${i}`;
   const r = store().prepare('INSERT INTO orgs (name, slug, seats, is_platform, referral_code) VALUES (?, ?, ?, ?, ?) RETURNING *').get(name, slug, seats, input.isPlatform ? 1 : 0, newReferralCode()) as Record<string, unknown>;
   fs.mkdirSync(companiesDirFor(mapOrg(r)), { recursive: true });
-  const created = mapOrg(r);
+  if (input.isTest) store().prepare('UPDATE orgs SET is_test = 1 WHERE id = ?').run(r.id);
+  const created = input.isTest ? getOrg(Number(r.id))! : mapOrg(r);
   return input.founding ? setOrgFounding(created.id, true) : created;
 }
 
@@ -666,4 +668,12 @@ export function createClientSubscription(input: { firmOrgId: number; companyFile
     throw new Error(`The company file could not be moved: ${e instanceof Error ? e.message : String(e)}`);
   }
   return result;
+}
+
+/** Marks an organisation as a test one (not billed, not counted) or back to a real subscriber. */
+export function setOrgTest(id: number, isTest: boolean): Org {
+  const org = getOrg(id);
+  if (!org || org.isPlatform) throw new Error('Organisation not found.');
+  store().prepare('UPDATE orgs SET is_test = ?, discount_pct = CASE WHEN ? = 1 THEN 0 ELSE discount_pct END, discount_until = CASE WHEN ? = 1 THEN NULL ELSE discount_until END WHERE id = ?').run(isTest ? 1 : 0, isTest ? 1 : 0, isTest ? 1 : 0, id);
+  return getOrg(id)!;
 }

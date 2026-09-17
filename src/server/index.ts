@@ -44,7 +44,7 @@ import { diskSpace, folderBytes } from './storage';
 import { referralInviteMail } from './referralInvite';
 import { sendPlatformEmail } from '../main/email/sendEmail';
 import { mayOpenCompany, reachableCompanies, type CompanyReach } from './companyAccess';
-import { orgByReferralCode, activeReferralFor, createClientSubscription, endReferral, linkedClientOrgs, listReferrals, referralCreditCents, setReferralCreditCents, setUserAccess, startReferral, CLIENT_RATE_KEY } from './admin';
+import { setOrgTest, orgByReferralCode, activeReferralFor, createClientSubscription, endReferral, linkedClientOrgs, listReferrals, referralCreditCents, setReferralCreditCents, setUserAccess, startReferral, CLIENT_RATE_KEY } from './admin';
 import { addPayment, deletePayment, lastActivityFor, listPayments, setOrgBilling } from './admin';
 import { billingTotals, computeOrgBilling, referralCredit } from './billing';
 import { SITE_KNOWLEDGE } from './siteKnowledge.generated';
@@ -464,7 +464,8 @@ const wrap = (fn: () => unknown) => { try { return { ok: true, data: fn() }; } c
 function orgBillingRow(o: ReturnType<typeof listOrgs>[number], today: string, referrals = listReferrals(), orgsById = new Map(listOrgs().map((x) => [x.id, x]))) {
   const users = listUsers(o.id);
   const payments = listPayments(o.id);
-  const credit = referralCredit(o.id, referrals, orgsById, referralCreditCents());
+  // A test business earns its firm nothing.
+  const credit = referralCredit(o.id, referrals.filter((r) => !orgsById.get(r.clientOrgId)?.isTest), orgsById, referralCreditCents());
   const billing = computeOrgBilling(o, users.map((u) => ({ seatType: u.isClient ? CLIENT_RATE_KEY : u.seatType, isActive: u.isActive })), seatRates(), payments, today, credit);
   const active = activeReferralFor(o.id);
   const referredBy = active ? orgsById.get(active.firmOrgId)?.name ?? null : null;
@@ -482,7 +483,8 @@ app.get('/api/admin/subscriptions', (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const referrals = listReferrals();
     const orgsById = new Map(listOrgs().map((x) => [x.id, x]));
-    const rows = listOrgs().filter((o) => !o.isPlatform).map((o) => orgBillingRow(o, today, referrals, orgsById));
+    // Test organisations are for trying seats out: not billed, so not in the subscriptions list or totals.
+    const rows = listOrgs().filter((o) => !o.isPlatform && !o.isTest).map((o) => orgBillingRow(o, today, referrals, orgsById));
     const storage = { usedBytes: rows.reduce((t, r) => t + r.storageBytes, 0), disk: diskSpace(DATA_DIR) };
     return { today, rates: seatRates(), referralCreditCents: referralCreditCents(), totals: billingTotals(rows.map((r) => r.billing)), storage, rows };
   }));
@@ -500,7 +502,7 @@ app.post('/api/admin/payments/:id/delete', (req, res) => {
   res.json(wrap(() => { deletePayment(Number(req.params.id)); return { deleted: true }; }));
 });
 app.get('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json(wrap(() => (s.org.isPlatform ? listOrgs() : [s.org]).map((o) => ({ ...o, activeSeats: listUsers(o.id).filter((u) => u.isActive).length })))); });
-app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean; referrerOrgId?: number | null }; if (b.founding && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); const org = createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) }); if (b.referrerOrgId) startReferral(org.id, Number(b.referrerOrgId)); return org; })); });
+app.post('/api/admin/orgs', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => { const b = (req.body ?? {}) as { name?: string; seats?: number; founding?: boolean; referrerOrgId?: number | null; isTest?: boolean }; if (b.founding && !b.isTest && foundingFirmsCount() >= FOUNDING.maxFirms) throw new Error(`All ${FOUNDING.maxFirms} founding-firm places are taken.`); const org = createOrg({ name: String(b.name ?? ''), seats: b.seats, founding: Boolean(b.founding) && !b.isTest, isTest: Boolean(b.isTest) }); if (b.referrerOrgId) startReferral(org.id, Number(b.referrerOrgId)); return org; })); });
 app.get('/api/admin/signin-pause', (req, res) => { const s = requirePlatform(req, res); if (!s) return; res.json({ ok: true, data: { paused: signInPaused() } }); });
 app.post('/api/admin/signin-pause', (req, res) => {
   const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; }
@@ -535,6 +537,7 @@ app.post('/api/admin/preview-seat', (req, res) => {
   console.log(`[web] ${s.user.email} ${seat ? `previewing as ${seat}` : 'back to own seat'}`);
   res.json({ ok: true, data: { previewSeat: seat } });
 });
+app.post('/api/admin/orgs/:id/test', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setOrgTest(Number(req.params.id), Boolean((req.body ?? {}).isTest)))); });
 app.post('/api/admin/referral-credit', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } res.json(wrap(() => setReferralCreditCents(Math.round(Number((req.body ?? {}).dollars) * 100)))); });
 app.post('/api/admin/referrals', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { clientOrgId?: number; firmOrgId?: number }; res.json(wrap(() => startReferral(Number(b.clientOrgId), Number(b.firmOrgId)))); });
 app.post('/api/admin/seat-rates', (req, res) => { const s = requirePlatform(req, res); if (!s || !s.org.isPlatform) { if (s) res.status(403).json({ ok: false, error: 'Platform administrator only.' }); return; } const b = (req.body ?? {}) as { seatType?: SeatType; dollars?: number }; res.json(wrap(() => setSeatRate(b.seatType as SeatType, Math.round(Number(b.dollars) * 100)))); });
